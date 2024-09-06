@@ -1,0 +1,44 @@
+.employee-table1 {
+    margin-top: 100px !important;
+    width: 1500px !important; /* Full width */
+    border-collapse: collapse; /* Remove gaps between borders */
+    background-color: #ffffff; /* White background */
+    box-shadow: none; /* No shadow for flat design */
+    position: relative !important;
+    right: -70px !important;
+    border-radius: 20px !important;
+    top: 30px !important;
+  }
+
+
+  .emp{
+    margin-left: -1540px !important;
+    position: relative !important;
+    top: 60px !important;
+    color: #1f2937; /* Darker text color */
+    font-size: 2.8em; /* Larger greeting text */
+    font-weight: 700; /* Bold text */
+  }
+
+  .search-and-download {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    margin-right: 720px !important;
+    position: relative !important;
+    right: -75px !important;
+    top: 80px !important;
+
+  }
+  
+  .search-input {
+    flex: 1;
+    max-width: 400px;
+    margin-right: 20px !important;
+  }
+
+  .download-button{
+    position: relative !important;
+    right: -330px !important;
+  }

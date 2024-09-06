@@ -1,0 +1,72 @@
+/* src/components/Navbar.css */
+
+.sidebar {
+  width: 240px; /* Fixed width for the sidebar */
+  height: 100vh; /* Full height of the viewport */
+  background-color: #ffffff; /* White background */
+  padding: 20px;
+  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.05); /* Light shadow */
+  border-right: 1px solid #e5e9f2; /* Right border for separation */
+  display: flex;
+  flex-direction: column; /* Stack items vertically */
+  position: fixed; /* Fixed position */
+  top: 0; /* Start at the top */
+  left: 0; /* Align to the left */
+  z-index: 1000; /* Ensure it's above other content */
+  overflow-y: none !important; /* Disable vertical scrolling */
+}
+
+.sidebar .item {
+  padding: 15px 20px; /* More padding for better spacing */
+  font-size: 1.15rem;
+  color: #333; /* Dark text color */
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+  border-radius: 8px; /* Rounded corners for hover effect */
+  margin-bottom: 10px; /* Add spacing between items */
+  display: block; /* Ensure items are block-level elements */
+}
+
+.sidebar .item:hover {
+  background-color: #f0f0f5; /* Light background on hover */
+}
+
+.sidebar .item.active {
+  background-color: #e5e9f2; /* Active item background */
+  font-weight: 600; /* Bold text for active items */
+  color: #4a90e2; /* Active item text color */
+}
+
+.navbar-logo {
+  position: relative !important;
+  right: -10px;
+  width: 180px !important;
+  height: 120px !important;
+}
+
+.user-info {
+  position: relative !important;
+  top: 620px !important;
+  background-color: #f5f8fa !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05) !important; /* Soft shadow for depth */
+  border: 1px solid rgb(209, 208, 208);
+  padding: 10px !important;
+}
+
+.role-tag {
+  display: inline-block; /* Inline-block for tag */
+  padding: 4px 8px; /* Padding for the tag */
+  font-size: 0.9rem; /* Smaller font size for the tag */
+  color: #ffffff; /* White text */
+  border-radius: 12px; /* Rounded corners for the tag */
+  text-transform: capitalize; /* Capitalize the text */
+}
+
+/* Add specific styles for different roles */
+.role-tag.bizops {
+  background-color: #4a90e2; /* Blue background for BizOps */
+}
+
+.role-tag.leader {
+  background-color: orange; /* Orange background for Leader */
+}

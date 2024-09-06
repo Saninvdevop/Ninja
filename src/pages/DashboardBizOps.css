@@ -1,0 +1,165 @@
+.dashboard-bizops-container {
+    margin-left: 220px; /* Offset for sidebar */
+    padding: 40px;
+    background-color: #f5f8fa; /* White background for the entire dashboard */
+    min-height: 100vh; /* Full height for background */
+    font-family: 'Arial', sans-serif; /* Clean and modern font */
+  }
+  
+  .content-wrapper {
+    padding: 30px;
+    background-color: #f5f8fa !important; /* White background for the content area */
+    border-radius: 10px;
+    box-shadow: none !important; /* Removed shadow for a flat look */
+    border: none !important;
+  }
+  
+  /* Greeting Section Styling */
+  .greeting-section {
+    margin-bottom: 30px;
+    
+  }
+  .bizopname{
+    margin-left: -1740px !important;
+  }
+  
+  .greeting-section h2 {
+    margin: 0;
+    color: #1f2937; /* Darker text color */
+    font-size: 2.8em; /* Larger greeting text */
+    font-weight: 700; /* Bold text */
+  }
+  
+  .instruction-message {
+    margin-top: 10px;
+    color: #6b7280; /* Subtle text color */
+    font-size: 1.4em; /* Slightly larger font size */
+    font-weight: 400; /* Regular weight for message */
+    position: relative !important;
+    right: 200px !important;
+  }
+  
+  /* Card Styles */
+  .bizops-cards {
+    margin-top: 20px;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: space-between; /* Spread out cards */
+    gap: 15px; /* Spacing between cards */
+    
+  }
+  
+  .interactive-card {
+    flex: 1;
+    max-width: 380px !important; /* Fixed width to fit cards in a single line */
+    border: none; /* Removed border */
+    border-radius: 20px !important;
+    background-color: #ffffff !important; /* Softer background color for cards */
+    color: #1f2937 !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Soft shadow for depth */
+    transition: all 0.3s ease;
+    text-align: center;
+    padding: 20px 10px; /* Internal padding for better spacing */
+    margin: 0; /* Removed margin for exact spacing */
+    cursor: pointer; /* Pointer cursor to indicate interactivity */
+    position: relative !important;
+    right: 220px !important;
+
+  }
+ 
+  
+  .interactive-card:hover {
+    background-color: #ffffff; /* White background on hover */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Deeper shadow on hover */
+    transform: translateY(-5px); /* Slight lift on hover */
+  }
+  
+  .card-icon {
+    font-size: 1.5em !important; 
+    color: #4a90e2; 
+    margin-bottom: 10px;
+    
+  }
+
+.card-heading { 
+    font-size: 1.7em !important; 
+   
+}
+  
+  .card-value {
+    font-size: 4.3em; /* Large value size */
+    font-weight: bold;
+    color: #1f2937;
+    margin-top: 35px !important;
+    margin-left: -44px !important;
+  }
+  .card-value1 {
+    font-size: 4.3em; /* Large value size */
+    font-weight: bold;
+    color: #1f2937;
+    
+    margin-top: 35px !important;
+   
+    margin-left: 7px !important;
+  }
+
+  .card-value2 {
+    font-size: 4.3em; /* Large value size */
+    font-weight: bold;
+    color: #1f2937;
+    margin-top: 15px;
+    margin-left: -97px !important;
+    margin-top: 35px !important;
+  }
+  
+  /* Table Section */
+  .employee-table {
+    margin-top: 100px !important;
+    width: 100%; /* Full width */
+    border-collapse: collapse; /* Remove gaps between borders */
+    background-color: #ffffff; /* White background */
+    box-shadow: none; /* No shadow for flat design */
+    position: relative !important;
+    right: 200px !important;
+    border-radius: 20px !important;
+  }
+
+  .drafts{
+   position: relative !important;
+   top: 65px !important;
+   font-size: 38px !important;
+   right: 200px !important;
+  }
+  
+  .employee-table th,
+  .employee-table td {
+    padding: 15px; /* Padding for cells */
+    text-align: left;
+    border-bottom: 1px solid #e1e1e1; /* Bottom border */
+    color: #1f2937; /* Text color */
+    font-size: 1em; /* Uniform font size */
+  }
+  
+  .employee-table th {
+    background-color: #ffffff; /* White background for header */
+    color: #1f2937; /* Dark text color */
+    font-weight: 600; /* Bold header text */
+  }
+  
+  .employee-table tr:hover {
+    background-color: #f9fafb; /* Subtle hover effect */
+    color: #1f2937; /* Darker hover text */
+    cursor: default; /* Default cursor */
+  }
+  
+  /* Specific Styles */
+  .employee-table td a {
+    color: #6c63ff; /* Blue color for links */
+    text-decoration: none; /* Remove underline */
+    font-weight: 600; /* Bold for emphasis */
+  }
+  
+  .employee-table td a:hover {
+    text-decoration: underline; /* Underline on hover */
+  }
+  

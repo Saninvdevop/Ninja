@@ -1,0 +1,192 @@
+/* EmployeeDetails.css */
+.employee-details-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .employee-card {
+    max-width: 1400px !important;
+    width: 700px !important;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 16px !important;
+    overflow: hidden;
+    color: #333;
+  }
+  
+  .employee-card .card-header {
+    font-size: 22px;
+    color: #2c3e50;
+  }
+  .card-meta{
+    font-size: 20px !important;
+    position: relative !important;
+    top: 30px !important;
+    display: flex !important;
+    gap: 130px !important;
+  }
+  .card-description {
+    font-size: 15px !important;
+    display: grid; /* Use CSS Grid for structured layout */
+    grid-template-columns: repeat(3, 1fr); /* Create three equal-width columns */
+    gap: 30px !important; /* Gap between columns */
+    margin-top: 70px !important; /* Top margin to separate from other content */
+    border-top: 1px solid #b9bcc0; /* Top border for separation */
+    padding-top: 20px; /* Padding to separate from the top content */
+    position: relative !important;
+    right: 80px !important;
+    width: 750px !important;
+    text-align: left !important;
+  }
+  
+  /* Style for each grid item */
+  .card-description .grid-item {
+    display: flex;
+    flex-direction: column; /* Stack heading and content vertically */
+    align-items: center; /* Center align items */
+    color: #c0c0c0; /* Light gray color for text */
+  }
+  .card-description .grid-item1 {
+    display: flex;
+    flex-direction: column; /* Stack heading and content vertically */
+    align-items: center; /* Center align items */
+    color: #c0c0c0; /* Light gray color for text */
+    position: relative !important;
+    right: -15px !important;
+  }
+  
+  .card-description .grid-item .heading {
+    font-size: 0.9em; /* Smaller font for the heading */
+    color: #94a3b8; /* Light gray color for headings */
+    margin-bottom: 5px; /* Space between heading and content */
+    text-transform: uppercase; /* Uppercase for heading */
+  }
+  
+  .card-description .grid-item .content {
+    font-size: 1.1em; /* Slightly larger font for content */
+    color: #fff; /* White color for content */
+    font-weight: bold; /* Bold font for content */
+   position: relative !important;
+   right: 1px !important;
+  }
+  .card-description .grid-item1 .content {
+    font-size: 1.1em; /* Slightly larger font for content */
+    color: #fff; /* White color for content */
+    font-weight: bold; /* Bold font for content */
+   position: relative !important;
+   right: 1px !important;
+  }
+  
+  
+  .card-description .grid-item .content i {
+    margin-right: 8px; /* Spacing between icon and text */
+    color: #6bcdec; /* Light blue color for icons */
+  }
+  .card-description .grid-item1 .content i {
+    margin-right: 8px; /* Spacing between icon and text */
+    color: #6bcdec; /* Light blue color for icons */
+  }
+
+  .content{
+    color: black !important;
+  }
+  
+  .card-header{
+    font-size: 30px !important;
+  }
+  
+  .employee-card .card-meta span {
+    color: #7f8c8d;
+    display: block;
+    margin-top: 5px;
+  }
+  
+  .employee-card .card-description p {
+    margin: 0;
+    padding: 5px 0;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .allocations-table {
+    margin-top: 20px;
+    width: 1600px !important;
+  }
+  /* Custom styles for the success toaster message */
+
+
+
+
+  
+  .add-icon {
+    position: fixed;
+    bottom: 430px;
+    
+    right: 56px;
+    background-color: #4a90e2 !important;
+    color: white !important;
+    border-radius: 50% !important;
+  }
+  .submit-button{
+    color: white !important;
+    font-size: 20px !important;
+    border-radius: 10px !important;
+    height: 50px !important;
+    width: 120px !important;
+  }
+  
+  .details-chart-container {
+    display: flex; /* Flexbox to place card and chart side by side */
+    gap: 40px; /* Gap between the card and the chart */
+    align-items: center; /* Align items vertically in the center */
+    margin-bottom: 40px; /* Margin bottom for spacing */
+  }
+  
+  .doughnut-chart-container {
+    width: 300px; /* Fixed width for the doughnut chart */
+    height: 300px; /* Fixed height for the doughnut chart */
+    position: relative; /* Position relative for label centering */
+    right: 550px !important;
+    top: -10px !important;
+    background-size: cover; /* Cover the entire area */
+    border-radius: 50%; /* Rounded border */
+    padding: 10px; /* Padding around the chart */
+  }
+  
+  .doughnut-chart-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the label in the chart */
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .doughnut-chart-label .number {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #454545;
+    background-color: white;
+    border-radius: 50%;
+    padding: 10px;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .doughnut-chart-label .user-badge {
+    font-size: 1em;
+    font-weight: bold;
+    color: white;
+    background-color: #8a2be2; /* Purple color for user badge */
+    border-radius: 50%;
+    padding: 5px 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  

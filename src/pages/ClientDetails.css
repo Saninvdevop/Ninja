@@ -1,0 +1,128 @@
+/* src/pages/ClientDetails.css */
+
+.client-details-container {
+    padding: 40px;
+    background-color: #f5f8fa; /* Light background */
+    min-height: 100vh; /* Full height */
+    position: relative !important;
+    right: -300px !important;
+    width: 1600px !important;
+  }
+  
+  .client-details-container h2 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .employee-table3 {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 15px; /* Spacing between rows */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    background-color: #ffffff; /* Table background */
+    border-radius: 10px;
+    overflow: hidden; /* Ensure rounded corners */
+    position: relative !important;
+    right: 250px !important;
+    top: 30px !important;
+  }
+  .filled {
+    background-color: #e0e0e0 !important; /* Grey background for filled fields */
+  }
+  .emphead{
+    position: relative !important;
+    right: 648px !important;
+  }
+  .employee-table4 {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 15px; /* Spacing between rows */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    background-color: #ffffff; /* Table background */
+    border-radius: 10px;
+    overflow: hidden; /* Ensure rounded corners */
+    position: relative !important;
+    right: 250px !important;
+    top: 30px !important;
+    
+    
+  }
+  .headingproj{
+    position: relative !important;
+    right: 828px !important;
+  }
+  .add-icon1 {
+    position: fixed;
+    bottom: 735px;
+    
+    right: 36px;
+    background-color: #4a90e2 !important;
+    color: white !important;
+    border-radius: 50% !important;
+  
+  }
+  
+  .employee-table thead th {
+    background: linear-gradient(to right, #4a90e2, #50e3c2); /* Gradient background */
+    color: #ffffff;
+    padding: 15px;
+    text-align: left;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+  }
+  
+  .employee-table tbody tr {
+    transition: background-color 0.3s ease;
+  }
+  
+  .employee-table tbody tr:hover {
+    background-color: #f0f4f8; /* Hover effect for rows */
+  }
+  
+  .employee-table tbody td {
+    padding: 15px;
+    border-bottom: 1px solid #eaeaea; /* Subtle border for cells */
+    font-size: 1rem;
+    color: #555;
+  }
+  
+  /* src/pages/ClientDetails.css */
+
+/* Custom styles for the success toaster message */
+.toaster-message {
+  position: fixed; /* Fixed position */
+  top: -100px; /* Distance from the top */
+  right: -980px; /* Distance from the right */
+  z-index: 1000; /* Ensure it appears above other content */
+  background-color: #21ba45 !important; /* Green background color */
+  color: white !important;
+  border-radius: 5px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  padding: 15px 20px; /* Padding for spacing */
+  animation: fadeInOut 5s ease forwards; /* Animation for fade in and out */
+  width: 300px !important;
+  height: 70px !important;
+  border-radius: 10px !important;
+}
+
+/* Keyframes for fade in and fade out effect */
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px); /* Slide down effect */
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px); /* Slide up effect */
+  }
+}
