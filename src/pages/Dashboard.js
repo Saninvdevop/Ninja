@@ -1,30 +1,24 @@
-// src/pages/Dashboard.js
 import React from 'react';
 import { Icon } from 'semantic-ui-react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import './Dashboard.css';
 
 const Dashboard = () => {
   const totalEmployees = 120;
   const totalProjects = 45;
   const activeProjects = 15;
-  const totalRevenue = "$1,200,000";
 
-  const pieData = [
-    { name: 'Innovative Projects', value: 10 },
-    { name: 'Bench', value: 5 },
-    { name: 'Client Projects', value: 30 },
-  ];
+  const navigate = useNavigate(); // Initialize useNavigate
 
-  const COLORS = ['#4a90e2', '#50e3c2', '#f5a623'];
+  // Function to navigate to the Reports page with a filter
+  const handleReportClick = (filter) => {
+    navigate('/reports', { state: { filter } }); // Navigate to /reports with filter in state
+  };
 
-  const barData = [
-    { department: 'HR', count: 10 },
-    { department: 'Engineering', count: 40 },
-    { department: 'Marketing', count: 20 },
-    { department: 'Sales', count: 15 },
-    { department: 'Finance', count: 8 },
-  ];
+  // Function to navigate to the Projects page
+  const handleProjectsClick = () => {
+    navigate('/projects'); // Navigate to /projects
+  };
 
   return (
     <div className="dashboard-page-container">
@@ -54,7 +48,7 @@ const Dashboard = () => {
         </div>
 
         {/* Active Projects Card */}
-        <div className="dashboard-card">
+        <div className="dashboard-card" onClick={handleProjectsClick}> {/* Navigate to /projects */}
           <Icon name='tasks' className='dashboard-card-icon' />
           <div className="dashboard-card-content">
             <div className="dashboard-card-header">
@@ -65,60 +59,35 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Revenue Card */}
-        <div className="dashboard-card">
-          <Icon name='dollar' className='dashboard-card-icon' />
+        {/* Bench Report Card */}
+        <div className="dashboard-card" onClick={() => handleReportClick('benched')}> {/* Navigate with 'benched' filter */}
           <div className="dashboard-card-content">
             <div className="dashboard-card-header">
-              <Icon name='dollar' style={{ marginRight: '8px' }} />
-              Total Revenue Generated
+              <Icon name='book' style={{ marginRight: '8px' }} />
+              Bench Report
             </div>
-            <div className="dashboard-card-description">{totalRevenue}</div>
-          </div>
-        </div>
-
-        {/* Pie Chart Card */}
-        <div className="dashboard-card dashboard-pie-chart">
-          <div className="dashboard-card-content">
-            <div className="dashboard-card-header">Project Distribution</div>
-            <div className="dashboard-chart-container">
-              <PieChart width={300} height={200}>
-                <Pie
-                  data={pieData}
-                  cx={150}
-                  cy={100}
-                  innerRadius={40}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="value"
-                  label
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
+            {/* Large Icon for Bench Report */}
+            <div className="dashboard-card-icon-large">
+              <Icon name='book' size='massive' />
             </div>
           </div>
         </div>
 
-        {/* Bar Chart Card */}
-        <div className="dashboard-card dashboard-bar-chart">
+        {/* Allocated Report Card */}
+        <div className="dashboard-card" onClick={() => handleReportClick('allocated')}> {/* Navigate with 'allocated' filter */}
           <div className="dashboard-card-content">
-            <div className="dashboard-card-header">Department Distribution</div>
-            <div className="dashboard-chart-container">
-              <BarChart width={300} height={200} data={barData}>
-                <XAxis dataKey="department" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#4a90e2" />
-              </BarChart>
+            <div className="dashboard-card-header">
+              <Icon name='book outline' style={{ marginRight: '8px' }} />
+              Allocated Report
+            </div>
+            {/* Two Icons for Allocated Report */}
+            <div className="dashboard-card-icon-large">
+              <Icon name='book' size='massive' />
+              <Icon name='book outline' size='massive' style={{ marginLeft: '20px' }} />
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

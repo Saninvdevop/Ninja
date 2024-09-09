@@ -18,10 +18,10 @@ const Navbar = ({ userRole }) => {
       {/* User Info Section */}
       <div className="user-info">
         <h3 className="user-name">
-        <Icon name="user" className="user-icon" /> 
-        Ravi Kumar</h3>
+          <Icon name="user" className="user-icon" /> 
+          Ravi Kumar
+        </h3>
         <span className={`role-tag ${userRole}`}>{userRole === 'bizops' ? 'BizOps' : 'Leader'}</span>
-
       </div>
 
       <Menu vertical pointing secondary className="navbar-menu">
@@ -45,6 +45,15 @@ const Navbar = ({ userRole }) => {
               className="item"
             >
               Projects
+            </Menu.Item>
+            <Menu.Item
+              name="reports"
+              active={activeItem === '/reports'}
+              as={Link}
+              to="/reports" // Add link to the new Reports page
+              className="item"
+            >
+              Reports
             </Menu.Item>
           </>
         )}

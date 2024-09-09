@@ -1,4 +1,3 @@
-// src/pages/DashboardBizOps.js
 import React from 'react';
 import { Card, Table, Segment, Icon } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
@@ -27,6 +26,11 @@ const DashboardBizOps = () => {
     navigate('/unallocated');
   };
 
+  // Function to navigate to ToDo page
+  const handleToDoClick = () => {
+    navigate('/todo'); // Navigate to the ToDoPage when clicking the To Do card
+  };
+
   return (
     <div className="dashboard-bizops-container">
       <Segment className="content-wrapper">
@@ -41,14 +45,14 @@ const DashboardBizOps = () => {
           <Card className="interactive-card" onClick={handleUnallocatedClick}>
             <Card.Content>
               <Icon name="users" className="card-icon" />
-              <Card.Header className="card-heading">Unallocated</Card.Header>
+              <Card.Header className="card-heading">Drafts</Card.Header>
               <Card.Description className="card-value">{unallocated}</Card.Description>
             </Card.Content>
           </Card>
-          <Card className="interactive-card">
+          <Card className="interactive-card" onClick={handleToDoClick}> {/* Updated onClick event */}
             <Card.Content>
               <Icon name="edit" className="card-icon" />
-              <Card.Header className="card-heading">Draft</Card.Header>
+              <Card.Header className="card-heading">To Do</Card.Header>
               <Card.Description className="card-value1">{draft}</Card.Description>
             </Card.Content>
           </Card>

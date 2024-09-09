@@ -83,7 +83,8 @@
 
 .card-heading { 
     font-size: 1.7em !important; 
-   
+    position: relative !important;
+    right: 30px !important;   
 }
   
   .card-value {

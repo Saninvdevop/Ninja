@@ -9,6 +9,8 @@ import Unallocated from './pages/Unallocated';
 import EmployeeDetails from './pages/EmployeeDetails';
 import ClientProjects from './pages/ClientProjects';
 import ClientDetails from './pages/ClientDetails';
+import ToDoPage from './pages/ToDoPage';
+import Reports from './pages/Reports';
 
 const App = () => {
   const [userRole, setUserRole] = useState(null); // State to manage user role
@@ -25,14 +27,28 @@ const App = () => {
           <Navbar userRole={userRole} />
           <div style={{ marginLeft: '220px', padding: '20px', width: '100%' }}>
             <Routes>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/dashboardbizops" element={<DashboardBizOps />} />
-              <Route path="/unallocated" element={<Unallocated />} />
-              <Route path="/employee/:id" element={<EmployeeDetails />} />
+              {userRole === 'leader' && (
+                <>
+                  {/* Routes specific to the leader role */}
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/projects" element={<Projects />} />
+                  <Route path="/reports" element={<Reports userRole={userRole} />} />
+                </>
+              )}
+              {userRole === 'bizops' && (
+                <>
+                  {/* Routes specific to the bizops role */}
+                  <Route path="/projects" element={<Projects />} />
+                  <Route path="/dashboardbizops" element={<DashboardBizOps />} />
+                  <Route path="/unallocated" element={<Unallocated />} />
+                  <Route path="/todo" element={<ToDoPage />} />
+                  <Route path="/reports" element={<Reports userRole={userRole} />} />
+                </>
+              )}
+              {/* Common Routes for both roles */}
+              <Route path="/employee/:id" element={<EmployeeDetails userRole={userRole} />} />
               <Route path="/client/:clientId/projects" element={<ClientProjects />} />
-              {/* Pass userRole as a prop to ClientDetails */}
-              <Route path="/client/:clientId/project/:projectId" element={<ClientDetails userRole={userRole} />} />
+              <Route path="/client/:clientId/project/:projectId" element={<ClientDetails />} />
             </Routes>
           </div>
         </>

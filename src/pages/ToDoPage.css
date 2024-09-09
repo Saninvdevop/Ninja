@@ -1,0 +1,22 @@
+.todo-page-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+  }
+  
+  .todo-page-header {
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .todo-employee-table {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .todo-employee-table .ui.table td, .todo-employee-table .ui.table th {
+    font-size: 16px;
+  }
+  
