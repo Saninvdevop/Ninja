@@ -20,12 +20,12 @@ const App = () => {
     <Router>
       {!userRole ? (
         <Routes>
-          <Route path="/" element={<Login setUserRole={setUserRole} />} />
+          <Route path="/" element={<Login setUserRole={setUserRole} />} /> {/* Pass setUserRole to Login */}
         </Routes>
       ) : (
         <>
-          {/* Pass userRole to Navbar for conditional rendering */}
-          <Navbar userRole={userRole} />
+          {/* Pass userRole and setUserRole to Navbar for conditional rendering */}
+          <Navbar userRole={userRole} setUserRole={setUserRole} /> {/* Pass setUserRole to Navbar */}
           <div style={{ marginLeft: '220px', padding: '20px', width: '100%' }}>
             <Routes>
               {userRole === 'leader' && (
@@ -43,7 +43,7 @@ const App = () => {
                   <Route path="/dashboardbizops" element={<DashboardBizOps />} />
                   <Route path="/unallocated" element={<Unallocated />} />
                   <Route path="/todo" element={<ToDoPage />} />
-                  <Route path="/employee-details" element={<EmpPage />} /> {/* Add new route */}
+                  <Route path="/employees" element={<EmpPage />} /> {/* Updated route to /employees */}
                   <Route path="/reports" element={<Reports userRole={userRole} />} />
                 </>
               )}

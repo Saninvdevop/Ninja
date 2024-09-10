@@ -45,7 +45,7 @@
 
 .user-info {
   position: relative !important;
-  top: 620px !important;
+  top: 595px !important;
   background-color: #f5f8fa !important;
   border-radius: 12px !important;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05) !important; /* Soft shadow for depth */
@@ -60,6 +60,15 @@
   color: #ffffff; /* White text */
   border-radius: 12px; /* Rounded corners for the tag */
   text-transform: capitalize; /* Capitalize the text */
+}
+
+.logout-button{
+  position: relative !important;
+  top: 440px !important;
+  right: -7px !important;
+  background-color: #e5e9f2 !important;
+  color: black !important;
+  border: 2px black !important;
 }
 
 /* Add specific styles for different roles */
