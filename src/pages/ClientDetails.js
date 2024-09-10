@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams,useNavigate } from 'react-router-dom';
 import { Table, Icon, Button, Modal, Form, Dropdown, Message } from 'semantic-ui-react';
 import './ClientDetails.css'; // Custom CSS for styling
 
 const ClientDetails = ({ userRole }) => {
+  const navigate = useNavigate();
   const { clientId, projectId } = useParams();
   const [open, setOpen] = useState(false);
   const [showMessage, setShowMessage] = useState(false);

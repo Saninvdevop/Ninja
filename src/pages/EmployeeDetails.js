@@ -1,5 +1,5 @@
 import React, { useState,useEffect } from 'react';
-import { useLocation,useParams } from 'react-router-dom';
+import { useLocation,useParams ,useNavigate} from 'react-router-dom';
 import { Card, Icon, Table, Button, Modal, Form, Dropdown } from 'semantic-ui-react';
 import { Doughnut } from 'react-chartjs-2';
 import 'chart.js/auto';
@@ -11,7 +11,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   const location = useLocation();
   const navigate = useNavigate(); // Initialize useNavigate for navigation
   const { employee, allocationPercentage: initialAllocation } = location.state; // Get the employee and initial allocation percentage from state
-
+  
   // Client data and project data from Projects.js
   const [clientData, setClientData] = useState([]);
 
@@ -83,8 +83,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
 
   // State to manage new allocation input
   const [newAllocation, setNewAllocation] = useState({
-    employeeName: employee.employee_name, // Pre-fill with current employee name
-    employeeId: employee.employee_id, // Pre-fill with current employee ID
+    employeeName: employee.EmployeeName, // Pre-fill with current employee name
+    employeeId: employee.EmployeeID, // Pre-fill with current employee ID
     clientName: '',
     projectName: '',
     status: '',
@@ -161,8 +161,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
 
     // Clear form fields after saving
     setNewAllocation({
-      employeeName: employee.employee_name,
-      employeeId: employee.employee_id,
+      employeeName: employee.EmployeeName,
+      employeeId: employee.EmployeeID,
       clientName: '',
       projectName: '',
       status: '',
@@ -299,14 +299,14 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
         <Card className="employee-card" centered>
           <Card.Content>
             <Card.Header className="card-header">
-              {employee.employee_name} {/* Dynamic Employee Name */}
+              {employee.EmployeeName} {/* Dynamic Employee Name */}
             </Card.Header>
             <Card.Meta className="card-meta">
               <span>
                 <Icon name="briefcase" /> {employee.role} {/* Dynamic Role */}
               </span>
               <span>
-                <Icon name="mail" /> {employee.email} {/* Dynamic Email */}
+                <Icon name="mail" /> {employee.Email} {/* Dynamic Email */}
               </span>
             </Card.Meta>
             <Card.Description className="card-description">
@@ -335,7 +335,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
               </div>
               <div className="grid-item">
                 <span className="content">
-                  <Icon name="hashtag" /> {employee.employee_id} {/* Dynamic Employee ID */}
+                  <Icon name="hashtag" /> {employee.EmployeeID} {/* Dynamic Employee ID */}
                 </span>
               </div>
             </Card.Description>

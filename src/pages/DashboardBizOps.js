@@ -57,7 +57,7 @@ const DashboardBizOps = () => {
 
   // Function to navigate to EmpPage
   const handleEmployeeDetailsClick = () => {
-    navigate('/employee-details'); // Adjust this path to match your App.js route
+    navigate('/employees'); // Adjust this path to match your App.js route
   };
 
   return (

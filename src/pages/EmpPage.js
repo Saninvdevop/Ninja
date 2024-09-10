@@ -1,39 +1,47 @@
 // src/pages/EmpPage.js
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, Input, Dropdown, Icon } from 'semantic-ui-react'; // Import Icon component for back arrow
 
 const EmpPage = () => {
   const navigate = useNavigate(); // For navigation to employee details
 
-  // Expanded employee data with more employees including those with 100% allocation
-  const employeeData = [
-    { employee_id: 'E001', employee_name: 'Alice Johnson', email: 'alice.johnson@example.com', current_allocation: 50 },
-    { employee_id: 'E002', employee_name: 'Bob Smith', email: 'bob.smith@example.com', current_allocation: 30 },
-    { employee_id: 'E003', employee_name: 'John Johnson', email: 'j.johnson@example.com', current_allocation: 20 },
-    { employee_id: 'E004', employee_name: 'Peter Smith', email: 'p.smith@example.com', current_allocation: 30 },
-    { employee_id: 'E005', employee_name: 'Sam Johnson', email: 's.johnson@example.com', current_allocation: 10 },
-    { employee_id: 'E006', employee_name: 'Ron Smith', email: 'r.smith@example.com', current_allocation: 90 },
-    { employee_id: 'E007', employee_name: 'Parker Johnson', email: 'p.johnson@example.com', current_allocation: 55 },
-    { employee_id: 'E008', employee_name: 'Samuel Smith', email: 'sm.smith@example.com', current_allocation: 30 },
-    { employee_id: 'E009', employee_name: 'Nina Brown', email: 'nina.brown@example.com', current_allocation: 70 },
-    { employee_id: 'E010', employee_name: 'Oliver Twist', email: 'oliver.twist@example.com', current_allocation: 100 },
-    { employee_id: 'E011', employee_name: 'Lucas White', email: 'lucas.white@example.com', current_allocation: 100 },
-    { employee_id: 'E012', employee_name: 'Sophia Green', email: 'sophia.green@example.com', current_allocation: 75 },
-    { employee_id: 'E013', employee_name: 'Liam Black', email: 'liam.black@example.com', current_allocation: 85 },
-    { employee_id: 'E014', employee_name: 'Emma Blue', email: 'emma.blue@example.com', current_allocation: 100 },
-    { employee_id: 'E015', employee_name: 'Mason Gray', email: 'mason.gray@example.com', current_allocation: 45 },
-    // More employees can be added here as needed
-  ];
+  // State for employee data and loading status
+  const [employeeData, setEmployeeData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const [searchTerm, setSearchTerm] = useState(''); // State for search term
-  const [filteredEmployees, setFilteredEmployees] = useState(employeeData); // State for filtered employees
-  const [filter, setFilter] = useState('all'); // State for filter option
+  // State for search and filter
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [filter, setFilter] = useState('all');
+
+  useEffect(() => {
+    const fetchClientData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:5000/employees');
+        
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        setEmployeeData(data);
+        setFilteredEmployees(data); // Initialize filtered employees
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClientData();
+  }, []); // Empty dependency array to run once on component mount
 
   // Handle search input change
   const handleSearchChange = (e) => {
-    const searchValue = e.target.value.toLowerCase();
+    const searchValue = e.target.value
     setSearchTerm(searchValue);
     applyFilters(searchValue, filter);
   };
@@ -46,33 +54,48 @@ const EmpPage = () => {
 
   // Apply search and filter logic
   const applyFilters = (searchTerm, filter) => {
+    // Convert search term to lowercase
+    const lowerSearchTerm = searchTerm.toLowerCase();
+  
     const filtered = employeeData.filter((employee) => {
+      // Convert employee properties to lowercase for comparison
+      const employeeName = employee.EmployeeName.toLowerCase();
+      const email = employee.Email.toLowerCase();
+      const employeeId = (employee?.EmployeeID || '').toString().toLowerCase();;
+  
+      // Check if the employee matches the search term
       const matchesSearchTerm =
-        employee.employee_name.toLowerCase().includes(searchTerm) ||
-        employee.email.toLowerCase().includes(searchTerm) ||
-        employee.employee_id.toLowerCase().includes(searchTerm);
-
+        employeeName.includes(lowerSearchTerm) ||
+        email.includes(lowerSearchTerm) ||
+        employeeId.includes(lowerSearchTerm);
+  
+      // Check if the employee matches the filter criteria
       let matchesFilter = true;
       if (filter === 'bench') {
-        matchesFilter = employee.current_allocation === 0;
+        matchesFilter = employee.Allocation === 0;
       } else if (filter === 'draft') {
-        matchesFilter = employee.current_allocation > 0 && employee.current_allocation < 100;
+        matchesFilter = employee.current_allocation > 0 && employee.Allocation < 100;
       } else if (filter === 'allocated') {
-        matchesFilter = employee.current_allocation === 100;
+        matchesFilter = employee.Allocation === 100;
       }
-
+  
+      // Return true if both search and filter criteria are met
       return matchesSearchTerm && matchesFilter;
     });
-
+  
+    // Log filtered results for debugging
+    console.log('Filtered Employees:', filtered);
+  
     setFilteredEmployees(filtered);
   };
+  
 
   // Handle navigation to individual employee details
   const handleEmployeeClick = (employee) => {
-    navigate(`/employee/${employee.employee_id}`, {
+    navigate(`/employee/${employee.EmployeeID}`, {
       state: {
         employee,
-        allocationPercentage: employee.current_allocation, // Pass the current allocation percentage
+        allocationPercentage: employee.Allocation, // Pass the current allocation percentage
       },
     });
   };
@@ -128,11 +151,11 @@ const EmpPage = () => {
         </Table.Header>
         <Table.Body>
           {filteredEmployees.map((employee) => (
-            <Table.Row key={employee.employee_id} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
-              <Table.Cell>{employee.employee_id}</Table.Cell>
-              <Table.Cell>{employee.employee_name}</Table.Cell>
-              <Table.Cell>{employee.email}</Table.Cell>
-              <Table.Cell>{employee.current_allocation}%</Table.Cell>
+            <Table.Row key={employee.EmployeeID} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
+              <Table.Cell>{employee.EmployeeID}</Table.Cell>
+              <Table.Cell>{employee.EmployeeName}</Table.Cell>
+              <Table.Cell>{employee.Email}</Table.Cell>
+              <Table.Cell>{employee.Allocation}%</Table.Cell>
             </Table.Row>
           ))}
         </Table.Body>
