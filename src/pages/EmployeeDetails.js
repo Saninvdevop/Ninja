@@ -1,60 +1,82 @@
-import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState,useEffect } from 'react';
+import { useLocation,useParams } from 'react-router-dom';
 import { Card, Icon, Table, Button, Modal, Form, Dropdown } from 'semantic-ui-react';
 import { Doughnut } from 'react-chartjs-2';
 import 'chart.js/auto';
 import './EmployeeDetails.css';
 
 const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
-
+  const { id } = useParams(); 
+  console.log(id);
   const location = useLocation();
   const { employee, allocationPercentage: initialAllocation } = location.state; // Get the employee and initial allocation percentage from state
 
   // Client data and project data from Projects.js
-  const clientData = [
-    {
-      company: 'Acme Corp',
-      projects: ['Website Redesign', 'Mobile App Development'],
-      id: 'acme-corp',
-    },
-    {
-      company: 'Global Tech',
-      projects: ['AI Research', 'Data Migration'],
-      id: 'global-tech',
-    },
-    {
-      company: 'Healthify Inc.',
-      projects: ['Health Tracking App', 'Wellness Portal'],
-      id: 'healthify-inc',
-    },
-    {
-      company: 'EduPro',
-      projects: ['E-learning Platform', 'Course Management System'],
-      id: 'edupro',
-    },
-  ];
+  const [clientData, setClientData] = useState([]);
 
+  const [loading, setLoading] = useState(true); // Loading state
+
+  // Fetch data from APIs
+  useEffect(() => {
+    const fetchClientData = async () => {
+      try {
+        setLoading(true);
+        const Response = await fetch('http://localhost:5000/clients');
+        
+        
+        if (!Response.ok || !Response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const Data = await Response.json();
+        
+
+        setClientData(Data);
+        
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClientData();
+  }, []);
   // Options for client dropdown
   const clientOptions = clientData.map((client) => ({
-    key: client.id,
-    text: client.company,
-    value: client.company, // Using company name as value to match table entries
+    key: client.ClientID,
+    text: client.ClientName,
+    value: client.ClientName, // Using company name as value to match table entries
   }));
 
   // State to manage the allocation data
-  const [allocations, setAllocations] = useState([
-    {
-      employeeName: employee.employee_name,
-      employeeId: employee.employee_id,
-      clientName: 'Acme Corp',
-      projectName: 'Website Redesign',
-      allocation: initialAllocation, // Initialize with passed allocation percentage
-      status: 'Active',
-      startDate: '2020-05-02',
-      endDate: '2024-05-02',
-    },
-  ]);
+  const [allocations, setAllocations] = useState([]);
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        // setLoading(true);
+   
+        const Response = await fetch(`http://localhost:5000/detailed-view/${id}`);
 
+        
+        if (!Response.ok ) {
+          throw new Error('Network response was not ok');
+        }
+
+        const Data = await Response.json();
+        
+
+        setAllocations(Data);
+        
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        // setLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, []);
   // State to manage modal visibility
   const [open, setOpen] = useState(false);
 
@@ -85,19 +107,36 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   ];
 
   // Function to handle client change and update project options
-  const handleClientChange = (e, { value }) => {
+  const handleClientChange = async (e, { value }) => {
     setSelectedClient(value);
     setNewAllocation({ ...newAllocation, clientName: value, projectName: '' });
-
-    // Get project options for the selected client
-    const selectedClientData = clientData.find((client) => client.company === value);
-    const projects = selectedClientData?.projects.map((project) => ({
-      key: project,
-      text: project,
-      value: project,
-    })) || [];
-    setProjectOptions(projects); // Update project options based on selected client
+  
+    try {
+      // Fetch projects for the selected client
+      const response = await fetch(`http://localhost:5000/client/project/${value}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+  
+      // Map the fetched projects to options
+      const projects = data.map((project) => ({
+        key: project.projectID,  // Assuming each project has a unique ID
+        text: project.projectName,  // Assuming the project name is in projectName
+        value: project.projectName,
+      }));
+  
+      setProjectOptions([
+        { key: 'none', text: 'None', value: '' },  // Include "None" option
+        ...projects,
+      ]);
+  
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setProjectOptions([]);  // Clear options in case of error
+    }
   };
+  
 
   // Function to handle adding or editing an allocation
   const handleSaveAllocation = () => {
@@ -145,7 +184,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   const handleEditAllocation = (index) => {
     const allocationToEdit = allocations[index];
     setNewAllocation(allocationToEdit); // Set the state with values from the selected allocation
-    setSelectedClient(allocationToEdit.clientName); // Set selected client to populate project dropdown
+    setSelectedClient(allocationToEdit.ClientID); // Set selected client to populate project dropdown
     setEditIndex(index);
 
     // Populate project options based on the selected client
@@ -210,8 +249,8 @@ const doughnutData = {
   // Function to open the modal and set the pre-filled values
   const handleOpenModal = () => {
     setNewAllocation({
-      employeeName: employee.employee_name,
-      employeeId: employee.employee_id,
+      employeeName: employee.EmployeeName,
+      employeeId: employee.EmployeeID,
       clientName: '',
       projectName: '',
       status: '',
@@ -346,12 +385,12 @@ const doughnutData = {
         <Table.Body>
           {allocations.map((alloc, index) => (
             <Table.Row key={index}>
-              <Table.Cell>{alloc.employeeName}</Table.Cell>
-              <Table.Cell>{alloc.employeeId}</Table.Cell>
-              <Table.Cell>{alloc.clientName}</Table.Cell>
-              <Table.Cell>{alloc.projectName}</Table.Cell>
-              <Table.Cell>{alloc.allocation}</Table.Cell>
-              <Table.Cell>{alloc.status}</Table.Cell>
+              <Table.Cell>{alloc.EmployeeName}</Table.Cell>
+              <Table.Cell>{alloc.EmployeeID}</Table.Cell>
+              <Table.Cell>{alloc.ClientName}</Table.Cell>
+              <Table.Cell>{alloc.ProjectName}</Table.Cell>
+              <Table.Cell>{alloc.Allocation}</Table.Cell>
+              <Table.Cell>{alloc.ProjectStatus}</Table.Cell>
               <Table.Cell>{alloc.startDate}</Table.Cell>
               <Table.Cell>{alloc.endDate}</Table.Cell>
               <Table.Cell>
@@ -385,13 +424,13 @@ const doughnutData = {
       <Form.Input
         label="Employee Name"
         placeholder="Enter employee name"
-        value={newAllocation.employeeName}
+        value={newAllocation.EmployeeName}
         readOnly
       />
       <Form.Input
         label="Employee ID"
         placeholder="Enter employee ID"
-        value={newAllocation.employeeId}
+        value={newAllocation.EmployeeID}
         readOnly
       />
       <Form.Field>
@@ -411,7 +450,7 @@ const doughnutData = {
 
             // Update project options based on selected client
             if (value) {
-              const selectedClientData = clientData.find((client) => client.company === value);
+              const selectedClientData = clientData.find((client) => client.client === value);
               const projects = selectedClientData?.projects.map((project) => ({
                 key: project,
                 text: project,

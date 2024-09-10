@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Table, Icon, Button, Modal, Form, Dropdown } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom';
 import './Projects.css';
@@ -10,48 +10,37 @@ const Projects = () => {
   const [selectedClient, setSelectedClient] = useState(''); // State for selected client
   const [selectedProject, setSelectedProject] = useState(''); // State for selected project
 
-  const clientData = [
-    {
-      company: 'Acme Corp',
-      projects: ['Website Redesign', 'Mobile App Development'],
-      status: 'In Progress',
-      country: 'USA',
-      contract_start_date: '2023-01-01',
-      contract_end_date: '2023-12-31',
-      employees: 50,
-      id: 'acme-corp',
-    },
-    {
-      company: 'Global Tech',
-      projects: ['AI Research', 'Data Migration'],
-      status: 'Completed',
-      country: 'UK',
-      contract_start_date: '2022-05-01',
-      contract_end_date: '2023-04-30',
-      employees: 30,
-      id: 'global-tech',
-    },
-    {
-      company: 'Healthify Inc.',
-      projects: ['Health Tracking App', 'Wellness Portal'],
-      status: 'In Progress',
-      country: 'Canada',
-      contract_start_date: '2023-03-01',
-      contract_end_date: '2024-02-28',
-      employees: 20,
-      id: 'healthify-inc',
-    },
-    {
-      company: 'EduPro',
-      projects: ['E-learning Platform', 'Course Management System'],
-      status: 'Pending',
-      country: 'Australia',
-      contract_start_date: '2023-06-01',
-      contract_end_date: '2024-05-31',
-      employees: 25,
-      id: 'edupro',
-    },
-  ];
+  const [clientData, setClientData] = useState([]);
+  const [benchedEmployees, setBenchedEmployees] = useState([]);
+  const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
+  const [loading, setLoading] = useState(true); // Loading state
+
+  // Fetch data from APIs
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        setLoading(true);
+        const allocatedResponse = await fetch('http://localhost:5000/clients');
+        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
+        
+        if (!allocatedResponse.ok || !benchedResponse.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const allocatedData = await allocatedResponse.json();
+        const benchedData = await benchedResponse.json();
+
+        setClientData(allocatedData);
+        setBenchedEmployees(benchedData);
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, []);
 
   const allocationOptions = [
     { key: 'client', text: 'Client Project', value: 'client project' },
@@ -128,22 +117,22 @@ const Projects = () => {
           {clientData.map((client, index) => (
             <Table.Row
               key={index}
-              onClick={() => handleRowClick(client.id)} // Ensure correct navigation
+              onClick={() => handleRowClick(client.ClientID)} // Ensure correct navigation
               style={{ cursor: 'pointer' }}
             >
               <Table.Cell>
-                <Icon name="building" /> {client.company}
+                <Icon name="building" /> {client.ClientName}
               </Table.Cell>
-              <Table.Cell>{client.projects.length}</Table.Cell>
+              <Table.Cell>{client.NoOfProjects}</Table.Cell>
               <Table.Cell>
-                <span className={`status ${client.status.toLowerCase().replace(' ', '-')}`}>
+                <span className={`status ${client.Status.toLowerCase().replace(' ', '-')}`}>
                   {client.status}
                 </span>
               </Table.Cell>
-              <Table.Cell>{client.country}</Table.Cell>
-              <Table.Cell>{client.contract_start_date}</Table.Cell>
-              <Table.Cell>{client.contract_end_date}</Table.Cell>
-              <Table.Cell>{client.employees}</Table.Cell>
+              <Table.Cell>{client.Country}</Table.Cell>
+              <Table.Cell>{client.StartDate}</Table.Cell>
+              <Table.Cell>{client.EndDate}</Table.Cell>
+              <Table.Cell>{client.NoOfEmployees}</Table.Cell>
             </Table.Row>
           ))}
         </Table.Body>

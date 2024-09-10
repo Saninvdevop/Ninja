@@ -12,6 +12,7 @@ const Login = ({ setUserRole }) => {
 
   const handleLogin = () => {
     if (loginId === 'leader' && password === 'password') {
+     
       setUserRole('leader');
       navigate('/dashboard');
     } else if (loginId === 'bizops' && password === 'password') {

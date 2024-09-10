@@ -1,70 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Table, Icon, Button, Modal, Form, Dropdown, Message } from 'semantic-ui-react';
 import './ClientDetails.css'; // Custom CSS for styling
 
-const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
-  const { clientId, projectId } = useParams(); // Get clientId and projectId from the URL
-
-  // State to control modal visibility and messages
+const ClientDetails = ({ userRole }) => {
+  const { clientId, projectId } = useParams();
   const [open, setOpen] = useState(false);
-  const [showMessage, setShowMessage] = useState(false); // State for toaster message
-  const [allocation, setAllocation] = useState('client project'); // State for allocation dropdown
-  const [selectedClient, setSelectedClient] = useState(clientId); // Auto-fill with current client
-  const [selectedProject, setSelectedProject] = useState(projectId); // Auto-fill with current project
-  const [resourceName, setResourceName] = useState(''); // State to manage resource name input
-  const [allocationPercentage, setAllocationPercentage] = useState(''); // State to manage percentage input
+  const [showMessage, setShowMessage] = useState(false);
+  const [allocation, setAllocation] = useState('client project');
+  const [selectedClient, setSelectedClient] = useState(clientId);
+  const [selectedProject, setSelectedProject] = useState(projectId);
+  const [resourceName, setResourceName] = useState('');
+  const [allocationPercentage, setAllocationPercentage] = useState('');
+  const [employeesData, setEmployeesData] = useState([]);
+  const [loading, setLoading] = useState(true); // State to manage loading status
 
-  // Complete mock data for employees by client project with additional fields
-  const initialEmployeesData = {
-    'acme-corp': {
-      'website-redesign': [
-        { name: 'John Doe', role: 'Frontend Developer', status: 'Active', allocationPercentage: 50, allocationType: 'Client' },
-        { name: 'Jane Smith', role: 'Backend Developer', status: 'Active', allocationPercentage: 70, allocationType: 'Client' },
-      ],
-      'mobile-app-development': [
-        { name: 'Alice Johnson', role: 'Mobile Developer', status: 'On Leave', allocationPercentage: 30, allocationType: 'Benched' },
-        { name: 'Bob Brown', role: 'QA Engineer', status: 'Active', allocationPercentage: 60, allocationType: 'Service' },
-      ],
-    },
-    'global-tech': {
-      'ai-research': [
-        { name: 'Charlie Wilson', role: 'AI Scientist', status: 'Active', allocationPercentage: 80, allocationType: 'Client' },
-        { name: 'Daisy Thomas', role: 'Data Analyst', status: 'Active', allocationPercentage: 60, allocationType: 'Client' },
-      ],
-      'data-migration': [
-        { name: 'Evelyn White', role: 'Data Engineer', status: 'Active', allocationPercentage: 40, allocationType: 'Service' },
-        { name: 'Frank Green', role: 'Database Admin', status: 'Active', allocationPercentage: 90, allocationType: 'Client' },
-        { name: 'George Adams', role: 'Migration Specialist', status: 'Active', allocationPercentage: 100, allocationType: 'Benched' },
-      ],
-    },
-    // ... Other clients remain unchanged
-  };
+  // Fetch employees data
+  useEffect(() => {
+    const fetchEmployeesData = async () => {
+      try {
+        const formattedProjectName = projectId.replace(/-/g, ' ');
+        const encodedProjectName = encodeURIComponent(formattedProjectName);
+        console.log(encodedProjectName);
+    
+        const response = await fetch(`http://localhost:5000/project/${encodedProjectName}/employees`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        setEmployeesData(data);
+      } catch (error) {
+        console.error('Failed to fetch employees data:', error);
+      } finally {
+        setLoading(false); // Stop loading once data is fetched
+      }
+    };
 
-  const [employeesData, setEmployeesData] = useState(initialEmployeesData); // State to manage employees data
+    fetchEmployeesData();
+  }, [projectId]); // Refetch data if projectId changes
 
   const clientName = clientId.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
   const projectName = projectId.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-  const employees = (employeesData[clientId] && employeesData[clientId][projectId]) || []; // Get employees for the current project under the current client
-
+  
   // Options for client dropdown
-  const clientOptions = Object.keys(employeesData).map((id) => ({
-    key: id,
-    text: id.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
-    value: id,
-  }));
+  const clientOptions = [
+    { key: clientId, text: clientName, value: clientId }
+  ];
 
   // Options for project dropdown based on selected client
   const projectOptions = selectedClient
-    ? Object.keys(employeesData[selectedClient]).map((projectId) => ({
-        key: projectId,
-        text: projectId.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
-        value: projectId,
-      }))
+    ? [{ key: projectId, text: projectName, value: projectId }]
     : [];
 
   const handleSubmit = () => {
-    // Add new employee data to the existing list
     const newEmployee = {
       name: resourceName,
       role: 'New Role', // Placeholder role; this could be another input field in a real scenario
@@ -73,13 +61,7 @@ const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
       allocationType: 'Client', // Assuming fixed for this scenario
     };
 
-    const updatedEmployees = {
-      ...employeesData,
-      [selectedClient]: {
-        ...employeesData[selectedClient],
-        [selectedProject]: [...employeesData[selectedClient][selectedProject], newEmployee], // Append new employee
-      },
-    };
+    const updatedEmployees = [...employeesData, newEmployee]; // Append new employee
 
     setEmployeesData(updatedEmployees); // Update state with new employee data
     setOpen(false); // Close modal after submission
@@ -88,7 +70,6 @@ const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
   };
 
   const handleInputChange = (e, { value, name }) => {
-    // Update state and add 'filled' class if the input is filled
     if (name === 'selectedClient') setSelectedClient(value);
     if (name === 'selectedProject') setSelectedProject(value);
   };
@@ -108,31 +89,35 @@ const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
       )}
 
       {/* Employees Table */}
-      <Table celled padded className="employee-table4">
-        <Table.Header>
-          <Table.Row>
-            <Table.HeaderCell>Employee Name</Table.HeaderCell>
-            <Table.HeaderCell>Role</Table.HeaderCell>
-            <Table.HeaderCell>Status</Table.HeaderCell>
-            <Table.HeaderCell>Allocation %</Table.HeaderCell> {/* New column */}
-            <Table.HeaderCell>Allocation Type</Table.HeaderCell> {/* New column */}
-          </Table.Row>
-        </Table.Header>
-
-        <Table.Body>
-          {employees.map((employee, index) => (
-            <Table.Row key={index}>
-              <Table.Cell>
-                <Icon name="user" /> {employee.name}
-              </Table.Cell>
-              <Table.Cell>{employee.role}</Table.Cell>
-              <Table.Cell>{employee.status}</Table.Cell>
-              <Table.Cell>{employee.allocationPercentage}</Table.Cell> {/* Allocation % data */}
-              <Table.Cell>{employee.allocationType}</Table.Cell> {/* Allocation Type data */}
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <Table celled padded className="employee-table4">
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>Employee Name</Table.HeaderCell>
+              <Table.HeaderCell>Role</Table.HeaderCell>
+              {/* <Table.HeaderCell>Status</Table.HeaderCell> */} 
+              <Table.HeaderCell>Allocation %</Table.HeaderCell>
+              {/* <Table.HeaderCell>Allocation Type</Table.HeaderCell> */}
             </Table.Row>
-          ))}
-        </Table.Body>
-      </Table>
+          </Table.Header>
+
+          <Table.Body>
+            {employeesData.map((employee, index) => (
+              <Table.Row key={index}>
+                <Table.Cell>
+                  <Icon name="user" /> {employee.EmployeeName}
+                </Table.Cell>
+                <Table.Cell>{employee.Role}</Table.Cell>
+                 {/* <Table.Cell>{employee.status}</Table.Cell> */} 
+                <Table.Cell>{employee.Allocation}</Table.Cell>
+                {/* <Table.Cell>{employee.allocationType}</Table.Cell> */}
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </Table>
+      )}
 
       {/* Modal for Allocating Resource - Only accessible if not a leader */}
       {userRole !== 'leader' && (

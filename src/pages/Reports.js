@@ -8,54 +8,79 @@ const Reports = () => {
   const location = useLocation(); // Use useLocation to access the state
   const navigate = useNavigate(); // Initialize useNavigate for navigation
 
-  // Combined data from /unallocated and /todo with different allocation percentages
-  const combinedEmployeeData = [
-    { employee_id: 'E001', employee_name: 'Alice Johnson', email: 'alice.johnson@example.com', role: 'Frontend Developer', current_allocation: 0 },
-    { employee_id: 'E002', employee_name: 'Bob Smith', email: 'bob.smith@example.com', role: 'Backend Developer', current_allocation: 70 },
-    { employee_id: 'E003', employee_name: 'Charlie Brown', email: 'charlie.brown@example.com', role: 'Designer', current_allocation: 0 },
-    { employee_id: 'E004', employee_name: 'Diana Prince', email: 'diana.prince@example.com', role: 'QA Engineer', current_allocation: 80 },
-    { employee_id: 'E005', employee_name: 'Edward Norton', email: 'edward.norton@example.com', role: 'DevOps Engineer', current_allocation: 0 },
-    { employee_id: 'E006', employee_name: 'Fiona Apple', email: 'fiona.apple@example.com', role: 'Project Manager', current_allocation: 10 },
-  ];
-
-  // State for managing the filter
+  const [combinedEmployeeData, setCombinedEmployeeData] = useState([]);
+  const [bench, setBench] = useState([]);
   const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchCombinedEmployeeData = async () => {
+      try {
+        const [allocatedResponse, benchResponse] = await Promise.all([
+          fetch('http://localhost:5000/employees/drafts'),
+          fetch('http://localhost:5000/employees/todo')
+        ]);
+
+        if (!allocatedResponse.ok || !benchResponse.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const [dataAllocated, dataBenched] = await Promise.all([
+          allocatedResponse.json(),
+          benchResponse.json()
+        ]);
+
+        console.log('Fetched data:', { dataAllocated, dataBenched }); // Log data for debugging
+        setCombinedEmployeeData(dataAllocated);
+        setBench(dataBenched);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCombinedEmployeeData();
+  }, []);
 
   useEffect(() => {
     if (location.state && location.state.filter) {
       setFilter(location.state.filter); // Set the filter from state if available
     }
   }, [location.state]);
-
-  // Function to handle filter change
+  const [filteredData,setFilterData] = useState([]);
   const handleFilterChange = (e, { value }) => {
     setFilter(value);
+     if(filter==='allocated'){
+    setFilterData(combinedEmployeeData);
+  }else if(filter==='benched'){
+    setFilterData(bench);
+  }
   };
-
-  // Filtered data based on the selected filter
-  const filteredData = combinedEmployeeData.filter((employee) =>
-    filter === 'allocated' ? employee.current_allocation > 0 : employee.current_allocation === 0
-  );
-
-  // Function to handle row click to navigate to EmployeeDetails page
+  
+  // Determine which dataset to use based on the filter
+  
+ 
   const handleRowClick = (employee) => {
-    navigate('/employee/' + employee.employee_id, { state: { employee: { ...employee, allocation: employee.current_allocation } } });
+    navigate('/employee/' + employee.EmployeeID, { state: { employee: { ...employee, allocation: employee.allocation } } });
   };
 
-  // Prepare data for CSV export
   const csvData = filteredData.map((employee) => ({
-    'Employee ID': employee.employee_id,
-    'Employee Name': employee.employee_name,
+    'Employee ID': employee.EmployeeID,
+    'Employee Name': employee.EmployeeName,
     Email: employee.email,
     Role: employee.role,
-    'Current Allocation %': employee.current_allocation,
+    'Current Allocation %': employee.Allocation, // Ensure this matches the field name from the API
   }));
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
 
   return (
     <div className="reports-container">
       <h2 className="reports-header">Reports</h2>
 
-      {/* Filter Dropdown */}
       <Dropdown
         placeholder="Filter by Allocation"
         fluid
@@ -69,17 +94,14 @@ const Reports = () => {
         className="filter-dropdown"
       />
 
-      {/* CSV Download Button */}
       <CSVLink 
         data={csvData} 
         filename={"employee-reports.csv"} 
-        className="ui button primary" 
-        style={{ margin: '20px 0' }} // Add margin for better spacing
+        className="ui button primary csv-download-button"
       >
         Download CSV
       </CSVLink>
 
-      {/* Employees Table */}
       <Table celled striped className="reports-employee-table">
         <Table.Header>
           <Table.Row>
@@ -92,15 +114,21 @@ const Reports = () => {
         </Table.Header>
 
         <Table.Body>
-          {filteredData.map((employee) => (
-            <Table.Row key={employee.employee_id} onClick={() => handleRowClick(employee)}>
-              <Table.Cell>{employee.employee_id}</Table.Cell>
-              <Table.Cell>{employee.employee_name}</Table.Cell>
-              <Table.Cell>{employee.email}</Table.Cell>
-              <Table.Cell>{employee.role}</Table.Cell>
-              <Table.Cell>{employee.current_allocation}%</Table.Cell>
+          {filteredData.length > 0 ? (
+            filteredData.map((employee) => (
+              <Table.Row key={employee.EmployeeID} onClick={() => handleRowClick(employee)}>
+                <Table.Cell>{employee.EmployeeID}</Table.Cell>
+                <Table.Cell>{employee.EmployeeName}</Table.Cell>
+                <Table.Cell>{employee.email}</Table.Cell>
+                <Table.Cell>{employee.role}</Table.Cell>
+                <Table.Cell>{employee.Allocation}%</Table.Cell> {/* Ensure this matches the field name from the API */}
+              </Table.Row>
+            ))
+          ) : (
+            <Table.Row>
+              <Table.Cell colSpan="5">No data available</Table.Cell>
             </Table.Row>
-          ))}
+          )}
         </Table.Body>
       </Table>
     </div>

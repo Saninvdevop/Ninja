@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect,useState} from 'react';
 import { Card, Table, Segment, Icon } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import './DashboardBizOps.css'; // Import CSS for consistent styling
@@ -7,19 +7,43 @@ const DashboardBizOps = () => {
   const navigate = useNavigate(); // Initialize useNavigate for navigation
 
   // Hardcoded data for the cards
-  const unallocated = 20;
-  const draft = 30;
+  const [todo,setTodo]=useState();
+  const [draft,setDraft] = useState();
   const activeProjects = 80;
 
   // Hardcoded data for the table
-  const employeeData = [
-    { employee_id: 'E001', employee_name: 'Alice Johnson', email: 'alice.johnson@example.com', current_allocation: 50 },
-    { employee_id: 'E002', employee_name: 'Bob Smith', email: 'bob.smith@example.com', current_allocation: 70 },
-    { employee_id: 'E003', employee_name: 'Charlie Brown', email: 'charlie.brown@example.com', current_allocation: 60 },
-    { employee_id: 'E004', employee_name: 'Diana Prince', email: 'diana.prince@example.com', current_allocation: 80 },
-    { employee_id: 'E005', employee_name: 'Edward Norton', email: 'edward.norton@example.com', current_allocation: 90 },
-    { employee_id: 'E006', employee_name: 'Fiona Apple', email: 'fiona.apple@example.com', current_allocation: 40 },
-  ];
+  const [allocatedEmployees, setAllocatedEmployees] = useState([]);
+  const [benchedEmployees, setBenchedEmployees] = useState([]);
+  const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
+  const [loading, setLoading] = useState(true); // Loading state
+
+  // Fetch data from APIs
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        setLoading(true);
+        const allocatedResponse = await fetch('http://localhost:5000/employees/drafts');
+        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
+        
+        if (!allocatedResponse.ok || !benchedResponse.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const allocatedData = await allocatedResponse.json();
+        const benchedData = await benchedResponse.json();
+        setDraft(allocatedData.length)
+        setAllocatedEmployees(allocatedData);
+        setTodo(benchedData.length)
+        setBenchedEmployees(benchedData);
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, []);
 
   // Function to navigate to Unallocated page
   const handleUnallocatedClick = () => {
@@ -46,14 +70,14 @@ const DashboardBizOps = () => {
             <Card.Content>
               <Icon name="users" className="card-icon" />
               <Card.Header className="card-heading">Drafts</Card.Header>
-              <Card.Description className="card-value">{unallocated}</Card.Description>
+              <Card.Description className="card-value">{draft}</Card.Description>
             </Card.Content>
           </Card>
           <Card className="interactive-card" onClick={handleToDoClick}> {/* Updated onClick event */}
             <Card.Content>
               <Icon name="edit" className="card-icon" />
               <Card.Header className="card-heading">To Do</Card.Header>
-              <Card.Description className="card-value1">{draft}</Card.Description>
+              <Card.Description className="card-value1">{todo}</Card.Description>
             </Card.Content>
           </Card>
           <Card className="interactive-card">
@@ -78,12 +102,12 @@ const DashboardBizOps = () => {
           </Table.Header>
 
           <Table.Body>
-            {employeeData.map((employee) => (
-              <Table.Row key={employee.employee_id}>
-                <Table.Cell>{employee.employee_id}</Table.Cell>
-                <Table.Cell>{employee.employee_name}</Table.Cell>
-                <Table.Cell>{employee.email}</Table.Cell>
-                <Table.Cell>{employee.current_allocation}%</Table.Cell>
+            {allocatedEmployees.map((employee) => (
+              <Table.Row key={employee.EmployeeID}>
+                <Table.Cell>{employee.EmployeeID}</Table.Cell>
+                <Table.Cell>{employee.EmployeeName}</Table.Cell>
+                <Table.Cell>{employee.Email}</Table.Cell>
+                <Table.Cell>{employee.Allocation}%</Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>
