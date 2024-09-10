@@ -1,7 +1,7 @@
 /* src/components/Navbar.css */
 
 .sidebar {
-  width: 240px; /* Fixed width for the sidebar */
+  width: 270px; /* Fixed width for the sidebar */
   height: 100vh; /* Full height of the viewport */
   background-color: #ffffff; /* White background */
   padding: 20px;
@@ -36,21 +36,47 @@
   color: #4a90e2; /* Active item text color */
 }
 
-.navbar-logo {
-  position: relative !important;
-  right: -10px;
-  width: 180px !important;
-  height: 120px !important;
-}
 
 .user-info {
-  position: relative !important;
-  top: 620px !important;
-  background-color: #f5f8fa !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05) !important; /* Soft shadow for depth */
+  background-color: #e5e9f2;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid rgb(209, 208, 208);
-  padding: 10px !important;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-details {
+  display: flex;
+  align-items: center; /* Align profile photo and text vertically */
+  margin-top: 2px;
+  margin-bottom: 10px; /* Space between profile details and the logout button */
+}
+
+.profile-photo {
+  width: 70px;
+  height: 70px;
+  border-radius: 4px;
+  background-color: #cbd2d6a4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 8px; /* Spacing between photo and text */
+}
+
+.user-text {
+  display:flex;
+  flex-direction: column;
+  justify-content: center; /* Align username and role within the height of the profile photo */
+}
+
+.user-name {
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 1px;
+  margin-bottom: 2px;
+  color: #211e1e;
 }
 
 .role-tag {
@@ -64,9 +90,24 @@
 
 /* Add specific styles for different roles */
 .role-tag.bizops {
+  width:fit-content;
   background-color: #4a90e2; /* Blue background for BizOps */
 }
 
+
 .role-tag.leader {
+  width:fit-content;
   background-color: orange; /* Orange background for Leader */
+}
+
+.logo-container{
+  margin-top: auto;
+  text-align: center;
+  
+}
+.navbar-logo{
+  position: relative !important;
+  width: 240px !important;
+  height: 60px !important;
+  border-radius: 10px;
 }

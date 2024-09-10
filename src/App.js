@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import Navbar from './components/Navbar/Navbar';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Login from './pages/Login';
-import DashboardBizOps from './pages/DashboardBizOps';
+import DashboardBizOps from "./pages/DashboardBizOps/DashboardBizOps"
 import Unallocated from './pages/Unallocated';
 import EmployeeDetails from './pages/EmployeeDetails';
 import ClientProjects from './pages/ClientProjects';
