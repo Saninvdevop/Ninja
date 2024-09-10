@@ -15,7 +15,7 @@ const EmpPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [filter, setFilter] = useState('all');
-
+  const[count,setCount]=useState();
   useEffect(() => {
     const fetchClientData = async () => {
       try {
@@ -29,6 +29,7 @@ const EmpPage = () => {
         const data = await response.json();
         setEmployeeData(data);
         setFilteredEmployees(data); // Initialize filtered employees
+        setCount(data.length)
       } catch (error) {
         console.error('Fetch error:', error);
       } finally {

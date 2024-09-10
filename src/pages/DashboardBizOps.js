@@ -16,7 +16,7 @@ const DashboardBizOps = () => {
   const [benchedEmployees, setBenchedEmployees] = useState([]);
   const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
   const [loading, setLoading] = useState(true); // Loading state
-
+  const [totalemp,setTotalEmp]=useState();
   // Fetch data from APIs
   useEffect(() => {
     const fetchEmployeeData = async () => {
@@ -24,17 +24,19 @@ const DashboardBizOps = () => {
         setLoading(true);
         const allocatedResponse = await fetch('http://localhost:5000/employees/drafts');
         const benchedResponse = await fetch('http://localhost:5000/employees/todo');
-        
-        if (!allocatedResponse.ok || !benchedResponse.ok) {
+        const totalresponse = await fetch('http://localhost:5000/employees');
+        if (!allocatedResponse.ok || !benchedResponse.ok || !totalresponse.ok) {
           throw new Error('Network response was not ok');
         }
 
         const allocatedData = await allocatedResponse.json();
         const benchedData = await benchedResponse.json();
+        const total=await totalresponse.json();
         setDraft(allocatedData.length)
         setAllocatedEmployees(allocatedData);
         setTodo(benchedData.length)
         setBenchedEmployees(benchedData);
+        setTotalEmp(total.length);
       } catch (error) {
         console.error('Fetch error:', error);
       } finally {
@@ -97,7 +99,7 @@ const DashboardBizOps = () => {
             <Card.Content>
             <Icon name="users" className="card-icon" />
               <Card.Header className="card-heading">Employee Details</Card.Header>
-              <Card.Description className="card-value3">View Details</Card.Description>
+              <Card.Description className="card-value3">{totalemp}</Card.Description>
             </Card.Content>
           </Card>
         </Card.Group>
