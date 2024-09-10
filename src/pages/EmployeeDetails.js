@@ -32,6 +32,11 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
       projects: ['E-learning Platform', 'Course Management System'],
       id: 'edupro',
     },
+    {
+      company: 'Innover',
+      projects: ['Benched'],
+      id: 'innover',
+    },
   ];
 
   // Options for client dropdown
@@ -52,6 +57,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
       status: 'Active',
       startDate: '2020-05-02',
       endDate: '2024-05-02',
+      billingRate: 100, // Example billing rate
+      timeSheetApprover: 'John Doe', // Example timesheet approver
     },
   ]);
 
@@ -68,6 +75,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     allocation: '',
     startDate: '',
     endDate: '',
+    billingRate: '', // New field for Billing Rate
+    timeSheetApprover: '', // New field for Time Sheet Approver
   });
 
   // State to manage selected client and project
@@ -127,6 +136,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
       allocation: '',
       startDate: '',
       endDate: '',
+      billingRate: '', // Clear new field
+      timeSheetApprover: '', // Clear new field
     });
 
     setSelectedClient('');
@@ -214,6 +225,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
       allocation: '',
       startDate: '',
       endDate: '',
+      billingRate: '', // New field for Billing Rate
+      timeSheetApprover: '', // New field for Time Sheet Approver
     });
     setEditIndex(null); // Reset edit index
     setOpen(true); // Open the modal
@@ -222,6 +235,20 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   // Function to handle back navigation
   const handleBackClick = () => {
     navigate(-1); // Navigate back to the previous page
+  };
+
+  // Check if all fields are filled in the modal form
+  const isFormValid = () => {
+    return (
+      newAllocation.clientName &&
+      newAllocation.projectName &&
+      newAllocation.status &&
+      newAllocation.allocation &&
+      newAllocation.startDate &&
+      newAllocation.endDate &&
+      newAllocation.billingRate &&
+      newAllocation.timeSheetApprover
+    );
   };
 
   return (
@@ -339,37 +366,45 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
       {/* Allocations Table */}
       <h3>Allocations</h3>
       <Table celled striped className="allocations-table">
-        <Table.Header>
-          <Table.Row>
-            <Table.HeaderCell>Employee Name</Table.HeaderCell>
-            <Table.HeaderCell>Employee ID</Table.HeaderCell>
-            <Table.HeaderCell>Client Name</Table.HeaderCell>
-            <Table.HeaderCell>Project Name</Table.HeaderCell>
-            <Table.HeaderCell>Allocation %</Table.HeaderCell>
-            <Table.HeaderCell>Status</Table.HeaderCell>
-            <Table.HeaderCell>Start Date</Table.HeaderCell>
-            <Table.HeaderCell>End Date</Table.HeaderCell>
-            <Table.HeaderCell>Actions</Table.HeaderCell> {/* New column for actions */}
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {allocations.map((alloc, index) => (
-            <Table.Row key={index}>
-              <Table.Cell>{alloc.employeeName}</Table.Cell>
-              <Table.Cell>{alloc.employeeId}</Table.Cell>
-              <Table.Cell>{alloc.clientName}</Table.Cell>
-              <Table.Cell>{alloc.projectName}</Table.Cell>
-              <Table.Cell>{alloc.allocation}</Table.Cell>
-              <Table.Cell>{alloc.status}</Table.Cell>
-              <Table.Cell>{alloc.startDate}</Table.Cell>
-              <Table.Cell>{alloc.endDate}</Table.Cell>
-              <Table.Cell>
-                <Button icon="edit" onClick={() => handleEditAllocation(index)} />
-                <Button icon="trash" color="red" onClick={() => handleDeleteAllocation(index)} />
-              </Table.Cell>
-            </Table.Row>
-          ))}
-        </Table.Body>
+      <Table.Header>
+  <Table.Row>
+    <Table.HeaderCell>Employee Name</Table.HeaderCell>
+    <Table.HeaderCell>Employee ID</Table.HeaderCell>
+    <Table.HeaderCell>Client Name</Table.HeaderCell>
+    <Table.HeaderCell>Project Name</Table.HeaderCell>
+    <Table.HeaderCell>Allocation %</Table.HeaderCell>
+    <Table.HeaderCell>Status</Table.HeaderCell>
+    <Table.HeaderCell>Start Date</Table.HeaderCell>
+    <Table.HeaderCell>End Date</Table.HeaderCell>
+    <Table.HeaderCell>Billing Rate</Table.HeaderCell> {/* New column */}
+    <Table.HeaderCell>Time Sheet Approver</Table.HeaderCell> {/* New column */}
+    <Table.HeaderCell>Modified By</Table.HeaderCell> {/* New column */}
+    <Table.HeaderCell>Actions</Table.HeaderCell> {/* New column for actions */}
+  </Table.Row>
+</Table.Header>
+
+<Table.Body>
+  {allocations.map((alloc, index) => (
+    <Table.Row key={index}>
+      <Table.Cell>{alloc.employeeName}</Table.Cell>
+      <Table.Cell>{alloc.employeeId}</Table.Cell>
+      <Table.Cell>{alloc.clientName}</Table.Cell>
+      <Table.Cell>{alloc.projectName}</Table.Cell>
+      <Table.Cell>{alloc.allocation}</Table.Cell>
+      <Table.Cell>{alloc.status}</Table.Cell>
+      <Table.Cell>{alloc.startDate}</Table.Cell>
+      <Table.Cell>{alloc.endDate}</Table.Cell>
+      <Table.Cell>{alloc.billingRate} USD</Table.Cell> {/* Billing Rate data */}
+      <Table.Cell>{alloc.timeSheetApprover}</Table.Cell> {/* Time Sheet Approver data */}
+      <Table.Cell>Modified by Kiran on 24th January 2024</Table.Cell> {/* New column */}
+      <Table.Cell>
+        <Button icon="edit" onClick={() => handleEditAllocation(index)} />
+        <Button icon="trash" color="red" onClick={() => handleDeleteAllocation(index)} />
+      </Table.Cell>
+    </Table.Row>
+  ))}
+</Table.Body>
+
       </Table>
 
       {/* Add Allocation Button */}
@@ -481,6 +516,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
                 ]}
                 value={newAllocation.status}
                 onChange={(e, { value }) => setNewAllocation({ ...newAllocation, status: value })}
+                required
               />
             </Form.Field>
             <Form.Input
@@ -501,6 +537,26 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
                   setNewAllocation((prev) => ({ ...prev, status: 'Client Unallocated' }));
                 }
               }}
+              required
+            />
+            <Form.Input
+              label="Billing Rate"
+              placeholder="Enter billing rate"
+              type="number"
+              value={newAllocation.billingRate}
+              onChange={(e) =>
+                setNewAllocation({ ...newAllocation, billingRate: e.target.value })
+              }
+              required
+            />
+            <Form.Input
+              label="Time Sheet Approver"
+              placeholder="Enter Time Sheet Approver"
+              value={newAllocation.timeSheetApprover}
+              onChange={(e) =>
+                setNewAllocation({ ...newAllocation, timeSheetApprover: e.target.value })
+              }
+              required
             />
             <Form.Input
               label="Start Date"
@@ -510,6 +566,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
               onChange={(e) =>
                 setNewAllocation({ ...newAllocation, startDate: e.target.value })
               }
+              required
             />
             <Form.Input
               label="End Date"
@@ -519,12 +576,17 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
               onChange={(e) =>
                 setNewAllocation({ ...newAllocation, endDate: e.target.value })
               }
+              required
             />
           </Form>
         </Modal.Content>
         <Modal.Actions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button color="blue" onClick={handleSaveAllocation}>
+          <Button
+            color="blue"
+            onClick={handleSaveAllocation}
+            disabled={!isFormValid()} // Disable if the form is not valid
+          >
             {editIndex !== null ? 'Update' : 'Save'}
           </Button>
         </Modal.Actions>
