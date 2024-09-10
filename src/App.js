@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'; // Keep using BrowserRouter
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
@@ -14,7 +14,21 @@ import Reports from './pages/Reports';
 import EmpPage from './pages/EmpPage'; // Import the new page
 
 const App = () => {
-  const [userRole, setUserRole] = useState(null); // State to manage user role
+  const [userRole, setUserRole] = useState(localStorage.getItem('userRole')); // Initialize state from localStorage
+
+  useEffect(() => {
+    // Whenever userRole changes, save it to localStorage
+    if (userRole) {
+      localStorage.setItem('userRole', userRole);
+    } else {
+      localStorage.removeItem('userRole');
+    }
+  }, [userRole]);
+
+  const handleLogout = () => {
+    setUserRole(null); // Clear user role
+    localStorage.removeItem('userRole'); // Remove user role from localStorage
+  };
 
   return (
     <Router>
@@ -25,7 +39,7 @@ const App = () => {
       ) : (
         <>
           {/* Pass userRole and setUserRole to Navbar for conditional rendering */}
-          <Navbar userRole={userRole} setUserRole={setUserRole} /> {/* Pass setUserRole to Navbar */}
+          <Navbar userRole={userRole} setUserRole={handleLogout} /> {/* Pass handleLogout to Navbar */}
           <div style={{ marginLeft: '220px', padding: '20px', width: '100%' }}>
             <Routes>
               {userRole === 'leader' && (
