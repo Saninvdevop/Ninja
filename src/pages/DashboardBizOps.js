@@ -52,7 +52,12 @@ const DashboardBizOps = () => {
 
   // Function to navigate to ToDo page
   const handleToDoClick = () => {
-    navigate('/todo'); // Navigate to the ToDoPage when clicking the To Do card
+    navigate('/todo');
+  };
+
+  // Function to navigate to EmpPage
+  const handleEmployeeDetailsClick = () => {
+    navigate('/employee-details'); // Adjust this path to match your App.js route
   };
 
   return (
@@ -73,7 +78,7 @@ const DashboardBizOps = () => {
               <Card.Description className="card-value">{draft}</Card.Description>
             </Card.Content>
           </Card>
-          <Card className="interactive-card" onClick={handleToDoClick}> {/* Updated onClick event */}
+          <Card className="interactive-card" onClick={handleToDoClick}>
             <Card.Content>
               <Icon name="edit" className="card-icon" />
               <Card.Header className="card-heading">To Do</Card.Header>
@@ -85,6 +90,14 @@ const DashboardBizOps = () => {
               <Icon name="briefcase" className="card-icon" />
               <Card.Header className="card-heading">Active Projects</Card.Header>
               <Card.Description className="card-value2">{activeProjects}</Card.Description>
+            </Card.Content>
+          </Card>
+          {/* New Card for Employee Details */}
+          <Card className="interactive-card" onClick={handleEmployeeDetailsClick}>
+            <Card.Content>
+            <Icon name="users" className="card-icon" />
+              <Card.Header className="card-heading">Employee Details</Card.Header>
+              <Card.Description className="card-value3">View Details</Card.Description>
             </Card.Content>
           </Card>
         </Card.Group>

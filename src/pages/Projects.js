@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './Projects.css';
 
 const Projects = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // For navigation
   const [open, setOpen] = useState(false); // State to control modal visibility
   const [allocation, setAllocation] = useState(''); // State for allocation dropdown
   const [selectedClient, setSelectedClient] = useState(''); // State for selected client
@@ -92,14 +92,23 @@ const Projects = () => {
     setOpen(false); // Close modal after submission
   };
 
+  // Function to handle back navigation
+  const handleBackClick = () => {
+    navigate(-1); // Go back to the previous page
+  };
+
   return (
     <div className="projects-container">
+      {/* Back Arrow Icon */}
+      <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
+
       <div className="projects-header">
         <h2>Clients</h2>
         {/* <Button className="allocate-button" primary onClick={() => setOpen(true)}>
           Allocate Resource
         </Button> */}
       </div>
+      
       <Table celled padded className="futuristic-table">
         <Table.Header>
           <Table.Row>

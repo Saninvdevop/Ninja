@@ -74,8 +74,16 @@ const ClientDetails = ({ userRole }) => {
     if (name === 'selectedProject') setSelectedProject(value);
   };
 
+  // Function to handle back navigation
+  const handleBackClick = () => {
+    navigate(-1); // Go back to the previous page
+  };
+
   return (
     <div className="client-details-container">
+      {/* Back Arrow Icon */}
+      <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
+
       <h2 className='emphead'>{`Employees for ${projectName}`}</h2>
 
       {/* Success Message */}

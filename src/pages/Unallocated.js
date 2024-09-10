@@ -1,6 +1,6 @@
 import React ,{useEffect,useState}from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table } from 'semantic-ui-react';
+import { Table, Icon } from 'semantic-ui-react';
 
 const Unallocated = () => {
   const navigate = useNavigate();
@@ -47,8 +47,16 @@ const Unallocated = () => {
     });
   };
 
+  // Function to handle back navigation
+  const handleBackClick = () => {
+    navigate(-1); // Go back to the previous page
+  };
+
   return (
     <div className="unallocated-container">
+      {/* Back Arrow Icon */}
+      <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
+      
       <h2>Unallocated Employees</h2>
       <Table celled striped>
         <Table.Header>

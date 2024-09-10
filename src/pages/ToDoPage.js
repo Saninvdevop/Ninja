@@ -1,5 +1,7 @@
+// src/pages/ToDoPage.js
+
 import React from 'react';
-import { Table } from 'semantic-ui-react';
+import { Table, Icon } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import './ToDoPage.css'; // Import CSS for consistent styling
 import { useEffect, useState } from 'react';
@@ -45,8 +47,16 @@ const ToDoPage = () => {
     navigate('/employee/' + employee.EmployeeID, { state: { employee: { ...employee, allocation: 0 } } }); // Navigate with state
   };
 
+  // Function to handle back navigation
+  const handleBackClick = () => {
+    navigate(-1); // Go back to the previous page
+  };
+
   return (
     <div className="todo-page-container">
+      {/* Back Arrow Icon */}
+      <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
+      
       <h2 className="todo-page-header">To Do - Employee Allocation</h2>
       <Table celled striped className="todo-employee-table">
         <Table.Header>
