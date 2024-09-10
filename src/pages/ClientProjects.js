@@ -1,3 +1,5 @@
+// src/pages/ClientProjects.js
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Table, Icon } from 'semantic-ui-react';
@@ -5,7 +7,7 @@ import './ClientDetails.css';
 
 const ClientProjects = () => {
   const { clientId } = useParams(); // Get the clientId from the URL
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Initialize useNavigate for navigation
 
   // Mock data for projects by client company
   const projectsData = {
@@ -34,8 +36,16 @@ const ClientProjects = () => {
     navigate(`/client/${clientId}/project/${projectName.toLowerCase().replace(/ /g, '-')}`); // Navigate to project details page with clientId and projectId
   };
 
+  // Function to handle back navigation
+  const handleBackClick = () => {
+    navigate(-1); // Go back to the previous page
+  };
+
   return (
     <div className="client-details-container">
+      {/* Back Arrow Icon */}
+      <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
+
       <h2 className='headingproj'>Projects for {clientName}</h2>
       <Table celled padded className="employee-table3">
         <Table.Header>

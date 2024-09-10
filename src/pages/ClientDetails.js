@@ -1,10 +1,13 @@
+// src/pages/ClientDetails.js
+
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import { Table, Icon, Button, Modal, Form, Dropdown, Message } from 'semantic-ui-react';
 import './ClientDetails.css'; // Custom CSS for styling
 
 const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
   const { clientId, projectId } = useParams(); // Get clientId and projectId from the URL
+  const navigate = useNavigate(); // Initialize useNavigate for navigation
 
   // State to control modal visibility and messages
   const [open, setOpen] = useState(false);
@@ -93,8 +96,16 @@ const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
     if (name === 'selectedProject') setSelectedProject(value);
   };
 
+  // Function to handle back navigation
+  const handleBackClick = () => {
+    navigate(-1); // Go back to the previous page
+  };
+
   return (
     <div className="client-details-container">
+      {/* Back Arrow Icon */}
+      <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
+
       <h2 className='emphead'>{`Employees for ${projectName}`}</h2>
 
       {/* Success Message */}

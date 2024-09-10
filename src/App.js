@@ -11,6 +11,7 @@ import ClientProjects from './pages/ClientProjects';
 import ClientDetails from './pages/ClientDetails';
 import ToDoPage from './pages/ToDoPage';
 import Reports from './pages/Reports';
+import EmpPage from './pages/EmpPage'; // Import the new page
 
 const App = () => {
   const [userRole, setUserRole] = useState(null); // State to manage user role
@@ -42,6 +43,7 @@ const App = () => {
                   <Route path="/dashboardbizops" element={<DashboardBizOps />} />
                   <Route path="/unallocated" element={<Unallocated />} />
                   <Route path="/todo" element={<ToDoPage />} />
+                  <Route path="/employee-details" element={<EmpPage />} /> {/* Add new route */}
                   <Route path="/reports" element={<Reports userRole={userRole} />} />
                 </>
               )}

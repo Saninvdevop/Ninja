@@ -131,6 +131,12 @@
    font-size: 38px !important;
    right: 200px !important;
   }
+
+.card-value3{
+  position: relative !important;
+  right: 80px !important;
+ 
+}
   
   .employee-table th,
   .employee-table td {
