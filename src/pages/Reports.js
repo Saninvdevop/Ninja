@@ -54,7 +54,7 @@ const Reports = () => {
     setFilter(value);
      if(filter==='allocated'){
     setFilterData(combinedEmployeeData);
-  }else if(filter==='benched'){
+  }else if(filter==='on Bench'){
     setFilterData(bench);
   }
   };
@@ -86,8 +86,8 @@ const Reports = () => {
         fluid
         selection
         options={[
-          { key: 'allocated', text: 'Allocated', value: 'allocated' },
-          { key: 'benched', text: 'Benched', value: 'benched' },
+          { key: 'on Bench', text: 'on Bench', value: 'on Bench' },
+          { key: 'allocated', text: 'allocated', value: 'allocated' },
         ]}
         value={filter}
         onChange={handleFilterChange}
@@ -119,7 +119,7 @@ const Reports = () => {
               <Table.Row key={employee.EmployeeID} onClick={() => handleRowClick(employee)}>
                 <Table.Cell>{employee.EmployeeID}</Table.Cell>
                 <Table.Cell>{employee.EmployeeName}</Table.Cell>
-                <Table.Cell>{employee.email}</Table.Cell>
+                <Table.Cell>{employee.Email}</Table.Cell>
                 <Table.Cell>{employee.role}</Table.Cell>
                 <Table.Cell>{employee.Allocation}%</Table.Cell> {/* Ensure this matches the field name from the API */}
               </Table.Row>
