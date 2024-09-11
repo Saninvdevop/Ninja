@@ -1,57 +1,94 @@
-/* src/components/Navbar.css */
-
 .sidebar {
-  width: 240px; /* Fixed width for the sidebar */
-  height: 100vh; /* Full height of the viewport */
+  width: 18%; /* Sidebar width for larger screens */
+  height: 100%; /* Full height of the viewport */
   background-color: #ffffff; /* White background */
-  padding: 20px;
+  padding: 1%;
   box-shadow: 2px 0 15px rgba(0, 0, 0, 0.05); /* Light shadow */
   border-right: 1px solid #e5e9f2; /* Right border for separation */
   display: flex;
   flex-direction: column; /* Stack items vertically */
+  justify-content: space-between; /* Distribute items evenly */
   position: fixed; /* Fixed position */
   top: 0; /* Start at the top */
   left: 0; /* Align to the left */
   z-index: 1000; /* Ensure it's above other content */
-  overflow-y: none !important; /* Disable vertical scrolling */
 }
 
-.sidebar .item {
-  padding: 15px 20px; /* More padding for better spacing */
-  font-size: 1.15rem;
-  color: #333; /* Dark text color */
-  transition: background-color 0.3s ease; /* Smooth hover effect */
-  border-radius: 8px; /* Rounded corners for hover effect */
-  margin-bottom: 10px; /* Add spacing between items */
-  display: block; /* Ensure items are block-level elements */
-}
-
-.sidebar .item:hover {
-  background-color: #f0f0f5; /* Light background on hover */
-}
-
-.sidebar .item.active {
-  background-color: #e5e9f2; /* Active item background */
-  font-weight: 600; /* Bold text for active items */
-  color: #4a90e2; /* Active item text color */
+.logo-container {
+  text-align: center; /* Center the logo */
+  padding: 20px 0; /* Add some padding around the logo */
 }
 
 .navbar-logo {
-  position: relative !important;
-  right: -10px;
-  width: 180px !important;
-  height: 120px !important;
+  width: 100px; /* Adjust logo size */
+  height: auto; /* Maintain aspect ratio */
+}
+
+/* Flex container for menu items */
+.menu-items {
+  flex-grow: 1; /* Allow the menu to take the available vertical space */
+  display: flex;
+  flex-direction: column; /* Stack items vertically */
+  justify-content: flex-start; /* Align items to the top */
+  overflow-y: auto; /* Enable scrolling if items exceed container height */
+}
+
+/* Menu Items */
+.navbar-menu {
+  width: 100%; /* Full width of the menu container */
+  flex-grow: 1; /* Allow the menu items to grow and take up space */
+}
+
+.navbar-menu .item {
+  padding: 15px 20px; /* Default padding for menu items */
+  font-size: 1.1rem; /* Default font size */
+  color: #333; /* Default text color */
+  border-radius: 8px; /* Rounded corners */
+  margin-bottom: 10px; /* Space between items */
+  display: block; /* Make the items block-level elements */
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+.navbar-menu .item:hover {
+  background-color: #f0f0f5; /* Background color on hover */
+}
+
+/* Adjust the menu item styles when active */
+.navbar-menu .item.active {
+  background-color: #e5e9f2; /* Background for active items */
+  font-weight: 600; /* Bold text for active items */
+  color: #4a90e2; /* Active text color */
 }
 
 .user-info {
-  position: relative !important;
-  top: 595px !important;
+  margin-top: auto; /* Push the user-info to the bottom */
+  margin-right: 5px;
   background-color: #f5f8fa !important;
   border-radius: 12px !important;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05) !important; /* Soft shadow for depth */
   border: 1px solid rgb(209, 208, 208);
   padding: 10px !important;
+  cursor: pointer;
+  overflow: hidden; /* Hide content when collapsed */
+  transition: max-height 0.3s ease; /* Use max-height for smoother transitions */
+  max-height: 85px; /* Initial collapsed height */
 }
+
+.user-info.expanded {
+  max-height: 200px; /* Expanded height when showing the logout button */
+}
+
+.logout-container {
+  text-align: center;
+  padding: 10px 0;
+}
+
+.logout-button {
+  background-color: #e5e9f2 !important;
+  color: black !important;
+  border: none;
+}
+
 
 .role-tag {
   display: inline-block; /* Inline-block for tag */
@@ -62,15 +99,6 @@
   text-transform: capitalize; /* Capitalize the text */
 }
 
-.logout-button{
-  position: relative !important;
-  top: 440px !important;
-  right: -7px !important;
-  background-color: #e5e9f2 !important;
-  color: black !important;
-  border: 2px black !important;
-}
-
 /* Add specific styles for different roles */
 .role-tag.bizops {
   background-color: #4a90e2; /* Blue background for BizOps */
@@ -78,4 +106,44 @@
 
 .role-tag.leader {
   background-color: orange; /* Orange background for Leader */
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%; /* Full width on small screens */
+    height: auto; /* Auto height for content */
+    position: static; /* No fixed position for mobile */
+    box-shadow: none; /* Remove shadow on mobile */
+  }
+
+  .navbar-logo {
+    width: 80px; /* Smaller logo for mobile */
+  }
+
+  /* Adjust menu item font size and padding for smaller screens */
+  .navbar-menu .item {
+    padding: 10px 15px; /* Reduced padding */
+    font-size: 1rem; /* Smaller font size */
+  }
+
+  .logout-button {
+    width: 100%; /* Full width button on small screens */
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-logo {
+    width: 60px; /* Even smaller logo for very small screens */
+  }
+
+  /* Further adjust menu items for very small screens */
+  .navbar-menu .item {
+    padding: 8px 10px; /* Smaller padding */
+    font-size: 0.9rem; /* Smaller font size */
+  }
+
+  .item {
+    font-size: 0.85rem; /* Further reduce font size */
+  }
 }
