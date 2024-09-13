@@ -1,4 +1,4 @@
-import React, {useEffect,useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, Table, Segment, Icon } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import './DashboardBizOps.css'; // Import CSS for consistent styling
@@ -7,8 +7,8 @@ const DashboardBizOps = () => {
   const navigate = useNavigate(); // Initialize useNavigate for navigation
 
   // Hardcoded data for the cards
-  const [todo,setTodo]=useState();
-  const [draft,setDraft] = useState();
+  const [todo, setTodo] = useState();
+  const [draft, setDraft] = useState();
   const activeProjects = 80;
 
   // Hardcoded data for the table
@@ -16,7 +16,8 @@ const DashboardBizOps = () => {
   const [benchedEmployees, setBenchedEmployees] = useState([]);
   const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
   const [loading, setLoading] = useState(true); // Loading state
-  const [totalemp,setTotalEmp]=useState();
+  const [totalemp, setTotalEmp] = useState();
+
   // Fetch data from APIs
   useEffect(() => {
     const fetchEmployeeData = async () => {
@@ -31,10 +32,10 @@ const DashboardBizOps = () => {
 
         const allocatedData = await allocatedResponse.json();
         const benchedData = await benchedResponse.json();
-        const total=await totalresponse.json();
-        setDraft(allocatedData.length)
+        const total = await totalresponse.json();
+        setDraft(allocatedData.length);
         setAllocatedEmployees(allocatedData);
-        setTodo(benchedData.length)
+        setTodo(benchedData.length);
         setBenchedEmployees(benchedData);
         setTotalEmp(total.length);
       } catch (error) {
@@ -62,13 +63,18 @@ const DashboardBizOps = () => {
     navigate('/employees'); // Adjust this path to match your App.js route
   };
 
+  // Function to navigate to Projects page
+  const handleProjectAllocationClick = () => {
+    navigate('/projects'); // Navigate to the projects route
+  };
+
   return (
     <div className="dashboard-bizops-container">
       <Segment className="content-wrapper">
         {/* Personalized Greeting and Message */}
         <div className="greeting-section">
           <h2 className='bizopname'>Hello Ravi,</h2>
-          <p className="instruction-message">Pick where you left from </p>
+          <p className="instruction-message">Pick where you left from</p>
         </div>
 
         {/* Cards Section */}
@@ -83,21 +89,22 @@ const DashboardBizOps = () => {
           <Card className="interactive-card" onClick={handleToDoClick}>
             <Card.Content>
               <Icon name="edit" className="card-icon" />
-              <Card.Header className="card-heading">To Do</Card.Header>
+              <Card.Header className="card-heading">0% Allocated</Card.Header>
               <Card.Description className="card-value1">{todo}</Card.Description>
             </Card.Content>
           </Card>
-          <Card className="interactive-card">
+          {/* Updated Project Allocation Card with onClick handler */}
+          <Card className="interactive-card" onClick={handleProjectAllocationClick}>
             <Card.Content>
               <Icon name="briefcase" className="card-icon" />
-              <Card.Header className="card-heading">Active Projects</Card.Header>
+              <Card.Header className="card-heading">Project Allocation</Card.Header>
               <Card.Description className="card-value2">{activeProjects}</Card.Description>
             </Card.Content>
           </Card>
           {/* New Card for Employee Details */}
           <Card className="interactive-card" onClick={handleEmployeeDetailsClick}>
             <Card.Content>
-            <Icon name="users" className="card-icon" />
+              <Icon name="users" className="card-icon" />
               <Card.Header className="card-heading">Employee Details</Card.Header>
               <Card.Description className="card-value3">{totalemp}</Card.Description>
             </Card.Content>

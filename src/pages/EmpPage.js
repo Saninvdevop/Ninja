@@ -26,15 +26,36 @@ const EmpPage = () => {
       let response;
 
       switch (filter) {
-        case 'bench':
+        case 'totally_unallocated': // Use /todo API for "Totally Unallocated" filter
           response = await fetch('http://localhost:5000/employees/todo');
           break;
         case 'draft':
           response = await fetch('http://localhost:5000/employees/drafts');
           break;
-        case 'allocated':
+        case 'allocated': // Updated filter for "Allocated"
           response = await fetch('http://localhost:5000/employees/drafts');
-          break;
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const allocatedEmployees = await response.json();
+          // Filter employees with 100% allocation only
+          const fullyAllocatedEmployees = allocatedEmployees.filter(employee => employee.Allocation === 100);
+          setEmployeeData(fullyAllocatedEmployees);
+          setFilteredEmployees(fullyAllocatedEmployees); // Initialize filtered employees
+          setCount(fullyAllocatedEmployees.length);
+          setLoading(false);
+          return; // Exit after processing this filter case
+        case 'benched': // New filter for "Benched"
+          response = await fetch('http://localhost:5000/employees/client/innover'); // Use the new API endpoint
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const benchedEmployees = await response.json(); // Fetch employees associated with "Innover"
+          setEmployeeData(benchedEmployees);
+          setFilteredEmployees(benchedEmployees); // Initialize filtered employees
+          setCount(benchedEmployees.length);
+          setLoading(false);
+          return; // Exit after processing this filter case
         case 'all':
         default:
           response = await fetch('http://localhost:5000/employees');
@@ -109,9 +130,10 @@ const EmpPage = () => {
   // Filter options for the dropdown
   const filterOptions = [
     { key: 'all', text: 'All', value: 'all' },
-    { key: 'bench', text: 'Bench', value: 'bench' },
+    { key: 'totally_unallocated', text: 'Totally Unallocated', value: 'totally_unallocated' },
     { key: 'draft', text: 'Draft', value: 'draft' },
-    { key: 'allocated', text: 'Allocated', value: 'allocated' },
+    { key: 'allocated', text: 'Allocated', value: 'allocated' }, // Updated filter option for Allocated
+    { key: 'benched', text: 'Benched', value: 'benched' }, // New filter option for Benched
   ];
 
   return (

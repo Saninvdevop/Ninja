@@ -498,119 +498,134 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
         readOnly
       />
       <Form.Field>
-              <label>Client</label>
-              <Dropdown
-                placeholder='Select Client'
-                fluid
-                selection
-                options={clientData.map(client => ({
-                  key: client.ClientName,
-                  text: client.ClientName,
-                  value: client.ClientName,
-                }))}
-                value={newAllocation.clientName}
-                onChange={handleClientChange}
-              />
-            </Form.Field>
-            <Form.Field>
-              <label>Project</label>
-              <Dropdown
-                placeholder='Select Project'
-                fluid
-                selection
-                options={projectOptions}
-                value={newAllocation.projectName}
-                onChange={handleProjectChange}
-              />
-            </Form.Field>
-            <Form.Field>
-              <label>Status</label>
-              <Dropdown
-                placeholder="Select Status"
-                fluid
-                selection
-                options={[
-                  { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
-                  { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
-                  { key: 'allocated', text: 'Allocated', value: 'Allocated' },
-                ]}
-                value={newAllocation.status}
-                onChange={(e, { value }) => setNewAllocation({ ...newAllocation, status: value })}
-                required
-              />
-            </Form.Field>
-            <Form.Input
-              label="Allocation %"
-              type="number"
-              placeholder="Enter allocation percentage"
-              value={newAllocation.allocation}
-              onChange={(e) => {
-                const allocationValue = e.target.value;
-                setNewAllocation((prev) => ({ ...prev, allocation: allocationValue }));
+        <label>Client</label>
+        <Dropdown
+          placeholder="Select Client"
+          fluid
+          selection
+          options={[
+            ...clientData.map((client) => ({
+              key: client.ClientName,
+              text: client.ClientName,
+              value: client.ClientName,
+            })),
+            { key: 'Innover', text: 'Innover', value: 'Innover' }, // Add "Innover" as a client option
+          ]}
+          value={newAllocation.clientName}
+          onChange={(e, { value }) => {
+            setNewAllocation((prev) => ({
+              ...prev,
+              clientName: value,
+              projectName: value === 'Innover' ? 'Benched' : '', // Auto-fill project to "Benched" if "Innover" is selected
+            }));
+          }}
+        />
+      </Form.Field>
+      <Form.Field>
+        <label>Project</label>
+        <Dropdown
+          placeholder="Select Project"
+          fluid
+          selection
+          options={
+            newAllocation.clientName === 'Innover' // If "Innover" is selected, set options to "Benched" only
+              ? [{ key: 'Benched', text: 'Benched', value: 'Benched' }]
+              : projectOptions // Otherwise, show all available options
+          }
+          value={newAllocation.projectName}
+          onChange={handleProjectChange}
+          disabled={newAllocation.clientName === 'Innover'} // Disable dropdown when client is "Innover"
+        />
+      </Form.Field>
+      <Form.Field>
+        <label>Status</label>
+        <Dropdown
+          placeholder="Select Status"
+          fluid
+          selection
+          options={[
+            { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
+            { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
+            { key: 'allocated', text: 'Allocated', value: 'Allocated' },
+          ]}
+          value={newAllocation.status}
+          onChange={(e, { value }) => setNewAllocation({ ...newAllocation, status: value })}
+          required
+        />
+      </Form.Field>
+      <Form.Input
+        label="Allocation %"
+        type="number"
+        placeholder="Enter allocation percentage"
+        value={newAllocation.allocation}
+        onChange={(e) => {
+          const allocationValue = e.target.value;
+          setNewAllocation((prev) => ({ ...prev, allocation: allocationValue }));
 
-                // Update status based on conditions dynamically
-                if (newAllocation.clientName && newAllocation.projectName && (!allocationValue || allocationValue === '0')) {
-                  setNewAllocation((prev) => ({ ...prev, status: 'Project Unallocated' }));
-                } else if (newAllocation.clientName && newAllocation.projectName && allocationValue && allocationValue !== '0') {
-                  setNewAllocation((prev) => ({ ...prev, status: 'Allocated' }));
-                } else if (newAllocation.clientName && !newAllocation.projectName) {
-                  setNewAllocation((prev) => ({ ...prev, status: 'Client Unallocated' }));
-                }
-              }}
-              required
-            />
-            <Form.Input
-              label="Billing Rate"
-              placeholder="Enter billing rate"
-              type="number"
-              value={newAllocation.billingRate}
-              onChange={(e) =>
-                setNewAllocation({ ...newAllocation, billingRate: e.target.value })
-              }
-              required
-            />
-            <Form.Input
-              label="Time Sheet Approver"
-              placeholder="Enter Time Sheet Approver"
-              value={newAllocation.timeSheetApprover}
-              onChange={(e) =>
-                setNewAllocation({ ...newAllocation, timeSheetApprover: e.target.value })
-              }
-              required
-            />
-            <Form.Input
-              label="Start Date"
-              type="date"
-              placeholder="Enter start date"
-              value={newAllocation.startDate}
-              onChange={(e) =>
-                setNewAllocation({ ...newAllocation, startDate: e.target.value })
-              }
-              required
-            />
-            <Form.Input
-              label="End Date"
-              type="date"
-              placeholder="Enter end date"
-              value={newAllocation.endDate}
-              onChange={(e) =>
-                setNewAllocation({ ...newAllocation, endDate: e.target.value })
-              }
-              required
-            />
-          </Form>
-        </Modal.Content>
-        <Modal.Actions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button
-            color="blue"
-            onClick={handleSaveAllocation}
-            disabled={!isFormValid()} // Disable if the form is not valid
-          >
-            {editIndex !== null ? 'Update' : 'Save'}
-          </Button>
-        </Modal.Actions>
-      </Modal>
+          // Update status based on conditions dynamically
+          if (newAllocation.clientName && newAllocation.projectName && (!allocationValue || allocationValue === '0')) {
+            setNewAllocation((prev) => ({ ...prev, status: 'Project Unallocated' }));
+          } else if (newAllocation.clientName && newAllocation.projectName && allocationValue && allocationValue !== '0') {
+            setNewAllocation((prev) => ({ ...prev, status: 'Allocated' }));
+          } else if (newAllocation.clientName && !newAllocation.projectName) {
+            setNewAllocation((prev) => ({ ...prev, status: 'Client Unallocated' }));
+          }
+        }}
+        required
+      />
+      <Form.Input
+        label="Billing Rate"
+        placeholder="Enter billing rate"
+        type="number"
+        value={newAllocation.billingRate}
+        onChange={(e) =>
+          setNewAllocation({ ...newAllocation, billingRate: e.target.value })
+        }
+        required
+      />
+      <Form.Input
+        label="Time Sheet Approver"
+        placeholder="Enter Time Sheet Approver"
+        value={newAllocation.timeSheetApprover}
+        onChange={(e) =>
+          setNewAllocation({ ...newAllocation, timeSheetApprover: e.target.value })
+        }
+        required
+      />
+      <Form.Input
+        label="Start Date"
+        type="date"
+        placeholder="Enter start date"
+        value={newAllocation.startDate}
+        onChange={(e) =>
+          setNewAllocation({ ...newAllocation, startDate: e.target.value })
+        }
+        required
+      />
+      <Form.Input
+        label="End Date"
+        type="date"
+        placeholder="Enter end date"
+        value={newAllocation.endDate}
+        onChange={(e) =>
+          setNewAllocation({ ...newAllocation, endDate: e.target.value })
+        }
+        required
+      />
+    </Form>
+  </Modal.Content>
+  <Modal.Actions>
+    <Button onClick={() => setOpen(false)}>Cancel</Button>
+    <Button
+      color="blue"
+      onClick={handleSaveAllocation}
+      disabled={!isFormValid()} // Disable if the form is not valid
+    >
+      {editIndex !== null ? 'Update' : 'Save'}
+    </Button>
+  </Modal.Actions>
+</Modal>
+
     </div>
   );
 };

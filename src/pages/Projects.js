@@ -1,15 +1,14 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Icon, Button, Modal, Form, Dropdown } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom';
 import './Projects.css';
 
-const Projects = () => {
+const Projects = ({ userRole }) => { // Receive userRole as a prop
   const navigate = useNavigate(); // For navigation
   const [open, setOpen] = useState(false); // State to control modal visibility
   const [allocation, setAllocation] = useState(''); // State for allocation dropdown
   const [selectedClient, setSelectedClient] = useState(''); // State for selected client
   const [selectedProject, setSelectedProject] = useState(''); // State for selected project
-
   const [clientData, setClientData] = useState([]);
   const [benchedEmployees, setBenchedEmployees] = useState([]);
   const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
@@ -104,9 +103,12 @@ const Projects = () => {
 
       <div className="projects-header">
         <h2>Clients</h2>
-        {/* <Button className="allocate-button" primary onClick={() => setOpen(true)}>
-          Allocate Resource
-        </Button> */}
+        {/* Show Allocate Button only if userRole is not 'leader' */}
+        {/* {userRole !== 'leader' && (
+          <Button className="allocate-button" primary onClick={() => setOpen(true)}>
+            Allocate Resource
+          </Button>
+        )} */}
       </div>
       
       <Table celled padded className="futuristic-table">
@@ -114,7 +116,6 @@ const Projects = () => {
           <Table.Row>
             <Table.HeaderCell>Company</Table.HeaderCell>
             <Table.HeaderCell>No. of Projects</Table.HeaderCell>
-            <Table.HeaderCell>Status</Table.HeaderCell>
             <Table.HeaderCell>Country</Table.HeaderCell>
             <Table.HeaderCell>Contract Start Date</Table.HeaderCell>
             <Table.HeaderCell>Contract End Date</Table.HeaderCell>
@@ -133,11 +134,6 @@ const Projects = () => {
                 <Icon name="building" /> {client.ClientName}
               </Table.Cell>
               <Table.Cell>{client.NoOfProjects}</Table.Cell>
-              <Table.Cell>
-                <span className={`status ${client.Status.toLowerCase().replace(' ', '-')}`}>
-                  {client.status}
-                </span>
-              </Table.Cell>
               <Table.Cell>{client.Country}</Table.Cell>
               <Table.Cell>{client.StartDate}</Table.Cell>
               <Table.Cell>{client.EndDate}</Table.Cell>

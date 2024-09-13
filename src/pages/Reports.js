@@ -54,14 +54,29 @@ const Reports = () => {
     }
   }, [location.state]);
 
-  const handleFilterChange = (e, { value }) => {
+  const handleFilterChange = async (e, { value }) => {
     setFilter(value);
-    
-    // Correct filter logic
-    if (value === 'allocated') {
-      setFilteredData(combinedEmployeeData); // Show allocated data
-    } else if (value === 'on Bench') {
-      setFilteredData(bench); // Show bench data
+    setLoading(true);
+
+    try {
+      // Correct filter logic
+      if (value === 'allocated') {
+        setFilteredData(combinedEmployeeData); // Show allocated data
+      } else if (value === 'totally unallocated') {
+        setFilteredData(bench); // Show unallocated (bench) data
+      } else if (value === 'bench') {
+        // Fetch employees associated with client "Innover" using the new API endpoint
+        const response = await fetch('http://localhost:5000/employees/client/innover');
+        if (!response.ok) {
+          throw new Error('Failed to fetch employees for "Bench" filter');
+        }
+        const dataBenched = await response.json();
+        setFilteredData(dataBenched); // Show employees associated with "Innover"
+      }
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,7 +88,6 @@ const Reports = () => {
     'Employee ID': employee.EmployeeID,
     'Employee Name': employee.EmployeeName,
     Email: employee.Email,
-    Role: employee.Role,
     'Current Allocation %': employee.Allocation, // Ensure this matches the field name from the API
   }));
 
@@ -89,8 +103,9 @@ const Reports = () => {
         fluid
         selection
         options={[
-          { key: 'on Bench', text: 'on Bench', value: 'on Bench' },
-          { key: 'allocated', text: 'allocated', value: 'allocated' },
+          { key: 'totally unallocated', text: 'Totally Unallocated', value: 'totally unallocated' },
+          { key: 'allocated', text: 'Allocated', value: 'allocated' },
+          { key: 'bench', text: 'Bench', value: 'bench' }, // New filter option for Bench
         ]}
         value={filter}
         onChange={handleFilterChange}
@@ -111,7 +126,6 @@ const Reports = () => {
             <Table.HeaderCell>Employee ID</Table.HeaderCell>
             <Table.HeaderCell>Employee Name</Table.HeaderCell>
             <Table.HeaderCell>Email</Table.HeaderCell>
-            <Table.HeaderCell>Role</Table.HeaderCell>
             <Table.HeaderCell>Current Allocation %</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
@@ -123,7 +137,6 @@ const Reports = () => {
                 <Table.Cell>{employee.EmployeeID}</Table.Cell>
                 <Table.Cell>{employee.EmployeeName}</Table.Cell>
                 <Table.Cell>{employee.Email}</Table.Cell>
-                <Table.Cell>{employee.Role}</Table.Cell>
                 <Table.Cell>{employee.Allocation}%</Table.Cell> {/* Ensure this matches the field name from the API */}
               </Table.Row>
             ))

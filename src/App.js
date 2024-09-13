@@ -8,7 +8,7 @@ import DashboardBizOps from './pages/DashboardBizOps';
 import Unallocated from './pages/Unallocated';
 import EmployeeDetails from './pages/EmployeeDetails';
 import ClientProjects from './pages/ClientProjects';
-import ClientDetails from './pages/ClientDetails';
+import ClientDetails from './pages/ClientDetails'; // Import ClientDetails
 import ToDoPage from './pages/ToDoPage';
 import Reports from './pages/Reports';
 import EmpPage from './pages/EmpPage'; // Import the new page
@@ -64,7 +64,7 @@ const App = () => {
               {/* Common Routes for both roles */}
               <Route path="/employee/:id" element={<EmployeeDetails userRole={userRole} />} />
               <Route path="/client/:clientId/projects" element={<ClientProjects />} />
-              <Route path="/client/:clientId/project/:projectId" element={<ClientDetails />} />
+              <Route path="/client/:clientId/project/:projectId" element={<ClientDetails userRole={userRole} />} /> {/* Pass userRole to ClientDetails */}
             </Routes>
           </div>
         </>

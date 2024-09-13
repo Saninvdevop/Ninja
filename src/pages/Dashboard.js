@@ -48,16 +48,7 @@ const Dashboard = () => {
         </div>
 
         {/* Active Projects Card */}
-        <div className="dashboard-card" onClick={handleProjectsClick}> {/* Navigate to /projects */}
-          <Icon name='tasks' className='dashboard-card-icon' />
-          <div className="dashboard-card-content">
-            <div className="dashboard-card-header">
-              <Icon name='tasks' style={{ marginRight: '8px' }} />
-              Active Projects
-            </div>
-            <div className="dashboard-card-description">{activeProjects}</div>
-          </div>
-        </div>
+       
 
         {/* Bench Report Card */}
         <div className="dashboard-card" onClick={() => handleReportClick('benched')}> {/* Navigate with 'benched' filter */}
