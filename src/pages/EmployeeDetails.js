@@ -1,5 +1,5 @@
-import React, { useState,useEffect } from 'react';
-import { useLocation,useParams ,useNavigate} from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Card, Icon, Table, Button, Modal, Form, Dropdown } from 'semantic-ui-react';
 import { Doughnut } from 'react-chartjs-2';
 import 'chart.js/auto';
@@ -29,23 +29,20 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     endDate: '',
     billingRate: '',
     timeSheetApprover: '',
-  });// Loading state
+  });
 
-  // Fetch data from APIs
+  // Fetch client data from API
   useEffect(() => {
     const fetchClientData = async () => {
       try {
         setLoading(true);
         const Response = await fetch('http://localhost:5000/clients');
         
-        
-        if (!Response.ok || !Response.ok) {
+        if (!Response.ok) {
           throw new Error('Network response was not ok');
         }
 
         const Data = await Response.json();
-        
-
         setClientData(Data);
         
       } catch (error) {
@@ -57,6 +54,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
 
     fetchClientData();
   }, []);
+
   // Options for client dropdown
   const clientOptions = clientData.map((client) => ({
     key: client.ClientID,
@@ -64,74 +62,36 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     value: client.ClientName, // Using company name as value to match table entries
   }));
 
-  // State to manage the allocation data
- 
-  
-  // State to manage modal visibility
-  
-
   // State to manage selected client and project
   const [selectedClient, setSelectedClient] = useState('');
-  
-
   // State to manage the currently edited allocation
   const [editIndex, setEditIndex] = useState(null);
 
-  // Options for status dropdown
-  const statusOptions = [
-    { key: 'allocated', text: 'Project Allocated', value: 'Project Allocated' },
-    { key: 'unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
-    { key: 'x', text: 'X', value: 'X' },
-  ];
-  useEffect(() => {
-    const fetchEmployeeData = async () => {
-      try {
-        // setLoading(true);
-   
-        const Response = await fetch(`http://localhost:5000/detailed-view/${id}`);
-
-        
-        if (!Response.ok ) {
-          throw new Error('Network response was not ok');
-        }
-
-        const Data = await Response.json();
-        
-
-        setAllocations(Data);
-        
-      } catch (error) {
-        console.error('Fetch error:', error);
-      } finally {
-        // setLoading(false);
+  // Function to fetch employee allocation data
+  const fetchEmployeeData = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/detailed-view/${id}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
       }
-    };
+      const data = await response.json();
+      setAllocations(data);
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setError('Failed to load employee data');
+    }
+  };
 
-    fetchEmployeeData();
-  }, []);
+  // Fetch employee data on component mount
   useEffect(() => {
-    const fetchEmployeeData = async () => {
-      try {
-        const response = await fetch(`http://localhost:5000/detailed-view/${id}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        setAllocations(data);
-      } catch (error) {
-        console.error('Fetch error:', error);
-        setError('Failed to load employee data');
-      }
-    };
-
     fetchEmployeeData();
   }, [id]);
+
+  // Fetch project options based on selected client
   useEffect(() => {
     const fetchProjects = async (clientName) => {
       try {
         if (clientName) {
-          const formattedProjectName = clientName.replace(/-/g, ' ');
-        const encodedProjectName = encodeURIComponent(formattedProjectName);
           const response = await fetch(`http://localhost:5000/client/${clientName}/allprojects`);
           if (!response.ok) {
             throw new Error('Network response was not ok');
@@ -196,6 +156,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
       console.error('Error saving allocation:', error);
     }
   };
+
   const handleSaveAllocation = async () => {
     if (editIndex !== null) {
       // Edit existing allocation
@@ -216,6 +177,9 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     // Send data to backend
     await submitAllocation();
 
+    // Fetch updated data to refresh UI
+    fetchEmployeeData();
+
     // Clear form fields after saving
     setNewAllocation({
       employeeName: employee.EmployeeName,
@@ -235,6 +199,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     setOpen(false);
     setEditIndex(null);
   };
+
   // Function to handle deletion of an allocation
   const handleDeleteAllocation = (index) => {
     const updatedAllocations = allocations.filter((_, i) => i !== index);
@@ -260,11 +225,12 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     setOpen(true); // Open the modal
   };
 
-  // Calculate total allocation percentage
-  const totalAllocationPercentage = allocations.reduce(
-    (total, alloc) => total + alloc.allocation,
-    0
-  );
+  // Calculate total allocation percentage based on allocations data
+  const calculateTotalAllocationPercentage = () => {
+    return allocations.reduce((total, alloc) => total + parseFloat(alloc.Allocation || 0), 0);
+  };
+
+  const totalAllocationPercentage = calculateTotalAllocationPercentage();
 
   // Calculate the remaining percentage to show in the doughnut chart
   const remainingPercentage = 100 - totalAllocationPercentage;

@@ -10,6 +10,7 @@ const Reports = () => {
 
   const [combinedEmployeeData, setCombinedEmployeeData] = useState([]);
   const [bench, setBench] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,6 +35,9 @@ const Reports = () => {
         console.log('Fetched data:', { dataAllocated, dataBenched }); // Log data for debugging
         setCombinedEmployeeData(dataAllocated);
         setBench(dataBenched);
+
+        // Set initial filtered data based on default filter
+        setFilteredData(dataAllocated); // Default is 'allocated'
       } catch (error) {
         setError(error.message);
       } finally {
@@ -49,28 +53,27 @@ const Reports = () => {
       setFilter(location.state.filter); // Set the filter from state if available
     }
   }, [location.state]);
-  const [filteredData,setFilterData] = useState([]);
+
   const handleFilterChange = (e, { value }) => {
     setFilter(value);
-     if(filter==='allocated'){
-    setFilterData(combinedEmployeeData);
-  }else if(filter==='on Bench'){
-    setFilterData(bench);
-  }
+    
+    // Correct filter logic
+    if (value === 'allocated') {
+      setFilteredData(combinedEmployeeData); // Show allocated data
+    } else if (value === 'on Bench') {
+      setFilteredData(bench); // Show bench data
+    }
   };
-  
-  // Determine which dataset to use based on the filter
-  
- 
+
   const handleRowClick = (employee) => {
-    navigate('/employee/' + employee.EmployeeID, { state: { employee: { ...employee, allocation: employee.allocation } } });
+    navigate('/employee/' + employee.EmployeeID, { state: { employee: { ...employee, allocation: employee.Allocation } } });
   };
 
   const csvData = filteredData.map((employee) => ({
     'Employee ID': employee.EmployeeID,
     'Employee Name': employee.EmployeeName,
-    Email: employee.email,
-    Role: employee.role,
+    Email: employee.Email,
+    Role: employee.Role,
     'Current Allocation %': employee.Allocation, // Ensure this matches the field name from the API
   }));
 
@@ -120,7 +123,7 @@ const Reports = () => {
                 <Table.Cell>{employee.EmployeeID}</Table.Cell>
                 <Table.Cell>{employee.EmployeeName}</Table.Cell>
                 <Table.Cell>{employee.Email}</Table.Cell>
-                <Table.Cell>{employee.role}</Table.Cell>
+                <Table.Cell>{employee.Role}</Table.Cell>
                 <Table.Cell>{employee.Allocation}%</Table.Cell> {/* Ensure this matches the field name from the API */}
               </Table.Row>
             ))
