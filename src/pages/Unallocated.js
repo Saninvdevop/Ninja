@@ -57,7 +57,7 @@ const Unallocated = () => {
       {/* Back Arrow Icon */}
       <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
       
-      <h2>Unallocated Employees</h2>
+      <h2>Drafts</h2>
       <Table celled striped>
         <Table.Header>
           <Table.Row>

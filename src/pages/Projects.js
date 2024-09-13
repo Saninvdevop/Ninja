@@ -99,7 +99,7 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
   return (
     <div className="projects-container">
       {/* Back Arrow Icon */}
-      <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
+      <Icon  name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
 
       <div className="projects-header">
         <h2>Clients</h2>
@@ -119,7 +119,7 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
             <Table.HeaderCell>Country</Table.HeaderCell>
             <Table.HeaderCell>Contract Start Date</Table.HeaderCell>
             <Table.HeaderCell>Contract End Date</Table.HeaderCell>
-            <Table.HeaderCell>No. of Employees Working</Table.HeaderCell>
+            <Table.HeaderCell>Headcount</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
 

@@ -106,7 +106,7 @@ const DashboardBizOps = () => {
             <Card.Content>
               <Icon name="users" className="card-icon" />
               <Card.Header className="card-heading">Employee Details</Card.Header>
-              <Card.Description className="card-value3">{totalemp}</Card.Description>
+              <Card.Description className="card-value3">Click to view</Card.Description>
             </Card.Content>
           </Card>
         </Card.Group>

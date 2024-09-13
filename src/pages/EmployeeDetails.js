@@ -574,7 +574,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
         required
       />
       <Form.Input
-        label="Billing Rate"
+        label="Billing Rate (USD)"
         placeholder="Enter billing rate"
         type="number"
         value={newAllocation.billingRate}

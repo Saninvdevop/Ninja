@@ -92,7 +92,7 @@
     font-weight: bold;
     color: #1f2937;
     margin-top: 35px !important;
-    margin-left: -44px !important;
+    margin-left: -84px !important;
   }
   .card-value1 {
     font-size: 4.3em; /* Large value size */
@@ -101,7 +101,7 @@
     
     margin-top: 35px !important;
    
-    margin-left: 7px !important;
+    margin-left: -157px !important;
   }
 
   .card-value2 {
@@ -109,7 +109,7 @@
     font-weight: bold;
     color: #1f2937;
     margin-top: 15px;
-    margin-left: -97px !important;
+    margin-left: -177px !important;
     margin-top: 35px !important;
   }
   
@@ -134,7 +134,9 @@
 
 .card-value3{
   position: relative !important;
-  right: 80px !important;
+  right: 75px !important;
+  font-size: 17px !important;
+  top: 7px !important;
  
 }
   
