@@ -17,6 +17,8 @@ const EmpPage = () => {
   const [count, setCount] = useState();
   const [sortColumn, setSortColumn] = useState(null); // Track the currently sorted column
   const [sortDirection, setSortDirection] = useState(null); // Track the sort direction (asc/desc)
+  const [currentPage, setCurrentPage] = useState(1); // Track current page
+  const [rowsPerPage] = useState(20); // Rows per page set to 20
 
   useEffect(() => {
     fetchDataBasedOnFilter(filter);
@@ -127,6 +129,7 @@ const EmpPage = () => {
     });
 
     setFilteredEmployees(filtered);
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   // Handle filter dropdown change
@@ -158,108 +161,133 @@ const EmpPage = () => {
     { key: 'benched', text: 'Benched', value: 'benched' }, // New filter option for Benched
   ];
   const shouldShowBackArrow = window.history.length > 1;
+  // Pagination logic
+  const indexOfLastEmployee = currentPage * rowsPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - rowsPerPage;
+  const currentEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
+
+  // Handle page change
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Generate pagination numbers
+  const totalPages = Math.ceil(filteredEmployees.length / rowsPerPage);
+  const pageNumbers = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
 
   return (
     <div className="main-layout">
-  <div className='right-content'>
-    {/* Breadcrumb Section */}
-    <div className='breadcrumb'>
-      <h2 className="breadcrumb-text">Employees</h2>
-    </div>
+    <div className='right-content'>
+      {/* Breadcrumb Section */}
+      <div className='breadcrumb'>
+        <h2 className="breadcrumb-text">Employees</h2>
+      </div>
 
-    <div className='table-filter-layout'>
-    {/* Filter Tabs */}
-    <div className="filter-tabs">
-      <button
-        className={`tab ${filter === 'all' ? 'active' : ''}`}
-        onClick={() => setFilter('all')}
-      >
-        All
-      </button>
-      <button
-        className={`tab ${filter === 'totally_unallocated' ? 'active' : ''}`}
-        onClick={() => setFilter('totally_unallocated')}
-      >
-        Totally Unallocated
-      </button>
-      <button
-        className={`tab ${filter === 'draft' ? 'active' : ''}`}
-        onClick={() => setFilter('draft')}
-      >
-        Draft
-      </button>
-      <button
-        className={`tab ${filter === 'allocated' ? 'active' : ''}`}
-        onClick={() => setFilter('allocated')}
-      >
-        Allocated
-      </button>
-      <button
-        className={`tab ${filter === 'benched' ? 'active' : ''}`}
-        onClick={() => setFilter('benched')}
-      >
-        Benched
-      </button>
-    </div>
+      <div className='table-filter-layout'>
+      {/* Filter Tabs */}
+      <div className="filter-tabs">
+        <button
+          className={`tab ${filter === 'all' ? 'active' : ''}`}
+          onClick={() => setFilter('all')}
+        >
+          All
+        </button>
+        <button
+          className={`tab ${filter === 'totally_unallocated' ? 'active' : ''}`}
+          onClick={() => setFilter('totally_unallocated')}
+        >
+          Totally Unallocated
+        </button>
+        <button
+          className={`tab ${filter === 'draft' ? 'active' : ''}`}
+          onClick={() => setFilter('draft')}
+        >
+          Draft
+        </button>
+        <button
+          className={`tab ${filter === 'allocated' ? 'active' : ''}`}
+          onClick={() => setFilter('allocated')}
+        >
+          Allocated
+        </button>
+        <button
+          className={`tab ${filter === 'benched' ? 'active' : ''}`}
+          onClick={() => setFilter('benched')}
+        >
+          Benched
+        </button>
+      </div>
 
-    {/* Search Bar */}
-    <Input
-      icon="search"
-      placeholder="Search by name, email, or ID..."
-      value={searchTerm}
-      onChange={handleSearchChange}
-      className="search-bar" /* Updated to add the correct class */
-      style={{ marginBottom: '20px' }}
-    />
-  </div>
-  {/* Employee Table Section */}
-  <div className='table'>
-    <Table celled striped sortable>
-      <Table.Header>
-        <Table.Row>
-          <Table.HeaderCell
-            sorted={sortColumn === 'EmployeeID' ? sortDirection : null}
-            onClick={() => handleSort('EmployeeID')}
-          >
-            Employee ID
-          </Table.HeaderCell>
-          <Table.HeaderCell
-            sorted={sortColumn === 'EmployeeName' ? sortDirection : null}
-            onClick={() => handleSort('EmployeeName')}
-          >
-            Employee Name
-          </Table.HeaderCell>
-          <Table.HeaderCell
-            sorted={sortColumn === 'Email' ? sortDirection : null}
-            onClick={() => handleSort('Email')}
-          >
-            Email
-          </Table.HeaderCell>
-          <Table.HeaderCell
-            sorted={sortColumn === 'Allocation' ? sortDirection : null}
-            onClick={() => handleSort('Allocation')}
-          >
-            Current Allocation %
-          </Table.HeaderCell>
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        {filteredEmployees.map((employee) => (
-          <Table.Row key={employee.EmployeeID} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
-            <Table.Cell>{employee.EmployeeID}</Table.Cell>
-            <Table.Cell>{employee.EmployeeName}</Table.Cell>
-            <Table.Cell>{employee.Email}</Table.Cell>
-            <Table.Cell>{employee.Allocation}%</Table.Cell>
+      {/* Search Bar */}
+      <Input
+        icon="search"
+        placeholder="Search by name, email, or ID..."
+        value={searchTerm}
+        onChange={handleSearchChange}
+        className="search-bar" /* Updated to add the correct class */
+        style={{ marginBottom: '20px' }}
+      />
+    </div>
+    {/* Employee Table Section */}
+    <div className='table'>
+      <Table celled striped sortable>
+        <Table.Header>
+          <Table.Row>
+            <Table.HeaderCell
+              sorted={sortColumn === 'EmployeeID' ? sortDirection : null}
+              onClick={() => handleSort('EmployeeID')}
+            >
+              Employee ID
+            </Table.HeaderCell>
+            <Table.HeaderCell
+              sorted={sortColumn === 'EmployeeName' ? sortDirection : null}
+              onClick={() => handleSort('EmployeeName')}
+            >
+              Employee Name
+            </Table.HeaderCell>
+            <Table.HeaderCell
+              sorted={sortColumn === 'Email' ? sortDirection : null}
+              onClick={() => handleSort('Email')}
+            >
+              Email
+            </Table.HeaderCell>
+            <Table.HeaderCell
+              sorted={sortColumn === 'Allocation' ? sortDirection : null}
+              onClick={() => handleSort('Allocation')}
+            >
+              Current Allocation %
+            </Table.HeaderCell>
           </Table.Row>
-        ))}
-      </Table.Body>
-    </Table>
+        </Table.Header>
+        <Table.Body>
+          {filteredEmployees.map((employee) => (
+            <Table.Row key={employee.EmployeeID} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
+              <Table.Cell>{employee.EmployeeID}</Table.Cell>
+              <Table.Cell>{employee.EmployeeName}</Table.Cell>
+              <Table.Cell>{employee.Email}</Table.Cell>
+              <Table.Cell>{employee.Allocation}%</Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table>
+    </div>
+    {/* Pagination Section */}
+    <div className="pagination">
+        <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>
+          Back
+        </button>
+        {pageNumbers.map(number => (
+          <button key={number} onClick={() => paginate(number)} className={currentPage === number ? 'active' : ''}>
+            {number}
+            </button>
+          ))}
+          <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages}>
+            Next
+          </button>
+      </div>
+    </div>
   </div>
-
-  </div>
-</div>
-
-
   );
 };
 
