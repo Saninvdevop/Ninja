@@ -3,6 +3,7 @@ import { Menu, Icon, Button } from 'semantic-ui-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import './Navbar.css'; // Import the CSS for navbar styling
 import logo from '../assets/images/logo.png'; // Adjusted path to logo.png
+import { CiLogout} from "react-icons/ci";
 
 const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
   const location = useLocation();
@@ -30,18 +31,6 @@ const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
         <img src={logo} alt="Platform X Logo" className="navbar-logo" />
       </div>
 
-      {/* User Info Section */}
-      <div 
-        className="user-info" 
-        onClick={toggleUserInfoPosition}  // Change top position on click
-        style={{ top: userInfoTop }} // Dynamically set the top position
-      >
-        <h3 className="user-name">
-          <Icon name="user" className="user-icon" /> 
-          Ravi Kumar
-        </h3>
-        <span className={`role-tag ${userRole}`}>{userRole === 'bizops' ? 'BizOps' : 'Leader'}</span>
-      </div>
 
       <Menu vertical pointing secondary className="navbar-menu">
         {/* Conditional rendering based on user role */}
@@ -111,21 +100,40 @@ const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
         )}
       </Menu>
 
-      {/* Conditionally Render Logout Button */}
-      {showLogout && (  // Show logout button only when showLogout is true
-        <div className="logout-container">
-          <Button 
-            icon
-            labelPosition="left"
-            color="red"
-            onClick={handleLogout} // Logout handler
-            className="logout-button"
-          >
-            <Icon name="sign-out" />
-            Logout
-          </Button>
+      {/* User Info Section */}
+      <div 
+        className="user-info" 
+        onClick={() => setShowLogout(!showLogout)} 
+      >
+        <div className="profile-details">
+          <div className="profile-photo">
+            <Icon name="user" className="user-icon" />
+          </div>
+          <div className="user-text">
+            <h3 className="user-name">Ravi Kumar</h3>
+            <span className={`role-tag ${userRole}`}>
+              {userRole === 'bizops' ? 'BizOps' : 'Leader'}
+            </span>
+          </div>
         </div>
-      )}
+
+        {/* Conditionally render the logout button based on the toggle state */}
+        {showLogout && (
+          <Button
+            variant="contained"
+            className="logout-button"
+            sx={{
+              width: '60%',
+              margin: '0 auto 5px auto',
+              display: 'block',
+            }}
+            onClick={handleLogout}
+          >
+            <CiLogout /> Logout
+          </Button>
+        )}
+      </div>
+      
     </div>
   );
 };
