@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Input } from 'semantic-ui-react';
+import { Table, Input } from 'semantic-ui-react'; // Import Icon component for back arrow
 import './EmpPage.css';
 import debounce from 'lodash.debounce';
 
@@ -21,31 +21,31 @@ const EmpPage = () => {
   const [rowsPerPage] = useState(20); // Rows per page set to 20
 
   useEffect(() => {
-    fetchDataBasedOnFilter(filter, searchTerm);
-  }, [filter, searchTerm]); // Fetch data when either filter or searchTerm changes
+    fetchDataBasedOnFilter();
+  }, [filter, searchTerm]); // Fetch data whenever the filter or search term changes
 
-  const fetchDataBasedOnFilter = async (filter, searchQuery = '') => {
+  // Function to fetch data based on filter
+  const fetchDataBasedOnFilter = async () => {
     try {
       setLoading(true);
       let response;
-
-      const search = searchQuery ? `&search=${searchQuery}` : '';
+      const searchQuery = searchTerm ? `&search=${searchTerm}` : ''; // Add search query if present
 
       switch (filter) {
         case 'totally_unallocated':
-          response = await fetch(`http://localhost:5000/employees/todo?filter=totally_unallocated${search}`);
+          response = await fetch(`http://localhost:5000/employees/todo?filter=totally_unallocated${searchQuery}`);
           break;
         case 'draft':
-          response = await fetch(`http://localhost:5000/employees/drafts?filter=draft${search}`);
+          response = await fetch(`http://localhost:5000/employees/drafts?filter=draft${searchQuery}`);
           break;
         case 'allocated':
-          response = await fetch(`http://localhost:5000/employees/drafts?filter=allocated${search}`);
+          response = await fetch(`http://localhost:5000/employees/drafts?filter=allocated${searchQuery}`);
           break;
         case 'benched':
-          response = await fetch(`http://localhost:5000/employees/client/innover?filter=benched${search}`);
+          response = await fetch(`http://localhost:5000/employees/client/innover?filter=benched${searchQuery}`);
           break;
         default:
-          response = await fetch(`http://localhost:5000/employees?filter=all${search}`);
+          response = await fetch(`http://localhost:5000/employees?filter=all${searchQuery}`);
           break;
       }
 
@@ -63,9 +63,12 @@ const EmpPage = () => {
     }
   };
 
-  // Debounced search handler
+  // Debounced search handler (for server-side searching)
   const handleSearchChange = debounce((searchValue) => {
     setSearchTerm(searchValue);
+    if (searchValue.length >= 3 || searchValue === '') {
+      fetchDataBasedOnFilter(); // Fetch results after 3 characters or if cleared
+    }
   }, 300);
 
   // Sorting logic
@@ -109,7 +112,6 @@ const EmpPage = () => {
         <div className='breadcrumb'>
           <h2 className="breadcrumb-text">Employees</h2>
         </div>
-
         {/* Tabs and Search Bar Section */}
         <div className='table-filter-layout'>
           <div className="filter-tabs">
@@ -161,7 +163,7 @@ const EmpPage = () => {
             </Table.Header>
             <Table.Body>
               {currentEmployees.map((employee) => (
-                <Table.Row key={employee.EmployeeID} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
+                <Table.Row key={employee.EmployeeID} onClick={() => navigate(`/employee/${employee.EmployeeID}`)} style={{ cursor: 'pointer' }}>
                   <Table.Cell>{employee.EmployeeID}</Table.Cell>
                   <Table.Cell>{employee.EmployeeName}</Table.Cell>
                   <Table.Cell>{employee.Email}</Table.Cell>
@@ -177,7 +179,7 @@ const EmpPage = () => {
           <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>
             Back
           </button>
-          {pageNumbers.map((number) => (
+          {pageNumbers.map(number => (
             <button key={number} onClick={() => paginate(number)} className={currentPage === number ? 'active' : ''}>
               {number}
             </button>
