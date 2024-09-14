@@ -1,12 +1,13 @@
 .main-layout{
+  margin-left: 16%;
   background-color: #f5f8fa;
   min-height: 100vh; /* Full height for background */
   font-family: 'Arial', sans-serif; /* Clean and modern font */
-  width: 85%;
+  width: auto;
+  padding: 2% 2% 5px 4%;
 }
 
 .right-content{
-  padding: 1% 0% 2px 8%;
   box-sizing: border-box;
 }
 

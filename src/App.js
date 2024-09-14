@@ -43,7 +43,7 @@ const App = () => {
         <>
           {/* Pass userRole and setUserRole to Navbar for conditional rendering */}
           <Navbar userRole={userRole} setUserRole={handleLogout} /> {/* Pass handleLogout to Navbar */}
-          <div style={{ marginLeft: '220px', padding: '20px', width: '100%' }}>
+          <div>
             <Routes>
               {userRole === 'leader' && (
                 <>

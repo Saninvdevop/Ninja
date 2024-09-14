@@ -23,14 +23,14 @@
 }
 
 .card-heading {
-  font-size: 2.5em;
+  font-size: 2em;
   margin: 5px 0;
   text-align: left; /* Ensure heading aligns to the left */
   width: 100%; /* Make sure it takes full width */
 }
 
 .card-value {
-  font-size: 1.25em;
+  font-size: 3em;
   font-weight: bold;
   color: #1f2937;
   text-align: left; /* Ensure value aligns to the left */

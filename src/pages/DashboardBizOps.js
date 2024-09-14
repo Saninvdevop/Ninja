@@ -79,7 +79,7 @@ const DashboardBizOps = () => {
 
   return (
     <div className="main-layout">
-      <div className='right-content w-100'>
+      <div className='right-content'>
         <div className='top-content'>
           <div className='greeting'>
             <h1>Hello Ravi,</h1>
