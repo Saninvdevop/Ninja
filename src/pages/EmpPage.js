@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Input } from 'semantic-ui-react'; // Import Icon component for back arrow
+import { Table, Input, Dropdown, Icon } from 'semantic-ui-react'; // Import Icon component for back arrow
 import './EmpPage.css';
 import debounce from 'lodash.debounce';
+
 
 const EmpPage = () => {
   const navigate = useNavigate(); // For navigation to employee details
@@ -15,21 +16,32 @@ const EmpPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [count, setCount] = useState();
   const [sortColumn, setSortColumn] = useState(null); // Track the currently sorted column
   const [sortDirection, setSortDirection] = useState(null); // Track the sort direction (asc/desc)
   const [currentPage, setCurrentPage] = useState(1); // Track current page
   const [rowsPerPage] = useState(20); // Rows per page set to 20
 
   useEffect(() => {
-    fetchDataBasedOnFilter();
-  }, [filter, searchTerm]); // Fetch data whenever the filter or search term changes
+    fetchDataBasedOnFilter(filter);
+  }, [filter]); // Re-fetch data whenever the filter changes
 
   // Function to fetch data based on filter
-  const fetchDataBasedOnFilter = async () => {
+  useEffect(() => {
+    fetchDataBasedOnFilter(filter);
+  }, [filter]); // Re-fetch data whenever the filter changes
+
+  // Fetch data when filter or search term changes
+  useEffect(() => {
+    fetchDataBasedOnFilter(filter);
+  }, [filter, searchTerm]);
+
+  const fetchDataBasedOnFilter = async (filter) => {
     try {
       setLoading(true);
       let response;
-      const searchQuery = searchTerm ? `&search=${searchTerm}` : ''; // Add search query if present
+
+      const searchQuery = searchTerm ? `&search=${searchTerm}` : '';
 
       switch (filter) {
         case 'totally_unallocated':
@@ -63,13 +75,17 @@ const EmpPage = () => {
     }
   };
 
-  // Debounced search handler (for server-side searching)
-  const handleSearchChange = debounce((searchValue) => {
-    setSearchTerm(searchValue);
-    if (searchValue.length >= 3 || searchValue === '') {
-      fetchDataBasedOnFilter(); // Fetch results after 3 characters or if cleared
-    }
+  // Debounce the search input (wait for 300ms after user stops typing)
+  const debouncedSearch = debounce((value) => {
+    setSearchTerm(value);
   }, 300);
+
+  // Update search term on input change
+  const handleSearchChange = (e) => {
+    const searchValue = e.target.value;
+    debouncedSearch(searchValue);
+  };
+
 
   // Sorting logic
   const handleSort = (column) => {
@@ -90,6 +106,59 @@ const EmpPage = () => {
     setSortDirection(direction);
   };
 
+  // Apply search and filter logic
+  const applyFilters = (searchTerm) => {
+    // Convert search term to lowercase
+    const lowerSearchTerm = searchTerm.toLowerCase();
+
+    const filtered = employeeData.filter((employee) => {
+      // Convert employee properties to lowercase for comparison
+      const employeeName = employee.EmployeeName.toLowerCase();
+      const email = employee.Email.toLowerCase();
+      const employeeId = (employee?.EmployeeID || '').toString().toLowerCase();
+
+      // Check if the employee matches the search term
+      const matchesSearchTerm =
+        employeeName.includes(lowerSearchTerm) ||
+        email.includes(lowerSearchTerm) ||
+        employeeId.includes(lowerSearchTerm);
+
+      return matchesSearchTerm;
+    });
+
+    setFilteredEmployees(filtered);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  // Handle filter dropdown change
+  const handleFilterChange = (e, { value }) => {
+    setFilter(value); // Update filter, triggering useEffect to fetch new data
+  };
+
+  // Handle navigation to individual employee details
+  const handleEmployeeClick = (employee) => {
+    navigate(`/employee/${employee.EmployeeID}`, {
+      state: {
+        employee,
+        allocationPercentage: employee.Allocation, // Pass the current allocation percentage
+      },
+    });
+  };
+
+  // Function to handle back navigation
+  const handleBackClick = () => {
+    navigate(-1); // Go back to the previous page
+  };
+
+  // Filter options for the dropdown
+  const filterOptions = [
+    { key: 'all', text: 'All', value: 'all' },
+    { key: 'totally_unallocated', text: 'Totally Unallocated', value: 'totally_unallocated' },
+    { key: 'draft', text: 'Draft', value: 'draft' },
+    { key: 'allocated', text: 'Allocated', value: 'allocated' }, // Updated filter option for Allocated
+    { key: 'benched', text: 'Benched', value: 'benched' }, // New filter option for Benched
+  ];
+  const shouldShowBackArrow = window.history.length > 1;
   // Pagination logic
   const indexOfLastEmployee = currentPage * rowsPerPage;
   const indexOfFirstEmployee = indexOfLastEmployee - rowsPerPage;
@@ -107,27 +176,43 @@ const EmpPage = () => {
 
   return (
     <div className="main-layout">
-      <div className='right-content'>
-        {/* Breadcrumb Section */}
-        <div className='breadcrumb'>
-          <h2 className="breadcrumb-text">Employees</h2>
-        </div>
-        {/* Tabs and Search Bar Section */}
-        <div className='table-filter-layout'>
+    <div className='right-content'>
+      {/* Breadcrumb Section */}
+      <div className='breadcrumb'>
+        <h2 className="breadcrumb-text">Employees</h2>
+      </div>
+    {/* Tabs and Search Bar Section */}
+    <div className='table-filter-layout'>
           <div className="filter-tabs">
-            <button className={`tab ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
+            {/* Always render the tabs */}
+            <button
+              className={`tab ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
+            >
               All
             </button>
-            <button className={`tab ${filter === 'totally_unallocated' ? 'active' : ''}`} onClick={() => setFilter('totally_unallocated')}>
+            <button
+              className={`tab ${filter === 'totally_unallocated' ? 'active' : ''}`}
+              onClick={() => setFilter('totally_unallocated')}
+            >
               Totally Unallocated
             </button>
-            <button className={`tab ${filter === 'draft' ? 'active' : ''}`} onClick={() => setFilter('draft')}>
+            <button
+              className={`tab ${filter === 'draft' ? 'active' : ''}`}
+              onClick={() => setFilter('draft')}
+            >
               Draft
             </button>
-            <button className={`tab ${filter === 'allocated' ? 'active' : ''}`} onClick={() => setFilter('allocated')}>
+            <button
+              className={`tab ${filter === 'allocated' ? 'active' : ''}`}
+              onClick={() => setFilter('allocated')}
+            >
               Allocated
             </button>
-            <button className={`tab ${filter === 'benched' ? 'active' : ''}`} onClick={() => setFilter('benched')}>
+            <button
+              className={`tab ${filter === 'benched' ? 'active' : ''}`}
+              onClick={() => setFilter('benched')}
+            >
               Benched
             </button>
           </div>
@@ -136,60 +221,70 @@ const EmpPage = () => {
           <Input
             icon="search"
             placeholder="Search by name, email, or ID..."
-            onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={handleSearchChange} // Using debounced handler
             className="search-bar"
             style={{ marginBottom: '20px' }}
           />
         </div>
-
-        {/* Employee Table Section */}
-        <div className='table'>
-          <Table celled striped sortable>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell sorted={sortColumn === 'EmployeeID' ? sortDirection : null} onClick={() => handleSort('EmployeeID')}>
-                  Employee ID
-                </Table.HeaderCell>
-                <Table.HeaderCell sorted={sortColumn === 'EmployeeName' ? sortDirection : null} onClick={() => handleSort('EmployeeName')}>
-                  Employee Name
-                </Table.HeaderCell>
-                <Table.HeaderCell sorted={sortColumn === 'Email' ? sortDirection : null} onClick={() => handleSort('Email')}>
-                  Email
-                </Table.HeaderCell>
-                <Table.HeaderCell sorted={sortColumn === 'Allocation' ? sortDirection : null} onClick={() => handleSort('Allocation')}>
-                  Current Allocation %
-                </Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {currentEmployees.map((employee) => (
-                <Table.Row key={employee.EmployeeID} onClick={() => navigate(`/employee/${employee.EmployeeID}`)} style={{ cursor: 'pointer' }}>
-                  <Table.Cell>{employee.EmployeeID}</Table.Cell>
-                  <Table.Cell>{employee.EmployeeName}</Table.Cell>
-                  <Table.Cell>{employee.Email}</Table.Cell>
-                  <Table.Cell>{employee.Allocation}%</Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
-        </div>
-
-        {/* Pagination Section */}
-        <div className="pagination">
-          <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>
-            Back
-          </button>
-          {pageNumbers.map(number => (
-            <button key={number} onClick={() => paginate(number)} className={currentPage === number ? 'active' : ''}>
-              {number}
+    {/* Employee Table Section */}
+    <div className='table'>
+      <Table celled striped sortable>
+        <Table.Header>
+          <Table.Row>
+            <Table.HeaderCell
+              sorted={sortColumn === 'EmployeeID' ? sortDirection : null}
+              onClick={() => handleSort('EmployeeID')}
+            >
+              Employee ID
+            </Table.HeaderCell>
+            <Table.HeaderCell
+              sorted={sortColumn === 'EmployeeName' ? sortDirection : null}
+              onClick={() => handleSort('EmployeeName')}
+            >
+              Employee Name
+            </Table.HeaderCell>
+            <Table.HeaderCell
+              sorted={sortColumn === 'Email' ? sortDirection : null}
+              onClick={() => handleSort('Email')}
+            >
+              Email
+            </Table.HeaderCell>
+            <Table.HeaderCell
+              sorted={sortColumn === 'Allocation' ? sortDirection : null}
+              onClick={() => handleSort('Allocation')}
+            >
+              Current Allocation %
+            </Table.HeaderCell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {filteredEmployees.map((employee) => (
+            <Table.Row key={employee.EmployeeID} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
+              <Table.Cell>{employee.EmployeeID}</Table.Cell>
+              <Table.Cell>{employee.EmployeeName}</Table.Cell>
+              <Table.Cell>{employee.Email}</Table.Cell>
+              <Table.Cell>{employee.Allocation}%</Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table>
+    </div>
+    {/* Pagination Section */}
+    <div className="pagination">
+        <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>
+          Back
+        </button>
+        {pageNumbers.map(number => (
+          <button key={number} onClick={() => paginate(number)} className={currentPage === number ? 'active' : ''}>
+            {number}
             </button>
           ))}
           <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages}>
             Next
           </button>
-        </div>
       </div>
     </div>
+  </div>
   );
 };
 
