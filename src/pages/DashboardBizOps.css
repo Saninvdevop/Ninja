@@ -6,7 +6,7 @@
 }
 
 .right-content{
-  padding: 30px 20px 20px 6%;
+  padding: 60px 20px 20px 6%;
   box-sizing: border-box;
 }
 
@@ -48,3 +48,38 @@ h2{
   .last-edited{
     margin-top: 20px;
   }
+
+  .employee-table {
+    width: 100%; /* Take full width */
+    table-layout: auto; /* Allow columns to size based on their content */
+    border-collapse: collapse; /* Collapse borders for cleaner look */
+  }
+  
+  .employee-table th, .employee-table td {
+    padding: 12px 15px; /* Add padding for better spacing */
+    text-align: left; /* Left-align text */
+    white-space: nowrap; /* Prevent wrapping in smaller columns */
+    overflow: hidden; /* Prevent overflow of content */
+    text-overflow: ellipsis; /* Add ellipsis if the content overflows */
+  }
+  
+  .employee-table th {
+    background-color: #f5f8fa; /* Light background for header */
+    font-weight: bold;
+    font-size: 1em; /* Adjust font size */
+  }
+  
+  .employee-table td {
+    background-color: #fff; /* White background for table rows */
+    font-size: 0.95em; /* Adjust font size slightly smaller */
+    color: #333; /* Darker text color for contrast */
+  }
+  
+  .employee-table tr:nth-child(even) {
+    background-color: #f9f9f9; /* Light grey background for alternating rows */
+  }
+  
+  .employee-table tr:hover {
+    background-color: #e9ecef; /* Highlight row on hover */
+  }
+  

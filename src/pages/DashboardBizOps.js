@@ -90,9 +90,9 @@ const DashboardBizOps = () => {
           <div className='cards'>
             <ViewCard
               icon="fa-users"
-              header="Drafts"
-              value={draft}
-              onClick={handleUnallocatedClick}
+              header="Unallocated"
+              value={todo}
+              onClick={handleToDoClick}
             />
           </div>
           <div className='cards'>
@@ -123,6 +123,29 @@ const DashboardBizOps = () => {
         <div className='last-edited'>
             <h2>Pick Where you left from,</h2>
               <div className='table'>
+                {/* Table Section */}
+                <h1 className='drafts'>Drafts</h1>
+                <Table celled striped className="employee-table">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.HeaderCell>Employee ID</Table.HeaderCell>
+                      <Table.HeaderCell>Employee Name</Table.HeaderCell>
+                      <Table.HeaderCell>Email</Table.HeaderCell>
+                      <Table.HeaderCell>Current Allocation %</Table.HeaderCell>
+                    </Table.Row>
+                  </Table.Header>
+
+                  <Table.Body>
+                    {allocatedEmployees.map((employee) => (
+                      <Table.Row key={employee.EmployeeID}>
+                        <Table.Cell>{employee.EmployeeID}</Table.Cell>
+                        <Table.Cell>{employee.EmployeeName}</Table.Cell>
+                        <Table.Cell>{employee.Email}</Table.Cell>
+                        <Table.Cell>{employee.Allocation}%</Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
               </div>
         </div>
       </div>
