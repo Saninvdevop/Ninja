@@ -106,26 +106,24 @@ const DashboardBizOps = () => {
           <div className='cards'>
             <ViewCard
               icon="fa-users"
-              header="Drafts"
+              header="Employees"
               value={draft}
-              onClick={handleUnallocatedClick}
+              onClick={handleEmployeeDetailsClick}
             />
           </div>
           <div className='cards'>
             <ViewCard
               icon="fa-users"
-              header="Drafts"
+              header="Projects"
               value={draft}
-              onClick={handleUnallocatedClick}
+              onClick={handleProjectAllocationClick}
             />
           </div>
         </div>
         <div className='last-edited'>
             <h2>Pick Where you left from,</h2>
-              <div className='table'>
-                {/* Table Section */}
-                <h1 className='drafts'>Drafts</h1>
-                <Table celled striped className="employee-table">
+            <div className='table'>
+            <Table celled striped>
                   <Table.Header>
                     <Table.Row>
                       <Table.HeaderCell>Employee ID</Table.HeaderCell>
@@ -146,7 +144,7 @@ const DashboardBizOps = () => {
                     ))}
                   </Table.Body>
                 </Table>
-              </div>
+            </div>
         </div>
       </div>
     </div>

@@ -70,6 +70,15 @@ const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
               Overview
             </Menu.Item>
             <Menu.Item
+              name="employees"
+              active={activeItem === '/employees'}
+              as={Link}
+              to="/employees" // Link to EmpPage.js route
+              className="item"
+            >
+              Employees
+            </Menu.Item>
+            <Menu.Item
               name="projects"
               active={activeItem === '/projects'}
               as={Link}
@@ -79,15 +88,7 @@ const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
               Project Allocation
             </Menu.Item>
             {/* New Menu Item for Employees */}
-            <Menu.Item
-              name="employees"
-              active={activeItem === '/employees'}
-              as={Link}
-              to="/employees" // Link to EmpPage.js route
-              className="item"
-            >
-              Employees
-            </Menu.Item>
+            
           </>
         )}
       </Menu>

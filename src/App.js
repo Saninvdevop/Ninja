@@ -15,6 +15,7 @@ import EmpPage from './pages/EmpPage'; // Import the new page
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 
+
 const App = () => {
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole')); // Initialize state from localStorage
 
