@@ -1,0 +1,47 @@
+.interactive-card {
+    min-width: 250px;
+    min-height: 185px;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 10px;
+    background-color: #ffffff;
+    color: #1f2937;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    text-align: center;
+    padding: 20px 0px 0px 0px;
+    cursor: pointer;
+  }
+  
+  .interactive-card:hover {
+    background-color: #f0f0f0; /* Slightly different background on hover */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px);
+  }
+  
+  .card-content {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-icon {
+    padding-left: 70%;
+    position: relative-inline;
+    font-size: 2em;
+    color: #4a90e2;
+  }
+  
+  .card-heading {
+    font-size: 2.5em;
+    margin: 10px 0;
+  }
+  
+  .card-value {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #1f2937;
+  }

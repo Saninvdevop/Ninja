@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Segment, Icon } from 'semantic-ui-react';
+import { Card, Table, Segment, Icon, Grid } from 'semantic-ui-react';
+import ViewCard from '../components/ViewCards/Viewcard'; // Import ViewCard component
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import './DashboardBizOps.css'; // Import CSS for consistent styling
 
 const DashboardBizOps = () => {
   const navigate = useNavigate(); // Initialize useNavigate for navigation
+  const [currentDate, setCurrentDate] = useState(''); // State to hold current date
 
   // Hardcoded data for the cards
   const [todo, setTodo] = useState();
@@ -17,6 +19,13 @@ const DashboardBizOps = () => {
   const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
   const [loading, setLoading] = useState(true); // Loading state
   const [totalemp, setTotalEmp] = useState();
+
+  useEffect(() => {
+  const today = new Date();
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  const formattedDate = today.toLocaleDateString('en-US', options);
+  setCurrentDate(formattedDate); // Removed the 's'
+}, []);
 
   // Fetch data from APIs
   useEffect(() => {
@@ -69,72 +78,54 @@ const DashboardBizOps = () => {
   };
 
   return (
-    <div className="dashboard-bizops-container">
-      <Segment className="content-wrapper">
-        {/* Personalized Greeting and Message */}
-        <div className="greeting-section">
-          <h2 className='bizopname'>Hello Ravi,</h2>
-          <p className="instruction-message">Pick where you left from</p>
+    <div className="main-layout">
+      <div className='right-content w-100'>
+        <div className='top-content'>
+          <div className='greeting'>
+            <h1>Hello Ravi,</h1>
+            <h2>{currentDate}</h2>
+          </div>
         </div>
-
-        {/* Cards Section */}
-        <Card.Group itemsPerRow={3} className="bizops-cards">
-          <Card className="interactive-card" onClick={handleUnallocatedClick}>
-            <Card.Content>
-              <Icon name="users" className="card-icon" />
-              <Card.Header className="card-heading">Drafts</Card.Header>
-              <Card.Description className="card-value">{draft}</Card.Description>
-            </Card.Content>
-          </Card>
-          <Card className="interactive-card" onClick={handleToDoClick}>
-            <Card.Content>
-              <Icon name="edit" className="card-icon" />
-              <Card.Header className="card-heading">0% Allocated</Card.Header>
-              <Card.Description className="card-value1">{todo}</Card.Description>
-            </Card.Content>
-          </Card>
-          {/* Updated Project Allocation Card with onClick handler */}
-          <Card className="interactive-card" onClick={handleProjectAllocationClick}>
-            <Card.Content>
-              <Icon name="briefcase" className="card-icon" />
-              <Card.Header className="card-heading">Project Allocation</Card.Header>
-              <Card.Description className="card-value2">{activeProjects}</Card.Description>
-            </Card.Content>
-          </Card>
-          {/* New Card for Employee Details */}
-          <Card className="interactive-card" onClick={handleEmployeeDetailsClick}>
-            <Card.Content>
-              <Icon name="users" className="card-icon" />
-              <Card.Header className="card-heading">Employee Details</Card.Header>
-              <Card.Description className="card-value3">Click to view</Card.Description>
-            </Card.Content>
-          </Card>
-        </Card.Group>
-
-        {/* Table Section */}
-        <h1 className='drafts'>Drafts</h1>
-        <Table celled striped className="employee-table">
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell>Employee ID</Table.HeaderCell>
-              <Table.HeaderCell>Employee Name</Table.HeaderCell>
-              <Table.HeaderCell>Email</Table.HeaderCell>
-              <Table.HeaderCell>Current Allocation %</Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-
-          <Table.Body>
-            {allocatedEmployees.map((employee) => (
-              <Table.Row key={employee.EmployeeID}>
-                <Table.Cell>{employee.EmployeeID}</Table.Cell>
-                <Table.Cell>{employee.EmployeeName}</Table.Cell>
-                <Table.Cell>{employee.Email}</Table.Cell>
-                <Table.Cell>{employee.Allocation}%</Table.Cell>
-              </Table.Row>
-            ))}
-          </Table.Body>
-        </Table>
-      </Segment>
+        <div className='bottom-content-cards'>
+          <div className='cards'>
+            <ViewCard
+              icon="fa-users"
+              header="Drafts"
+              value={draft}
+              onClick={handleUnallocatedClick}
+            />
+          </div>
+          <div className='cards'>
+            <ViewCard
+              icon="fa-users"
+              header="Drafts"
+              value={draft}
+              onClick={handleUnallocatedClick}
+            />
+          </div>
+          <div className='cards'>
+            <ViewCard
+              icon="fa-users"
+              header="Drafts"
+              value={draft}
+              onClick={handleUnallocatedClick}
+            />
+          </div>
+          <div className='cards'>
+            <ViewCard
+              icon="fa-users"
+              header="Drafts"
+              value={draft}
+              onClick={handleUnallocatedClick}
+            />
+          </div>
+        </div>
+        <div className='last-edited'>
+            <h2>Pick Where you left from,</h2>
+              <div className='table'>
+              </div>
+        </div>
+      </div>
     </div>
   );
 };

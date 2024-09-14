@@ -17,6 +17,7 @@
   transition: width 0.3s ease-in-out; /* Smooth width transition */
 }
 
+
 .logo-container {
   text-align: center;
   padding: 20px 0 30px; /* Add padding on top, left-right, and extra on the bottom */
@@ -42,6 +43,11 @@
   border-radius: 8px; /* Rounded corners for hover effect */
   margin-bottom: 10px; /* Add spacing between items */
   display: block; /* Ensure items are block-level elements */
+}
+
+.sidebar .item {
+  font-size: 1.3rem; /* Increase font size for menu items */
+  padding: 18px 24px; /* Increase padding for better spacing */
 }
 
 .sidebar .item:hover {
