@@ -25,7 +25,7 @@ const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
       </div>
 
       {/* Menu items in the middle */}
-      <Menu vertical pointing secondary className="navbar-menu">
+      <Menu vertical pointing secondary className="navbar-menu" style={{width: "auto"}}>
         {userRole === 'leader' && (
           <>
             <Menu.Item

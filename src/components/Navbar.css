@@ -29,7 +29,9 @@
   border-radius: 10px;
   padding-bottom: 10px; /* Optional: Extra padding at the bottom of the logo itself */
 }
-
+.ui .vertical .menu{
+  width: 18% !important;
+}
 /* Menu item styles */
 .sidebar .navbar-menu {
   flex-grow: 1; /* Allow menu to grow in height */
