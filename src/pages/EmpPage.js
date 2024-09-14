@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, Input, Dropdown, Icon } from 'semantic-ui-react'; // Import Icon component for back arrow
 import './EmpPage.css';
-import debounce from 'lodash.debounce';
-
 
 const EmpPage = () => {
   const navigate = useNavigate(); // For navigation to employee details
@@ -27,37 +25,45 @@ const EmpPage = () => {
   }, [filter]); // Re-fetch data whenever the filter changes
 
   // Function to fetch data based on filter
-  useEffect(() => {
-    fetchDataBasedOnFilter(filter);
-  }, [filter]); // Re-fetch data whenever the filter changes
-
-  // Fetch data when filter or search term changes
-  useEffect(() => {
-    fetchDataBasedOnFilter(filter);
-  }, [filter, searchTerm]);
-
   const fetchDataBasedOnFilter = async (filter) => {
     try {
       setLoading(true);
       let response;
 
-      const searchQuery = searchTerm ? `&search=${searchTerm}` : '';
-
       switch (filter) {
-        case 'totally_unallocated':
-          response = await fetch(`http://localhost:5000/employees/todo?filter=totally_unallocated${searchQuery}`);
+        case 'totally_unallocated': // Use /todo API for "Totally Unallocated" filter
+          response = await fetch('http://localhost:5000/employees/todo');
           break;
         case 'draft':
-          response = await fetch(`http://localhost:5000/employees/drafts?filter=draft${searchQuery}`);
+          response = await fetch('http://localhost:5000/employees/drafts');
           break;
-        case 'allocated':
-          response = await fetch(`http://localhost:5000/employees/drafts?filter=allocated${searchQuery}`);
-          break;
-        case 'benched':
-          response = await fetch(`http://localhost:5000/employees/client/innover?filter=benched${searchQuery}`);
-          break;
+        case 'allocated': // Updated filter for "Allocated"
+          response = await fetch('http://localhost:5000/employees/drafts');
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const allocatedEmployees = await response.json();
+          // Filter employees with 100% allocation only
+          const fullyAllocatedEmployees = allocatedEmployees.filter(employee => employee.Allocation === 100);
+          setEmployeeData(fullyAllocatedEmployees);
+          setFilteredEmployees(fullyAllocatedEmployees); // Initialize filtered employees
+          setCount(fullyAllocatedEmployees.length);
+          setLoading(false);
+          return; // Exit after processing this filter case
+        case 'benched': // New filter for "Benched"
+          response = await fetch('http://localhost:5000/employees/client/innover'); // Use the new API endpoint
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const benchedEmployees = await response.json(); // Fetch employees associated with "Innover"
+          setEmployeeData(benchedEmployees);
+          setFilteredEmployees(benchedEmployees); // Initialize filtered employees
+          setCount(benchedEmployees.length);
+          setLoading(false);
+          return; // Exit after processing this filter case
+        case 'all':
         default:
-          response = await fetch(`http://localhost:5000/employees?filter=all${searchQuery}`);
+          response = await fetch('http://localhost:5000/employees');
           break;
       }
 
@@ -67,25 +73,14 @@ const EmpPage = () => {
 
       const data = await response.json();
       setEmployeeData(data);
-      setFilteredEmployees(data);
+      setFilteredEmployees(data); // Initialize filtered employees
+      setCount(data.length);
     } catch (error) {
       console.error('Fetch error:', error);
     } finally {
       setLoading(false);
     }
   };
-
-  // Debounce the search input (wait for 300ms after user stops typing)
-  const debouncedSearch = debounce((value) => {
-    setSearchTerm(value);
-  }, 300);
-
-  // Update search term on input change
-  const handleSearchChange = (e) => {
-    const searchValue = e.target.value;
-    debouncedSearch(searchValue);
-  };
-
 
   // Sorting logic
   const handleSort = (column) => {
@@ -104,6 +99,13 @@ const EmpPage = () => {
     setFilteredEmployees(sortedData);
     setSortColumn(column);
     setSortDirection(direction);
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    const searchValue = e.target.value;
+    setSearchTerm(searchValue);
+    applyFilters(searchValue);
   };
 
   // Apply search and filter logic
@@ -181,51 +183,52 @@ const EmpPage = () => {
       <div className='breadcrumb'>
         <h2 className="breadcrumb-text">Employees</h2>
       </div>
-    {/* Tabs and Search Bar Section */}
-    <div className='table-filter-layout'>
-          <div className="filter-tabs">
-            {/* Always render the tabs */}
-            <button
-              className={`tab ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => setFilter('all')}
-            >
-              All
-            </button>
-            <button
-              className={`tab ${filter === 'totally_unallocated' ? 'active' : ''}`}
-              onClick={() => setFilter('totally_unallocated')}
-            >
-              Totally Unallocated
-            </button>
-            <button
-              className={`tab ${filter === 'draft' ? 'active' : ''}`}
-              onClick={() => setFilter('draft')}
-            >
-              Draft
-            </button>
-            <button
-              className={`tab ${filter === 'allocated' ? 'active' : ''}`}
-              onClick={() => setFilter('allocated')}
-            >
-              Allocated
-            </button>
-            <button
-              className={`tab ${filter === 'benched' ? 'active' : ''}`}
-              onClick={() => setFilter('benched')}
-            >
-              Benched
-            </button>
-          </div>
 
-          {/* Search Bar */}
-          <Input
-            icon="search"
-            placeholder="Search by name, email, or ID..."
-            onChange={handleSearchChange} // Using debounced handler
-            className="search-bar"
-            style={{ marginBottom: '20px' }}
-          />
-        </div>
+      <div className='table-filter-layout'>
+      {/* Filter Tabs */}
+      <div className="filter-tabs">
+        <button
+          className={`tab ${filter === 'all' ? 'active' : ''}`}
+          onClick={() => setFilter('all')}
+        >
+          All
+        </button>
+        <button
+          className={`tab ${filter === 'totally_unallocated' ? 'active' : ''}`}
+          onClick={() => setFilter('totally_unallocated')}
+        >
+          Totally Unallocated
+        </button>
+        <button
+          className={`tab ${filter === 'draft' ? 'active' : ''}`}
+          onClick={() => setFilter('draft')}
+        >
+          Draft
+        </button>
+        <button
+          className={`tab ${filter === 'allocated' ? 'active' : ''}`}
+          onClick={() => setFilter('allocated')}
+        >
+          Allocated
+        </button>
+        <button
+          className={`tab ${filter === 'benched' ? 'active' : ''}`}
+          onClick={() => setFilter('benched')}
+        >
+          Benched
+        </button>
+      </div>
+
+      {/* Search Bar */}
+      <Input
+        icon="search"
+        placeholder="Search by name, email, or ID..."
+        value={searchTerm}
+        onChange={handleSearchChange}
+        className="search-bar" /* Updated to add the correct class */
+        style={{ marginBottom: '20px' }}
+      />
+    </div>
     {/* Employee Table Section */}
     <div className='table'>
       <Table celled striped sortable>
