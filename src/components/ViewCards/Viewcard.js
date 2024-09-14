@@ -6,8 +6,8 @@ const Viewcards = ({ icon, header, value, onClick }) => {
     <div className="interactive-card" onClick={onClick}>
       <div className="card-content">
         <i className={`fas ${icon} card-icon`}></i> 
-        <h3 className="card-heading">{header}</h3>
-        <p className="card-value">{value}</p>
+        <h3 className="card-heading" style={{ textAlign: 'left' }}>{header}</h3>
+        <p className="card-value" style={{ textAlign: 'left' }}>{value}</p>
       </div>
     </div>
   );
