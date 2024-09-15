@@ -19,8 +19,8 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
     const fetchEmployeeData = async () => {
       try {
         setLoading(true);
-        const allocatedResponse = await fetch('http://localhost:5000/clients');
-        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
+        const allocatedResponse = await fetch('http://localhost:8080/clients');
+        const benchedResponse = await fetch('http://localhost:8080/employees/todo');
         
         if (!allocatedResponse.ok || !benchedResponse.ok) {
           throw new Error('Network response was not ok');
@@ -97,7 +97,8 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
   };
 
   return (
-    <div className="projects-container">
+    <div className='main-layout'>
+      <div className="projects-container">
       {/* Back Arrow Icon */}
       <Icon  name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
 
@@ -219,6 +220,7 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
           />
         </Modal.Actions>
       </Modal>
+    </div>
     </div>
   );
 };

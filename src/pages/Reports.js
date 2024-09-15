@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Dropdown } from 'semantic-ui-react';
+import { Table, Dropdown, Button} from 'semantic-ui-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CSVLink } from 'react-csv'; // Import CSVLink from react-csv
+import * as XLSX from 'xlsx'; 
 import './Reports.css';
 
 const Reports = () => {
@@ -19,8 +19,8 @@ const Reports = () => {
     const fetchCombinedEmployeeData = async () => {
       try {
         const [allocatedResponse, benchResponse] = await Promise.all([
-          fetch('http://localhost:5000/employees/drafts'),
-          fetch('http://localhost:5000/employees/todo')
+          fetch('http://localhost:8080/employees/drafts'),
+          fetch('http://localhost:8080/employees/todo')
         ]);
 
         if (!allocatedResponse.ok || !benchResponse.ok) {
@@ -66,7 +66,7 @@ const Reports = () => {
         setFilteredData(bench); // Show unallocated (bench) data
       } else if (value === 'bench') {
         // Fetch employees associated with client "Innover" using the new API endpoint
-        const response = await fetch('http://localhost:5000/employees/client/innover');
+        const response = await fetch('http://localhost:8080/employees/client/innover');
         if (!response.ok) {
           throw new Error('Failed to fetch employees for "Bench" filter');
         }
@@ -84,18 +84,28 @@ const Reports = () => {
     navigate('/employee/' + employee.EmployeeID, { state: { employee: { ...employee, allocation: employee.Allocation } } });
   };
 
-  const csvData = filteredData.map((employee) => ({
-    'Employee ID': employee.EmployeeID,
-    'Employee Name': employee.EmployeeName,
-    Email: employee.Email,
-    'Current Allocation %': employee.Allocation, // Ensure this matches the field name from the API
-  }));
+  // Function to handle Excel export
+  const downloadExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredData.map((employee) => ({
+      'Employee ID': employee.EmployeeID,
+      'Employee Name': employee.EmployeeName,
+      'Email': employee.Email,
+      'Current Allocation %': employee.Allocation, // Ensure this matches the field name from the API
+    })));
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Employee Data');
+    
+    // Save the Excel file
+    XLSX.writeFile(workbook, 'employee-reports.xlsx');
+  };
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="reports-container">
+    <div className='main-layout'>
+      <div className="reports-container">
       <h2 className="reports-header">Reports</h2>
 
       <Dropdown
@@ -112,13 +122,12 @@ const Reports = () => {
         className="filter-dropdown"
       />
 
-      <CSVLink 
-        data={csvData} 
-        filename={"employee-reports.csv"} 
-        className="ui button primary csv-download-button"
-      >
-        Download CSV
-      </CSVLink>
+      <Button 
+          className="ui button primary excel-download-button" 
+          onClick={downloadExcel}
+        >
+          Download Excel
+        </Button>
 
       <Table celled striped className="reports-employee-table">
         <Table.Header>
@@ -147,6 +156,7 @@ const Reports = () => {
           )}
         </Table.Body>
       </Table>
+    </div>
     </div>
   );
 };

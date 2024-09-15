@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Card, Icon, Table, Button, Modal, Form, Dropdown, Popup } from 'semantic-ui-react';
-import { Doughnut } from 'react-chartjs-2';
 import 'chart.js/auto';
 import './EmployeeDetails.css';
 import { IoSaveOutline } from "react-icons/io5"; // Import Save Icon
@@ -635,7 +634,10 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
               placeholder="Enter allocation percentage"
               value={newAllocation.allocation}
               onChange={(e) => {
-                const allocationValue = e.target.value;
+                // Parse the value and ensure it's between 0 and the remaining allocation
+                let allocationValue = Math.max(0, Math.min(e.target.value, 100 - totalAllocationPercentage)); 
+
+                // Update the newAllocation state with the valid allocation value
                 setNewAllocation((prev) => ({ ...prev, allocation: allocationValue }));
 
                 // Update status based on conditions dynamically
@@ -647,18 +649,32 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
                   setNewAllocation((prev) => ({ ...prev, status: 'Client Unallocated' }));
                 }
               }}
+              min={0} // Prevent negative values
+              max={100 - totalAllocationPercentage} // Set the maximum to the remaining allocation
               required
             />
+
+            {/* Display remaining allocation */}
+            {newAllocation.allocation && (
+              <p style={{ color: 'gray', fontSize: '12px', marginTop: '5px' }}>
+                {100 - totalAllocationPercentage - newAllocation.allocation}% allocation remaining.
+              </p>
+            )}
+
             <Form.Input
               label="Billing Rate (USD)"
               placeholder="Enter billing rate"
               type="number"
               value={newAllocation.billingRate}
-              onChange={(e) =>
-                setNewAllocation({ ...newAllocation, billingRate: e.target.value })
-              }
+              onChange={(e) => {
+                // Ensure the billing rate is always non-negative
+                const billingRate = Math.max(0, e.target.value);
+                setNewAllocation((prev) => ({ ...prev, billingRate }));
+              }}
+              min={0} // Prevent negative values
               required
             />
+
             <Form.Input
               label="Time Sheet Approver"
               placeholder="Enter Time Sheet Approver"

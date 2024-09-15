@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Input, Dropdown, Icon } from 'semantic-ui-react'; // Import Icon component for back arrow
+import { Table, Input, Dropdown, Icon, Button } from 'semantic-ui-react'; // Import Icon component for back arrow
 import './EmpPage.css';
+import * as XLSX from 'xlsx';
 
 const EmpPage = () => {
   const navigate = useNavigate(); // For navigation to employee details
@@ -51,16 +52,20 @@ const EmpPage = () => {
           setLoading(false);
           return; // Exit after processing this filter case
         case 'benched': // New filter for "Benched"
-          response = await fetch('http://localhost:8080/employees/client/innover'); // Use the new API endpoint
+          response = await fetch('http://localhost:8080/employees/drafts');
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
-          const benchedEmployees = await response.json(); // Fetch employees associated with "Innover"
+          const allEmployees = await response.json();
+          // Filter employees where Client is "Innover" and Project is "Benched"
+          const benchedEmployees = allEmployees.filter(employee =>
+            employee.ClientName === 'Innover' && employee.ProjectName === 'Benched'
+          );
           setEmployeeData(benchedEmployees);
-          setFilteredEmployees(benchedEmployees); // Initialize filtered employees
+          setFilteredEmployees(benchedEmployees); 
           setCount(benchedEmployees.length);
           setLoading(false);
-          return; // Exit after processing this filter case
+          return;
         case 'all':
         default:
           response = await fetch('http://localhost:8080/employees');
@@ -160,6 +165,21 @@ const EmpPage = () => {
     { key: 'allocated', text: 'Allocated', value: 'allocated' }, // Updated filter option for Allocated
     { key: 'benched', text: 'Benched', value: 'benched' }, // New filter option for Benched
   ];
+
+  // Function to download current filtered and sorted data as Excel
+  const downloadExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredEmployees.map((employee) => ({
+      'Employee ID': employee.EmployeeID,
+      'Employee Name': employee.EmployeeName,
+      'Email': employee.Email,
+      'Current Allocation %': employee.Allocation,
+    })));
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees');
+    
+    XLSX.writeFile(workbook, 'employee-data.xlsx');
+  };
   const shouldShowBackArrow = window.history.length > 1;
   // Pagination logic
   const indexOfLastEmployee = currentPage * rowsPerPage;
@@ -220,6 +240,16 @@ const EmpPage = () => {
       </div>
 
       {/* Search Bar */}
+      {/* <Button
+        icon
+        labelPosition="left"
+        color="blue"
+        onClick={downloadExcel}
+        style={{ margin: '20px' }}
+      >
+      <Icon name="download" />
+        Download to Excel
+      </Button> */}
       <Input
         icon="search"
         placeholder="Search by name, email, or ID..."
@@ -228,6 +258,7 @@ const EmpPage = () => {
         className="search-bar" /* Updated to add the correct class */
         style={{ marginBottom: '20px' }}
       />
+      
     </div>
     {/* Employee Table Section */}
     <div className='table'>

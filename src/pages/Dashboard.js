@@ -21,7 +21,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="dashboard-page-container">
+    <div className='main-layout'>
+      <div className="dashboard-page-container">
       <div className="dashboard-card-group">
         {/* Employee Card */}
         <div className="dashboard-card">
@@ -80,6 +81,7 @@ const Dashboard = () => {
         </div>
 
       </div>
+    </div>
     </div>
   );
 };
