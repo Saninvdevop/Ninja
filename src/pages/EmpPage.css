@@ -1,29 +1,46 @@
 .breadcrumb {
-    display: flex;
-    align-items: center; /* Vertically center the icon and text */
-    font-size: 1.5em; /* Adjust font size for the breadcrumb */
-  }
-  
-  .breadcrumb .breadcrumb-text {
-    margin-bottom: 10px; /* Remove default margin */
-    font-size: 2em;
-    color: #000000;
-  }
-  
-  .breadcrumb .breadcrumb-text:hover {
-    text-decoration: underline; /* Add underline effect on hover to indicate it's clickable */
-  }
-  
-  .breadcrumb .breadcrumb-text, .breadcrumb .icon {
-    cursor: pointer; /* Change cursor to pointer to show it's clickable */
-    display: flex;
-    align-items: center;
-  }
-  
-  .breadcrumb .icon {
-    color: #000000;
-    margin-right: 10px; /* Spacing between icon and text */
-  }
+  display: flex;
+  align-items: center; /* Vertically center the icon and text */
+  font-size: 1.5em; /* Adjust font size for the breadcrumb */
+  color: #000000; /* Set breadcrumb text color */
+}
+
+.breadcrumb .breadcrumb-text {
+  margin: 0; /* Remove default margin */
+  font-size: 2em;
+  color: #000000; /* Same color as the breadcrumb icon */
+  font-weight: 500; /* Adjust the weight to make it slightly bold */
+}
+
+.breadcrumb .breadcrumb-divider{
+  margin: 0 10px 0 10px; /* Space between items in the breadcrumb */
+  font-size: 2.5em;
+  color: #000000; /* Same color as the breadcrumb icon */
+  font-weight: 500; /* Adjust the weight to make it slightly bold */
+}
+
+.breadcrumb .breadcrumb-text:hover {
+  text-decoration: underline; /* Add underline effect on hover */
+  color: #000000; /* Slightly darker blue on hover for a visual feedback */
+}
+
+.breadcrumb .breadcrumb-text, .breadcrumb .icon {
+  cursor: pointer; /* Change cursor to pointer to show it's clickable */
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease; /* Smooth color transition on hover */
+}
+
+.breadcrumb .icon {
+  color: #000000; /* Set the same blue color for the icon */
+  margin-right: 10px; /* Spacing between icon and text */
+  transition: color 0.2s ease; /* Smooth color transition on hover */
+}
+
+.breadcrumb .icon:hover {
+  color: #000000; /* Change icon color slightly on hover */
+}
+
 
   .table-filter-layout {
     display: flex;
