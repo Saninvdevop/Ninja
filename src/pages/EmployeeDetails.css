@@ -83,7 +83,18 @@
   display: flex;
   align-items: center;
   margin-bottom: 20px;
+  position: relative; /* This allows absolute positioning of child elements */
 }
+
+.info.icon {
+  position: absolute; /* Set absolute positioning */
+  top: 10px; /* Adjust the value based on desired vertical alignment */
+  right: 10px; /* Adjust the value based on desired horizontal alignment */
+  cursor: pointer; /* Show pointer to indicate it's clickable */
+  font-size: 1.5em; /* Adjust size if needed */
+  border-radius: 10%; /* Make the icon circular */
+}
+
 
 .profile-img {
   width: 100px;
@@ -110,8 +121,9 @@
 }
 
 /* Flexbox to align top-info and contact-info */
-.top-info, .contact-info {
-  display: flex;
+.top-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   justify-content: space-between;
   align-items: center;
   
@@ -121,7 +133,7 @@
   display: flex;
   align-items: center;
   flex: 1; /* Allow the items to flex and take equal space */
-  padding: 0 10px;
+  padding: 10px;
 }
 
 .info-item div {
@@ -161,6 +173,7 @@
 .button-section .ui.button {
   width: 48%; /* Make the buttons take equal width */
 }
+
 
 
 .allocation-chart {

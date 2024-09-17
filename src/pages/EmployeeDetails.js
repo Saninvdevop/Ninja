@@ -416,6 +416,20 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
                 <h2>Oliver Smith</h2>
                 <p className="employee-id">ID: 12345</p>
               </div>
+              {/* Info Icon with Popup */}
+              <Popup
+                trigger={<i className="info icon" style={{ cursor: 'pointer', fontSize: '1.5em' }} />}
+                content={
+                  <div>
+                    <p><strong>Joining Date:</strong> Jan 1, 2022</p>
+                    <p><strong>Ending Date:</strong> Dec 31, 2024</p>
+                    <p><strong>Hard Skills:</strong> Data Analysis, Python, SQL</p>
+                    <p><strong>Soft Skills:</strong> Teamwork, Communication, Problem-solving</p>
+                  </div>
+                }
+                position="top right"
+                on="click" // Click to show the popup
+              />
             </div>
 
             <div className="top-info">
@@ -442,9 +456,6 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
                   <p>Advance Analytics</p>
                 </div>
               </div>
-            </div>
-
-            <div className="contact-info">
               <div className="info-item">
                 <Icon name="mail" size="large" />
                 <div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Input, Dropdown, Icon, Button } from 'semantic-ui-react'; // Import Icon component for back arrow
+import { Table, Input, Button } from 'semantic-ui-react';
 import './EmpPage.css';
 import * as XLSX from 'xlsx';
 
@@ -15,11 +15,11 @@ const EmpPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [filter, setFilter] = useState('all');
-  const [count, setCount] = useState();
+  const [count, setCount] = useState(0);
   const [sortColumn, setSortColumn] = useState(null); // Track the currently sorted column
   const [sortDirection, setSortDirection] = useState(null); // Track the sort direction (asc/desc)
   const [currentPage, setCurrentPage] = useState(1); // Track current page
-  const [rowsPerPage] = useState(5); // Rows per page set to 20
+  const rowsPerPage = 10; // Rows per page set to 10
 
   useEffect(() => {
     fetchDataBasedOnFilter(filter);
@@ -32,14 +32,14 @@ const EmpPage = () => {
       let response;
 
       switch (filter) {
-        case 'totally_unallocated': // Use /todo API for "Totally Unallocated" filter
-          response = await fetch('http://localhost:5000/employees/todo');
+        case 'unallocated': // Use /todo API for "Unallocated" filter
+          response = await fetch('http://localhost:8080/employees/todo');
           break;
         case 'draft':
-          response = await fetch('http://localhost:5000/employees/drafts');
+          response = await fetch('http://localhost:8080/employees/drafts');
           break;
         case 'allocated': // Updated filter for "Allocated"
-          response = await fetch('http://localhost:5000/employees/drafts');
+          response = await fetch('http://localhost:8080/employees/drafts');
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -51,24 +51,24 @@ const EmpPage = () => {
           setCount(fullyAllocatedEmployees.length);
           setLoading(false);
           return; // Exit after processing this filter case
-        case 'benched': // New filter for "Benched"
-          response = await fetch('http://localhost:5000/employees/drafts');
+        case 'bench': // New filter for "Benched"
+          response = await fetch('http://localhost:8080/employees/drafts');
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
           const allEmployees = await response.json();
           // Filter employees where Client is "Innover" and Project is "Benched"
-          const benchedEmployees = allEmployees.filter(employee =>
+          const benchEmployees = allEmployees.filter(employee =>
             employee.ClientName === 'Innover' && employee.ProjectName === 'Benched'
           );
-          setEmployeeData(benchedEmployees);
-          setFilteredEmployees(benchedEmployees); 
-          setCount(benchedEmployees.length);
+          setEmployeeData(benchEmployees);
+          setFilteredEmployees(benchEmployees); 
+          setCount(benchEmployees.length);
           setLoading(false);
           return;
         case 'all':
         default:
-          response = await fetch('http://localhost:5000/employees');
+          response = await fetch('http://localhost:8080/employees');
           break;
       }
 
@@ -134,12 +134,14 @@ const EmpPage = () => {
     });
 
     setFilteredEmployees(filtered);
+    setCount(filtered.length);
     setCurrentPage(1); // Reset to first page when filtering
   };
 
   // Handle filter dropdown change
   const handleFilterChange = (e, { value }) => {
     setFilter(value); // Update filter, triggering useEffect to fetch new data
+    setSearchTerm(''); // Reset search term when changing filter
   };
 
   // Handle navigation to individual employee details
@@ -157,13 +159,13 @@ const EmpPage = () => {
     navigate(-1); // Go back to the previous page
   };
 
-  // Filter options for the dropdown
+  // Filter options for the dropdown (if you decide to use it)
   const filterOptions = [
     { key: 'all', text: 'All', value: 'all' },
-    { key: 'totally_unallocated', text: 'Totally Unallocated', value: 'totally_unallocated' },
+    { key: 'unallocated', text: 'Unallocated', value: 'unallocated' },
     { key: 'draft', text: 'Draft', value: 'draft' },
     { key: 'allocated', text: 'Allocated', value: 'allocated' }, // Updated filter option for Allocated
-    { key: 'benched', text: 'Benched', value: 'benched' }, // New filter option for Benched
+    { key: 'bench', text: 'Bench', value: 'bench' }, // New filter option for Benched
   ];
 
   // Function to download current filtered and sorted data as Excel
@@ -180,14 +182,18 @@ const EmpPage = () => {
     
     XLSX.writeFile(workbook, 'employee-data.xlsx');
   };
-  const shouldShowBackArrow = window.history.length > 1;
+
   // Pagination logic
   const indexOfLastEmployee = currentPage * rowsPerPage;
   const indexOfFirstEmployee = indexOfLastEmployee - rowsPerPage;
   const currentEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
 
   // Handle page change
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const paginate = (pageNumber) => {
+    if (pageNumber < 1) return;
+    if (pageNumber > totalPages) return;
+    setCurrentPage(pageNumber);
+  };
 
   // Generate pagination numbers
   const totalPages = Math.ceil(filteredEmployees.length / rowsPerPage);
@@ -198,127 +204,160 @@ const EmpPage = () => {
 
   return (
     <div className="main-layout">
-    <div className='right-content'>
-      {/* Breadcrumb Section */}
-      <div className='breadcrumb'>
-        <h2 className="breadcrumb-text">Employees</h2>
-      </div>
+      <div className='right-content'>
+        {/* Breadcrumb Section */}
+        <div className='breadcrumb'>
+          <h2 className="breadcrumb-text">Employees</h2>
+        </div>
 
-      <div className='table-filter-layout'>
-      {/* Filter Tabs */}
-      <div className="filter-tabs">
-        <button
-          className={`tab ${filter === 'all' ? 'active' : ''}`}
-          onClick={() => setFilter('all')}
-        >
-          All
-        </button>
-        <button
-          className={`tab ${filter === 'totally_unallocated' ? 'active' : ''}`}
-          onClick={() => setFilter('totally_unallocated')}
-        >
-          Totally Unallocated
-        </button>
-        <button
-          className={`tab ${filter === 'draft' ? 'active' : ''}`}
-          onClick={() => setFilter('draft')}
-        >
-          Draft
-        </button>
-        <button
-          className={`tab ${filter === 'allocated' ? 'active' : ''}`}
-          onClick={() => setFilter('allocated')}
-        >
-          Allocated
-        </button>
-        <button
-          className={`tab ${filter === 'benched' ? 'active' : ''}`}
-          onClick={() => setFilter('benched')}
-        >
-          Benched
-        </button>
-      </div>
-
-      {/* Search Bar */}
-      {/* <Button
-        icon
-        labelPosition="left"
-        color="blue"
-        onClick={downloadExcel}
-        style={{ margin: '20px' }}
-      >
-      <Icon name="download" />
-        Download to Excel
-      </Button> */}
-      <Input
-        icon="search"
-        placeholder="Search by name, email, or ID..."
-        value={searchTerm}
-        onChange={handleSearchChange}
-        className="search-bar" /* Updated to add the correct class */
-        style={{ marginBottom: '20px' }}
-      />
-      
-    </div>
-    {/* Employee Table Section */}
-    <div className='table'>
-      <Table celled striped sortable>
-        <Table.Header>
-          <Table.Row>
-            <Table.HeaderCell
-              sorted={sortColumn === 'EmployeeID' ? sortDirection : null}
-              onClick={() => handleSort('EmployeeID')}
+        <div className='table-filter-layout'>
+          {/* Filter Tabs */}
+          <div className="filter-tabs">
+            <button
+              className={`tab ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
             >
-              Employee ID
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              sorted={sortColumn === 'EmployeeName' ? sortDirection : null}
-              onClick={() => handleSort('EmployeeName')}
-            >
-              Employee Name
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              sorted={sortColumn === 'Email' ? sortDirection : null}
-              onClick={() => handleSort('Email')}
-            >
-              Email
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              sorted={sortColumn === 'Allocation' ? sortDirection : null}
-              onClick={() => handleSort('Allocation')}
-            >
-              Current Allocation %
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {filteredEmployees.map((employee) => (
-            <Table.Row key={employee.EmployeeID} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
-              <Table.Cell>{employee.EmployeeID}</Table.Cell>
-              <Table.Cell>{employee.EmployeeName}</Table.Cell>
-              <Table.Cell>{employee.Email}</Table.Cell>
-              <Table.Cell>{employee.Allocation}%</Table.Cell>
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </Table>
-    </div>
-    {/* Pagination Section */}
-    <div className="pagination">
-        <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>
-          Back
-        </button>
-        {pageNumbers.map(number => (
-          <button key={number} onClick={() => paginate(number)} className={currentPage === number ? 'active' : ''}>
-            {number}
+              All
             </button>
-          ))}
-          <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages}>
-            Next
-          </button>
+            <button
+              className={`tab ${filter === 'unallocated' ? 'active' : ''}`}
+              onClick={() => setFilter('unallocated')}
+            >
+              Unallocated
+            </button>
+            <button
+              className={`tab ${filter === 'draft' ? 'active' : ''}`}
+              onClick={() => setFilter('draft')}
+            >
+              Draft
+            </button>
+            <button
+              className={`tab ${filter === 'allocated' ? 'active' : ''}`}
+              onClick={() => setFilter('allocated')}
+            >
+              Allocated
+            </button>
+            <button
+              className={`tab ${filter === 'bench' ? 'active' : ''}`}
+              onClick={() => setFilter('bench')}
+            >
+              Bench
+            </button>
+          </div>
+
+          {/* Search and Download Container */}
+          <div className="search-download-container">
+            {/* Search Bar */}
+            <Input
+              icon="search"
+              placeholder="Search by name, email, or ID..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="search-bar"
+            />
+
+            {/* Download Button */}
+            <Button
+              icon
+              labelPosition="left"
+              color="blue"
+              onClick={downloadExcel}
+              className="download-button"
+            >
+              <i className="download icon"></i>
+              Download
+            </Button>
+          </div>
+        </div>
+
+        {/* Employee Table Section */}
+        <div className='table'>
+          <Table celled striped sortable>
+            <Table.Header>
+              <Table.Row>
+                <Table.HeaderCell
+                  sorted={sortColumn === 'EmployeeID' ? sortDirection : null}
+                  onClick={() => handleSort('EmployeeID')}
+                >
+                  Employee ID
+                </Table.HeaderCell>
+                <Table.HeaderCell
+                  sorted={sortColumn === 'EmployeeName' ? sortDirection : null}
+                  onClick={() => handleSort('EmployeeName')}
+                >
+                  Employee Name
+                </Table.HeaderCell>
+                <Table.HeaderCell
+                  sorted={sortColumn === 'Email' ? sortDirection : null}
+                  onClick={() => handleSort('Email')}
+                >
+                  Email
+                </Table.HeaderCell>
+                <Table.HeaderCell
+                  sorted={sortColumn === 'Allocation' ? sortDirection : null}
+                  onClick={() => handleSort('Allocation')}
+                >
+                  Current Allocation %
+                </Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {loading ? (
+                <Table.Row>
+                  <Table.Cell colSpan="4" textAlign="center">
+                    Loading...
+                  </Table.Cell>
+                </Table.Row>
+              ) : currentEmployees.length > 0 ? (
+                currentEmployees.map((employee) => (
+                  <Table.Row key={employee.EmployeeID} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
+                    <Table.Cell>{employee.EmployeeID}</Table.Cell>
+                    <Table.Cell>{employee.EmployeeName}</Table.Cell>
+                    <Table.Cell>{employee.Email}</Table.Cell>
+                    <Table.Cell>{employee.Allocation}%</Table.Cell>
+                  </Table.Row>
+                ))
+              ) : (
+                <Table.Row>
+                  <Table.Cell colSpan="4" textAlign="center">
+                    No employees found.
+                  </Table.Cell>
+                </Table.Row>
+              )}
+            </Table.Body>
+          </Table>
+        </div>
+
+        {/* Pagination Section */}
+        {totalPages > 1 && (
+          <div className="pagination">
+            <button
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="pagination-button"
+            >
+              Back
+            </button>
+            {pageNumbers.map(number => (
+              <button
+                key={number}
+                onClick={() => paginate(number)}
+                className={`pagination-button ${currentPage === number ? 'active' : ''}`}
+              >
+                {number}
+              </button>
+            ))}
+            <button
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="pagination-button"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </div>
-  </div>
   );
 };
 

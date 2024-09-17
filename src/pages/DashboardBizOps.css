@@ -1,4 +1,9 @@
-.main-layout{
+/* Global Box Sizing for Consistency */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.main-layout {
   margin-left: 16%;
   background-color: #f5f8fa;
   min-height: 100vh; /* Full height for background */
@@ -7,51 +12,77 @@
   padding: 2% 2% 5px 4%;
 }
 
-.right-content{
+.right-content {
   box-sizing: border-box;
 }
 
-h1{
+h1 {
   font-weight: bold;
   letter-spacing: 1.5px;
   font-size: xx-large;
   text-align: left !important;
 }
-h2{
+
+h2 {
   font-weight: bold;
   font-size: x-large;
   text-align: left !important;
 }
-  
-  
-  .greeting-section h2 {
-    margin: 0;
-    color: #1f2937; /* Darker text color */
-    font-size: 2.8em; /* Larger greeting text */
-    font-weight: 700; /* Bold text */
-  }
-  
-  .instruction-message {
-    margin-top: 10px;
-    color: #6b7280; /* Subtle text color */
-    font-size: 1.4em; /* Slightly larger font size */
-    font-weight: 400; /* Regular weight for message */
-    position: relative !important;
-    right: 200px !important;
-  }
-  
-  .bottom-content-cards{
-    display: flex;
-    justify-content: space-between;
-    margin-top: 30px;
-  }
 
-  .last-edited{
-    margin-top: 20px;
-  }
+.greeting-section h2 {
+  margin: 0;
+  color: #1f2937; /* Darker text color */
+  font-size: 2.8em; /* Larger greeting text */
+  font-weight: 700; /* Bold text */
+}
 
-.last-edited{
+.instruction-message {
+  margin-top: 10px;
+  color: #6b7280; /* Subtle text color */
+  font-size: 1.4em; /* Slightly larger font size */
+  font-weight: 400; /* Regular weight for message */
+  position: relative !important;
+  right: 200px !important;
+}
+
+.bottom-content-cards {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+}
+
+.last-edited {
   margin-top: 20px;
+}
+
+/* Controls Styling */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Space between left and right */
+  width: 100%;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px; /* Uniform spacing between elements */
+}
+
+.left-controls {
+  flex: 1; /* Allow the filter to take up available space on the left */
+}
+
+.right-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Space between search input and download button */
+}
+
+.right-controls .ui.input {
+  flex: 1; /* Allow the search input to expand */
+  min-width: 200px; /* Ensure a minimum width for usability */
+}
+
+.right-controls .ui.button {
+  flex: 0 0 auto; /* Prevent the button from stretching */
 }
 
 .table {
@@ -86,4 +117,42 @@ h2{
 
 .table tr:hover {
   background-color: #e9ecef; /* Highlight row on hover */
+}
+
+.loader {
+  text-align: center;
+  padding: 50px 0;
+  font-size: 1.5em;
+  color: #555;
+}
+
+.error-message {
+  color: red;
+  text-align: center;
+  margin: 20px 0;
+  font-size: 1.2em;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .left-controls,
+  .right-controls {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .right-controls {
+    justify-content: flex-start; /* Align search and download to the start on small screens */
+  }
+
+  .right-controls .ui.input {
+    flex: 1;
+    min-width: unset; /* Remove minimum width on small screens */
+  }
 }
