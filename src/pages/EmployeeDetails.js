@@ -7,6 +7,8 @@ import { IoSaveOutline } from "react-icons/io5"; // Import Save Icon
 import { IoMdClose } from "react-icons/io"; // Import Discard Icon
 import { MdCheck } from "react-icons/md";
 import AllocationDonutChart from '../components/AllocationDonutChart/Allocationdonutchart';
+import * as XLSX from 'xlsx'; // Import SheetJS
+import { saveAs } from 'file-saver'; // Import FileSaver
 
 const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   const { id } = useParams(); 
@@ -36,12 +38,45 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     timeSheetApprover: '',
   });
 
+  // Add the handleDownloadExcel function
+  const handleDownloadExcel = () => {
+    // Create a new workbook and a worksheet
+    const workbook = XLSX.utils.book_new();
+    
+    // Convert allocations data to worksheet
+    const worksheetData = allocations.map(alloc => ({
+      'Employee Name': alloc.EmployeeName,
+      'Employee ID': alloc.EmployeeID,
+      'Client Name': alloc.ClientName,
+      'Project Name': alloc.ProjectName,
+      'Allocation %': alloc.Allocation,
+      'Status': alloc.ProjectStatus,
+      'Start Date': alloc.AllocationStartDate,
+      'End Date': alloc.AllocationEndDate,
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    
+    // Append worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Allocations');
+    
+    // Generate buffer
+    const workbookOut = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    
+    // Create a Blob from the buffer
+    const blob = new Blob([workbookOut], { type: 'application/octet-stream' });
+    
+    // Trigger the download using FileSaver
+    saveAs(blob, `${employee.EmployeeName}_Allocations.xlsx`);
+  };
+
+
   // Fetch client data from API
   useEffect(() => {
     const fetchClientData = async () => {
       try {
         setLoading(true);
-        const Response = await fetch('http://localhost:5000/clients');
+        const Response = await fetch('http://localhost:8080/clients');
         
         if (!Response.ok) {
           throw new Error('Network response was not ok');
@@ -103,7 +138,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   // Function to fetch employee allocation data
   const fetchEmployeeData = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/detailed-view/${id}`);
+      const response = await fetch(`http://localhost:8080/detailed-view/${id}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -125,7 +160,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     const fetchProjects = async (clientName) => {
       try {
         if (clientName) {
-          const response = await fetch(`http://localhost:5000/client/${clientName}/allprojects`);
+          const response = await fetch(`http://localhost:8080/client/${clientName}/allprojects`);
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -482,7 +517,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
             </div>
             {/* Buttons Section */}
             <div className="button-section">
-              <Button primary icon="download" content="Download" />
+              <Button primary icon="download" content="Download" onClick={handleDownloadExcel}/>
               {userRole === 'bizops' && (
                 <Button positive icon="plus" onClick={handleOpenModal} content="Allocate Resource" />
               )}
