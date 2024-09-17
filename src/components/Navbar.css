@@ -17,18 +17,24 @@
   transition: width 0.3s ease-in-out; /* Smooth width transition */
 }
 
-
+/* Logo container adjustments */
 .logo-container {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 20px 0 30px; /* Add padding on top, left-right, and extra on the bottom */
 }
 
 .navbar-logo {
-  width: 140px !important;
-  height: 100px !important;
+  width: 100%;
+  height: auto;
+  max-height: 60px; /* Adjust based on your design preference */
+  aspect-ratio: 4 / 1; /* Ensures the 4:1 ratio is maintained */
+  object-fit: contain; /* Ensures the logo scales correctly within its container */
   border-radius: 10px;
-  padding-bottom: 10px; /* Optional: Extra padding at the bottom of the logo itself */
+  padding-bottom: 10px; /* Optional */
 }
+
 .ui .vertical .menu{
   width: 18% !important;
 }
@@ -162,8 +168,7 @@ hr {
   }
 
   .navbar-logo {
-    width: 120px !important;
-    height: 80px !important;
+    max-height: 50px;
   }
 
   .sidebar .item {
@@ -188,8 +193,7 @@ hr {
   }
 
   .navbar-logo {
-    width: 100px !important;
-    height: 60px !important;
+    width: 40px
   }
 
   .sidebar .item {
@@ -215,8 +219,7 @@ hr {
   }
 
   .navbar-logo {
-    width: 80px !important;
-    height: 50px !important;
+    width: 35px;
   }
 
   .sidebar .item {
