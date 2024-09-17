@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { Menu, Icon, Button } from 'semantic-ui-react';
-import { Link, useLocation, useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
-import './Navbar.css'; // Import the CSS for navbar styling
-import logo from '../assets/images/logo.png'; // Adjusted path to logo.png
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import './Navbar.css';
+import logo from '../assets/images/logo.png'; // Preferably use SVG
 import { CiLogout } from "react-icons/ci";
 
-const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
+const Navbar = ({ userRole, setUserRole }) => {
   const location = useLocation();
-  const navigate = useNavigate(); // Initialize useNavigate for navigation
+  const navigate = useNavigate();
   const activeItem = location.pathname;
-  const [showLogout, setShowLogout] = useState(false); // State to toggle logout button visibility
+  const [showLogout, setShowLogout] = useState(false);
 
   // Function to handle logout
   const handleLogout = () => {
-    setUserRole(null); // Reset user role state
-    navigate('/'); // Redirect to the login page
+    setUserRole(null);
+    navigate('/');
   };
 
   return (
@@ -50,7 +50,7 @@ const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
               name="reports"
               active={activeItem === '/reports'}
               as={Link}
-              to="/reports" // Add link to the new Reports page
+              to="/reports"
               className="item"
             >
               Reports
@@ -73,7 +73,7 @@ const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
               name="employees"
               active={activeItem === '/employees'}
               as={Link}
-              to="/employees" // Link to EmpPage.js route
+              to="/employees"
               className="item"
             >
               Employees
@@ -87,8 +87,6 @@ const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
             >
               Project Allocation
             </Menu.Item>
-            {/* New Menu Item for Employees */}
-            
           </>
         )}
       </Menu>
@@ -120,7 +118,6 @@ const Navbar = ({ userRole, setUserRole }) => {  // Accept setUserRole as a prop
           </div>
         )}
       </div>
-
     </div>
   );
 };
