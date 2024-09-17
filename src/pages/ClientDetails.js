@@ -1,97 +1,124 @@
-// src/pages/ClientDetails.js
-
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Table, Icon, Button, Modal, Form, Dropdown, Message } from 'semantic-ui-react';
 import './ClientDetails.css'; // Custom CSS for styling
 
-const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
-  const { clientId, projectId } = useParams(); // Get clientId and projectId from the URL
-  const navigate = useNavigate(); // Initialize useNavigate for navigation
-
-  // State to control modal visibility and messages
+const ClientDetails = ({ userRole }) => {
+  const navigate = useNavigate();
+  const { clientId, projectId } = useParams();
   const [open, setOpen] = useState(false);
-  const [showMessage, setShowMessage] = useState(false); // State for toaster message
-  const [allocation, setAllocation] = useState('client project'); // State for allocation dropdown
-  const [selectedClient, setSelectedClient] = useState(clientId); // Auto-fill with current client
-  const [selectedProject, setSelectedProject] = useState(projectId); // Auto-fill with current project
-  const [resourceName, setResourceName] = useState(''); // State to manage resource name input
-  const [allocationPercentage, setAllocationPercentage] = useState(''); // State to manage percentage input
+  const [showMessage, setShowMessage] = useState(false);
+  const [allocation, setAllocation] = useState('client project');
+  const [selectedClient, setSelectedClient] = useState(clientId);
+  const [selectedProject, setSelectedProject] = useState(projectId);
+  const [resourceName, setResourceName] = useState(''); // Now represents selected employee
+  const [allocationPercentage, setAllocationPercentage] = useState('');
+  const [employeesData, setEmployeesData] = useState([]);
+  const [employeeOptions, setEmployeeOptions] = useState([]); // State to store employee options for dropdown
+  const [filteredEmployeeOptions, setFilteredEmployeeOptions] = useState([]); // State to store filtered employee options
+  const [loading, setLoading] = useState(true); // State to manage loading status
 
-  // Complete mock data for employees by client project with additional fields
-  const initialEmployeesData = {
-    'acme-corp': {
-      'website-redesign': [
-        { name: 'John Doe', role: 'Frontend Developer', status: 'Active', allocationPercentage: 50, allocationType: 'Client' },
-        { name: 'Jane Smith', role: 'Backend Developer', status: 'Active', allocationPercentage: 70, allocationType: 'Client' },
-      ],
-      'mobile-app-development': [
-        { name: 'Alice Johnson', role: 'Mobile Developer', status: 'On Leave', allocationPercentage: 30, allocationType: 'Benched' },
-        { name: 'Bob Brown', role: 'QA Engineer', status: 'Active', allocationPercentage: 60, allocationType: 'Service' },
-      ],
-    },
-    'global-tech': {
-      'ai-research': [
-        { name: 'Charlie Wilson', role: 'AI Scientist', status: 'Active', allocationPercentage: 80, allocationType: 'Client' },
-        { name: 'Daisy Thomas', role: 'Data Analyst', status: 'Active', allocationPercentage: 60, allocationType: 'Client' },
-      ],
-      'data-migration': [
-        { name: 'Evelyn White', role: 'Data Engineer', status: 'Active', allocationPercentage: 40, allocationType: 'Service' },
-        { name: 'Frank Green', role: 'Database Admin', status: 'Active', allocationPercentage: 90, allocationType: 'Client' },
-        { name: 'George Adams', role: 'Migration Specialist', status: 'Active', allocationPercentage: 100, allocationType: 'Benched' },
-      ],
-    },
-    // ... Other clients remain unchanged
-  };
+  // Fetch employees data for the current project
+  useEffect(() => {
+    const fetchEmployeesData = async () => {
+      try {
+        const formattedProjectName = projectId.replace(/-/g, ' ');
+        const encodedProjectName = encodeURIComponent(formattedProjectName);
 
-  const [employeesData, setEmployeesData] = useState(initialEmployeesData); // State to manage employees data
+        const response = await fetch(`http://localhost:5000/project/${encodedProjectName}/employees`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        setEmployeesData(data);
+      } catch (error) {
+        console.error('Failed to fetch employees data:', error);
+      } finally {
+        setLoading(false); // Stop loading once data is fetched
+      }
+    };
+
+    fetchEmployeesData();
+  }, [projectId]); // Refetch data if projectId changes
+
+  // Fetch all employees for the resource dropdown
+  useEffect(() => {
+    const fetchAllEmployees = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/employees');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        // Create options for the dropdown from fetched employees
+        const options = data.map((employee) => ({
+          key: employee.EmployeeID,
+          text: employee.EmployeeName,
+          value: employee.EmployeeName, // Or EmployeeID if needed
+        }));
+        setEmployeeOptions(options);
+        setFilteredEmployeeOptions(options); // Initially set filtered options to all employees
+      } catch (error) {
+        console.error('Failed to fetch all employees:', error);
+      }
+    };
+
+    fetchAllEmployees();
+  }, []);
 
   const clientName = clientId.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
   const projectName = projectId.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-  const employees = (employeesData[clientId] && employeesData[clientId][projectId]) || []; // Get employees for the current project under the current client
 
   // Options for client dropdown
-  const clientOptions = Object.keys(employeesData).map((id) => ({
-    key: id,
-    text: id.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
-    value: id,
-  }));
+  const clientOptions = [{ key: clientId, text: clientName, value: clientId }];
 
   // Options for project dropdown based on selected client
   const projectOptions = selectedClient
-    ? Object.keys(employeesData[selectedClient]).map((projectId) => ({
-        key: projectId,
-        text: projectId.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
-        value: projectId,
-      }))
+    ? [{ key: projectId, text: projectName, value: projectId }]
     : [];
 
-  const handleSubmit = () => {
-    // Add new employee data to the existing list
-    const newEmployee = {
-      name: resourceName,
-      role: 'New Role', // Placeholder role; this could be another input field in a real scenario
-      status: 'Active', // Default status
-      allocationPercentage: parseInt(allocationPercentage, 10),
-      allocationType: 'Client', // Assuming fixed for this scenario
-    };
+  // Handle search change for Resource Name Dropdown
+  const handleSearchChange = (e, { searchQuery }) => {
+    const filteredOptions = employeeOptions.filter((option) =>
+      option.text.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredEmployeeOptions(filteredOptions);
+  };
 
-    const updatedEmployees = {
-      ...employeesData,
-      [selectedClient]: {
-        ...employeesData[selectedClient],
-        [selectedProject]: [...employeesData[selectedClient][selectedProject], newEmployee], // Append new employee
-      },
-    };
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/project/allocate-resource', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          employeeName: resourceName,
+          projectName: projectName,
+          Allocation: allocationPercentage,
+          Role: 'New Role', // Placeholder role; you might want to use a dynamic role here
+        }),
+      });
 
-    setEmployeesData(updatedEmployees); // Update state with new employee data
-    setOpen(false); // Close modal after submission
-    setShowMessage(true); // Show success message
-    setTimeout(() => setShowMessage(false), 3000); // Hide message after 3 seconds
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const result = await response.json();
+      setShowMessage(true); // Show success message
+      setTimeout(() => setShowMessage(false), 3000); // Hide message after 3 seconds
+      setOpen(false); // Close modal after submission
+
+      // Optionally refetch employees data or update state
+      setEmployeesData([...employeesData, { EmployeeName: resourceName, Role: 'New Role', Allocation: allocationPercentage }]);
+
+    } catch (error) {
+      console.error('Failed to allocate resource:', error);
+      // Handle error state here if needed
+    }
   };
 
   const handleInputChange = (e, { value, name }) => {
-    // Update state and add 'filled' class if the input is filled
     if (name === 'selectedClient') setSelectedClient(value);
     if (name === 'selectedProject') setSelectedProject(value);
   };
@@ -102,7 +129,8 @@ const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
   };
 
   return (
-    <div className="client-details-container">
+    <div className='main-layout'>
+      <div className="client-details-container">
       {/* Back Arrow Icon */}
       <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
 
@@ -119,31 +147,31 @@ const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
       )}
 
       {/* Employees Table */}
-      <Table celled padded className="employee-table4">
-        <Table.Header>
-          <Table.Row>
-            <Table.HeaderCell>Employee Name</Table.HeaderCell>
-            <Table.HeaderCell>Role</Table.HeaderCell>
-            <Table.HeaderCell>Status</Table.HeaderCell>
-            <Table.HeaderCell>Allocation %</Table.HeaderCell> {/* New column */}
-            <Table.HeaderCell>Allocation Type</Table.HeaderCell> {/* New column */}
-          </Table.Row>
-        </Table.Header>
-
-        <Table.Body>
-          {employees.map((employee, index) => (
-            <Table.Row key={index}>
-              <Table.Cell>
-                <Icon name="user" /> {employee.name}
-              </Table.Cell>
-              <Table.Cell>{employee.role}</Table.Cell>
-              <Table.Cell>{employee.status}</Table.Cell>
-              <Table.Cell>{employee.allocationPercentage}</Table.Cell> {/* Allocation % data */}
-              <Table.Cell>{employee.allocationType}</Table.Cell> {/* Allocation Type data */}
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <Table celled padded className="employee-table4">
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>Employee Name</Table.HeaderCell>
+              <Table.HeaderCell>Role</Table.HeaderCell>
+              <Table.HeaderCell>Allocation %</Table.HeaderCell>
             </Table.Row>
-          ))}
-        </Table.Body>
-      </Table>
+          </Table.Header>
+
+          <Table.Body>
+            {employeesData.map((employee, index) => (
+              <Table.Row key={index}>
+                <Table.Cell>
+                  <Icon name="user" /> {employee.EmployeeName}
+                </Table.Cell>
+                <Table.Cell>{employee.Role}</Table.Cell>
+                <Table.Cell>{employee.Allocation}</Table.Cell>
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </Table>
+      )}
 
       {/* Modal for Allocating Resource - Only accessible if not a leader */}
       {userRole !== 'leader' && (
@@ -155,17 +183,22 @@ const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
           <Modal.Header>Allocate Resource</Modal.Header>
           <Modal.Content>
             <Form>
-              <Form.Input 
-                label="Resource Name" 
-                placeholder="Enter resource name" 
-                required 
-                className="resource-name-field"
-                value={resourceName}
-                onChange={(e) => {
-                  setResourceName(e.target.value);
-                  e.target.classList.toggle('filled', e.target.value !== '');
-                }}
-              />
+              {/* Dropdown for Resource Name with search and filtering */}
+              <Form.Field>
+                <label>Resource Name</label>
+                <Dropdown
+                  placeholder="Select Resource"
+                  fluid
+                  selection
+                  search
+                  options={filteredEmployeeOptions}
+                  value={resourceName}
+                  onChange={(e, { value }) => setResourceName(value)}
+                  onSearchChange={handleSearchChange} // Handle search input
+                  required
+                  className="resource-name-dropdown"
+                />
+              </Form.Field>
               <Form.Field>
                 <label>Allocation</label>
                 <Dropdown
@@ -236,6 +269,7 @@ const ClientDetails = ({ userRole }) => {  // Accept userRole as a prop
           </Modal.Actions>
         </Modal>
       )}
+    </div>
     </div>
   );
 };

@@ -1,6 +1,4 @@
-// src/pages/ClientProjects.js
-
-import React from 'react';
+import React, {useEffect,useState}from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Table, Icon } from 'semantic-ui-react';
 import './ClientDetails.css';
@@ -10,27 +8,40 @@ const ClientProjects = () => {
   const navigate = useNavigate(); // Initialize useNavigate for navigation
 
   // Mock data for projects by client company
-  const projectsData = {
-    'acme-corp': [
-      { name: 'Website Redesign', status: 'In Progress', category: 'Development' },
-      { name: 'Mobile App Development', status: 'Completed', category: 'Software' },
-    ],
-    'global-tech': [
-      { name: 'AI Research', status: 'In Progress', category: 'Research' },
-      { name: 'Data Migration', status: 'Pending', category: 'Data' },
-    ],
-    'healthify-inc': [
-      { name: 'Health Tracking App', status: 'In Progress', category: 'Healthcare' },
-      { name: 'Wellness Portal', status: 'Completed', category: 'Health' },
-    ],
-    'edupro': [
-      { name: 'E-learning Platform', status: 'Pending', category: 'Education' },
-      { name: 'Course Management System', status: 'In Progress', category: 'Education' },
-    ],
-  };
+  const [projects, setAllocatedEmployees] = useState([]);
+  const [benchedEmployees, setBenchedEmployees] = useState([]);
+  const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
+  const [loading, setLoading] = useState(true); // Loading state
+  
+  // Fetch data from APIs
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        setLoading(true);
+        const allocatedResponse = await fetch(`http://localhost:5000/client/${clientId}/projects`);
+        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
+        
+        if (!allocatedResponse.ok || !benchedResponse.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const allocatedData = await allocatedResponse.json();
+        const benchedData = await benchedResponse.json();
+
+        setAllocatedEmployees(allocatedData);
+        setBenchedEmployees(benchedData);
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, []);
 
   const clientName = clientId.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-  const projects = projectsData[clientId] || []; // Get projects for the current client
+   // Get projects for the current client
 
   const handleProjectClick = (projectName) => {
     navigate(`/client/${clientId}/project/${projectName.toLowerCase().replace(/ /g, '-')}`); // Navigate to project details page with clientId and projectId
@@ -42,7 +53,8 @@ const ClientProjects = () => {
   };
 
   return (
-    <div className="client-details-container">
+    <div className='main-layout'>
+      <div className="client-details-container">
       {/* Back Arrow Icon */}
       <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
 
@@ -60,18 +72,19 @@ const ClientProjects = () => {
           {projects.map((project, index) => (
             <Table.Row
               key={index}
-              onClick={() => handleProjectClick(project.name)}
+              onClick={() => handleProjectClick(project.ProjectName)}
               style={{ cursor: 'pointer' }}
             >
               <Table.Cell>
-                <Icon name="folder" /> {project.name}
+                <Icon name="folder" /> {project.ProjectName}
               </Table.Cell>
-              <Table.Cell>{project.status}</Table.Cell>
-              <Table.Cell>{project.category}</Table.Cell>
+              <Table.Cell>{project.Status}</Table.Cell>
+              <Table.Cell>{project.Category}</Table.Cell>
             </Table.Row>
           ))}
         </Table.Body>
       </Table>
+    </div>
     </div>
   );
 };

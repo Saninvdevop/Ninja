@@ -1,192 +1,211 @@
 /* EmployeeDetails.css */
-.employee-details-container {
-    padding: 20px;
-    background-color: #f8f9fa;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-  
-  .employee-card {
-    max-width: 1400px !important;
-    width: 700px !important;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 16px !important;
-    overflow: hidden;
-    color: #333;
-  }
-  
-  .employee-card .card-header {
-    font-size: 22px;
-    color: #2c3e50;
-  }
-  .card-meta{
-    font-size: 20px !important;
-    position: relative !important;
-    top: 30px !important;
-    display: flex !important;
-    gap: 130px !important;
-  }
-  .card-description {
-    font-size: 15px !important;
-    display: grid; /* Use CSS Grid for structured layout */
-    grid-template-columns: repeat(3, 1fr); /* Create three equal-width columns */
-    gap: 30px !important; /* Gap between columns */
-    margin-top: 70px !important; /* Top margin to separate from other content */
-    border-top: 1px solid #b9bcc0; /* Top border for separation */
-    padding-top: 20px; /* Padding to separate from the top content */
-    position: relative !important;
-    right: 80px !important;
-    width: 750px !important;
-    text-align: left !important;
-  }
-  
-  /* Style for each grid item */
-  .card-description .grid-item {
-    display: flex;
-    flex-direction: column; /* Stack heading and content vertically */
-    align-items: center; /* Center align items */
-    color: #c0c0c0; /* Light gray color for text */
-  }
-  .card-description .grid-item1 {
-    display: flex;
-    flex-direction: column; /* Stack heading and content vertically */
-    align-items: center; /* Center align items */
-    color: #c0c0c0; /* Light gray color for text */
-    position: relative !important;
-    right: -15px !important;
-  }
-  
-  .card-description .grid-item .heading {
-    font-size: 0.9em; /* Smaller font for the heading */
-    color: #94a3b8; /* Light gray color for headings */
-    margin-bottom: 5px; /* Space between heading and content */
-    text-transform: uppercase; /* Uppercase for heading */
-  }
-  
-  .card-description .grid-item .content {
-    font-size: 1.1em; /* Slightly larger font for content */
-    color: #fff; /* White color for content */
-    font-weight: bold; /* Bold font for content */
-   position: relative !important;
-   right: 1px !important;
-  }
-  .card-description .grid-item1 .content {
-    font-size: 1.1em; /* Slightly larger font for content */
-    color: #fff; /* White color for content */
-    font-weight: bold; /* Bold font for content */
-   position: relative !important;
-   right: 1px !important;
-  }
-  
-  
-  .card-description .grid-item .content i {
-    margin-right: 8px; /* Spacing between icon and text */
-    color: #6bcdec; /* Light blue color for icons */
-  }
-  .card-description .grid-item1 .content i {
-    margin-right: 8px; /* Spacing between icon and text */
-    color: #6bcdec; /* Light blue color for icons */
-  }
+.breadcrumb {
+  display: flex;
+  align-items: center; /* Vertically center the icon and text */
+  font-size: 1.5em; /* Adjust font size for the breadcrumb */
+  color: #000000; /* Set breadcrumb text color */
+}
 
-  .content{
-    color: black !important;
-  }
+.breadcrumb .breadcrumb-text {
+  margin: 0; /* Remove default margin */
+  font-size: 2em;
+  color: #000000; /* Same color as the breadcrumb icon */
+  font-weight: 500; /* Adjust the weight to make it slightly bold */
+}
+
+.breadcrumb .breadcrumb-divider{
+  margin: 0 10px 0 10px; /* Space between items in the breadcrumb */
+  font-size: 2.5em;
+  color: #000000; /* Same color as the breadcrumb icon */
+  font-weight: 500; /* Adjust the weight to make it slightly bold */
+}
+
+.breadcrumb .breadcrumb-text:hover {
+  text-decoration: underline; /* Add underline effect on hover */
+  color: #000000; /* Slightly darker blue on hover for a visual feedback */
+}
+
+.breadcrumb .breadcrumb-text, .breadcrumb .icon {
+  cursor: pointer; /* Change cursor to pointer to show it's clickable */
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease; /* Smooth color transition on hover */
+}
+
+.breadcrumb .icon {
+  color: #000000; /* Set the same blue color for the icon */
+  margin-right: 10px; /* Spacing between icon and text */
+  transition: color 0.2s ease; /* Smooth color transition on hover */
+}
+
+.breadcrumb .icon:hover {
+  color: #000000; /* Change icon color slightly on hover */
+}
+.breadcrumb-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: end;
+  gap: 10px; /* Space between the two buttons */
+}
+.breadcrumb-save button, .breadcrumb-discard button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+.middle-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch; /* Align to the top */
+  margin-top: 2%; /* Add some space at the top */
+  width: 100%;
+}
+
+.employee-card {
+  flex: 0 0 55%;
   
-  .card-header{
-    font-size: 30px !important;
-  }
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: 'Arial', sans-serif;
+}
+.employee-card, .allocation-chart {
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  flex: 1; /* Make both sections take up equal space */
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.profile-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-right: 20px;
+}
+
+.employee-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.employee-info h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.employee-id {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+/* Flexbox to align top-info and contact-info */
+.top-info, .contact-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   
-  .employee-card .card-meta span {
-    color: #7f8c8d;
-    display: block;
-    margin-top: 5px;
-  }
-  
-  .employee-card .card-description p {
-    margin: 0;
-    padding: 5px 0;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  
-  .allocations-table {
-    margin-top: 20px;
-    width: 1600px !important;
-  }
-  /* Custom styles for the success toaster message */
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  flex: 1; /* Allow the items to flex and take equal space */
+  padding: 0 10px;
+}
+
+.info-item div {
+  margin-left: 10px;
+}
+
+.info-item p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.employee-role h3, .info-item h3 {
+  margin-bottom: 5px;
+  font-size: 16px;
+}
+
+.employee-role p, .info-item p {
+  font-size: 14px;
+}
+
+/* Ensure the icons and text align properly */
+.info-item Icon {
+  margin-right: 10px;
+}
+
+.contact-info {
+  margin-top: 20px;
+}
+
+.button-section {
+  padding: 2% 0;
+  display: flex;
+  justify-content: space-between; /* Space between buttons */
+  margin-top: 20px;
+}
+
+.button-section .ui.button {
+  width: 48%; /* Make the buttons take equal width */
+}
 
 
+.allocation-chart {
+  flex: 0 0 40%; /* Fixed to take 38% of the width with some gap */
+  margin-left: 2%; /* Add space between employee-card and allocation-chart */
+  background-color: #00000000;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: 'Arial', sans-serif;
+}
 
-
+.bottom-content{
+  margin-top: 2%;
+}
   
-  .add-icon {
-    position: fixed;
-    bottom: 430px;
-    
-    right: 56px;
-    background-color: #4a90e2 !important;
-    color: white !important;
-    border-radius: 50% !important;
-  }
-  .submit-button{
-    color: white !important;
-    font-size: 20px !important;
-    border-radius: 10px !important;
-    height: 50px !important;
-    width: 120px !important;
+  .table {
+    width: 100%; /* Take full width */
+    table-layout: fixed; /* Fixed layout for better control */
+    border-collapse: collapse; /* Collapse borders for a cleaner look */
   }
   
-  .details-chart-container {
-    display: flex; /* Flexbox to place card and chart side by side */
-    gap: 40px; /* Gap between the card and the chart */
-    align-items: center; /* Align items vertically in the center */
-    margin-bottom: 40px; /* Margin bottom for spacing */
+  .table th, .table td {
+    padding: 8px 10px; /* Reduced padding */
+    text-align: left; /* Left-align text */
+    white-space: normal; /* Allow text to wrap */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ellipsis if the content overflows */
+    font-size: 0.9em; /* Slightly smaller font size */
   }
   
-  .doughnut-chart-container {
-    width: 300px; /* Fixed width for the doughnut chart */
-    height: 300px; /* Fixed height for the doughnut chart */
-    position: relative; /* Position relative for label centering */
-    right: 550px !important;
-    top: -10px !important;
-    background-size: cover; /* Cover the entire area */
-    border-radius: 50%; /* Rounded border */
-    padding: 10px; /* Padding around the chart */
-  }
-  
-  .doughnut-chart-label {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Center the label in the chart */
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .doughnut-chart-label .number {
-    font-size: 2.5em;
+  .table th {
+    background-color: #f5f8fa; /* Light background for the header */
     font-weight: bold;
-    color: #454545;
-    background-color: white;
-    border-radius: 50%;
-    padding: 10px;
-    margin-bottom: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
   }
   
-  .doughnut-chart-label .user-badge {
-    font-size: 1em;
-    font-weight: bold;
-    color: white;
-    background-color: #8a2be2; /* Purple color for user badge */
-    border-radius: 50%;
-    padding: 5px 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  .table td {
+    background-color: #fff; /* White background for table rows */
+    color: #333; /* Darker text color for contrast */
+  }
+  
+  .table tr:nth-child(even) {
+    background-color: #f9f9f9; /* Light grey background for alternating rows */
+  }
+  
+  .table tr:hover {
+    background-color: #e9ecef; /* Highlight row on hover */
   }
   

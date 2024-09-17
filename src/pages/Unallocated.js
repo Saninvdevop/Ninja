@@ -1,27 +1,45 @@
-// src/pages/Unallocated.js
-
-import React from 'react';
+import React ,{useEffect,useState}from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, Icon } from 'semantic-ui-react';
 
 const Unallocated = () => {
-  const navigate = useNavigate(); // For navigation
+  const navigate = useNavigate();
 
-  const employeeData = [
-    { employee_id: 'E001', employee_name: 'Alice Johnson', email: 'alice.johnson@example.com', current_allocation: 50 },
-    { employee_id: 'E002', employee_name: 'Bob Smith', email: 'bob.smith@example.com', current_allocation: 30 },
-    { employee_id: 'E003', employee_name: 'John Johnson', email: 'j.johnson@example.com', current_allocation: 20 },
-    { employee_id: 'E004', employee_name: 'Peter Smith', email: 'p.smith@example.com', current_allocation: 30 },
-    { employee_id: 'E005', employee_name: 'Sam Johnson', email: 's.johnson@example.com', current_allocation: 10 },
-    { employee_id: 'E006', employee_name: 'Ron Smith', email: 'r.smith@example.com', current_allocation: 90 },
-    { employee_id: 'E007', employee_name: 'Parker Johnson', email: 'p.johnson@example.com', current_allocation: 55 },
-    { employee_id: 'E008', employee_name: 'Samuel Smith', email: 'sm.smith@example.com', current_allocation: 30 },
-    // Add more employee data here
-  ];
+  const [allocatedEmployees, setAllocatedEmployees] = useState([]);
+  const [benchedEmployees, setBenchedEmployees] = useState([]);
+  const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
+  const [loading, setLoading] = useState(true); // Loading state
+
+  // Fetch data from APIs
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        setLoading(true);
+        const allocatedResponse = await fetch('http://localhost:5000/employees/drafts');
+        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
+        
+        if (!allocatedResponse.ok || !benchedResponse.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const allocatedData = await allocatedResponse.json();
+        const benchedData = await benchedResponse.json();
+
+        setAllocatedEmployees(allocatedData);
+        setBenchedEmployees(benchedData);
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, []);
 
   const handleEmployeeClick = (employee) => {
     // Navigate to EmployeeDetails with the allocation percentage and other data
-    navigate(`/employee/${employee.employee_id}`, {
+    navigate(`/employee/${employee.EmployeeID}`, {
       state: {
         employee,
         allocationPercentage: employee.current_allocation, // Pass the current allocation percentage
@@ -39,7 +57,7 @@ const Unallocated = () => {
       {/* Back Arrow Icon */}
       <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
       
-      <h2>Unallocated Employees</h2>
+      <h2>Drafts</h2>
       <Table celled striped>
         <Table.Header>
           <Table.Row>
@@ -50,12 +68,12 @@ const Unallocated = () => {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {employeeData.map((employee) => (
-            <Table.Row key={employee.employee_id} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
-              <Table.Cell>{employee.employee_id}</Table.Cell>
-              <Table.Cell>{employee.employee_name}</Table.Cell>
-              <Table.Cell>{employee.email}</Table.Cell>
-              <Table.Cell>{employee.current_allocation}%</Table.Cell>
+          {allocatedEmployees.map((employee) => (
+            <Table.Row key={employee.EmployeeID} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
+              <Table.Cell>{employee.EmployeeID}</Table.Cell>
+              <Table.Cell>{employee.EmployeeName}</Table.Cell>
+              <Table.Cell>{employee.Email}</Table.Cell>
+              <Table.Cell>{employee.Allocation}%</Table.Cell>
             </Table.Row>
           ))}
         </Table.Body>

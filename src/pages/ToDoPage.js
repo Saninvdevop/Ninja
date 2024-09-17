@@ -4,23 +4,47 @@ import React from 'react';
 import { Table, Icon } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import './ToDoPage.css'; // Import CSS for consistent styling
+import { useEffect, useState } from 'react';
 
 const ToDoPage = () => {
   const navigate = useNavigate(); // Initialize useNavigate for navigation
 
   // Hardcoded data for the table with 0% allocation
-  const employeeData = [
-    { employee_id: 'E001', employee_name: 'Alice Johnson', email: 'alice.johnson@example.com', role: 'Frontend Developer', current_allocation: 0 },
-    { employee_id: 'E002', employee_name: 'Bob Smith', email: 'bob.smith@example.com', role: 'Backend Developer', current_allocation: 0 },
-    { employee_id: 'E003', employee_name: 'Charlie Brown', email: 'charlie.brown@example.com', role: 'Designer', current_allocation: 0 },
-    { employee_id: 'E004', employee_name: 'Diana Prince', email: 'diana.prince@example.com', role: 'QA Engineer', current_allocation: 0 },
-    { employee_id: 'E005', employee_name: 'Edward Norton', email: 'edward.norton@example.com', role: 'DevOps Engineer', current_allocation: 0 },
-    { employee_id: 'E006', employee_name: 'Fiona Apple', email: 'fiona.apple@example.com', role: 'Project Manager', current_allocation: 0 },
-  ];
+  const [allocatedEmployees, setAllocatedEmployees] = useState([]);
+  const [benchedEmployees, setBenchedEmployees] = useState([]);
+  const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
+  const [loading, setLoading] = useState(true); // Loading state
+
+  // Fetch data from APIs
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        setLoading(true);
+        const allocatedResponse = await fetch('http://localhost:5000/employees/drafts');
+        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
+        
+        if (!allocatedResponse.ok || !benchedResponse.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const allocatedData = await allocatedResponse.json();
+        const benchedData = await benchedResponse.json();
+
+        setAllocatedEmployees(allocatedData);
+        setBenchedEmployees(benchedData);
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, []);
 
   // Function to handle row click to navigate to EmployeeDetails page
   const handleRowClick = (employee) => {
-    navigate('/employee/' + employee.employee_id, { state: { employee: { ...employee, allocation: 0 } } }); // Navigate with state
+    navigate('/employee/' + employee.EmployeeID, { state: { employee: { ...employee, allocation: 0 } } }); // Navigate with state
   };
 
   // Function to handle back navigation
@@ -40,19 +64,19 @@ const ToDoPage = () => {
             <Table.HeaderCell>Employee ID</Table.HeaderCell>
             <Table.HeaderCell>Employee Name</Table.HeaderCell>
             <Table.HeaderCell>Email</Table.HeaderCell>
-            <Table.HeaderCell>Role</Table.HeaderCell>
+            {/* <Table.HeaderCell>Role</Table.HeaderCell> */}
             <Table.HeaderCell>Current Allocation %</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
 
         <Table.Body>
-          {employeeData.map((employee) => (
-            <Table.Row key={employee.employee_id} onClick={() => handleRowClick(employee)}> {/* Row click handler */}
-              <Table.Cell>{employee.employee_id}</Table.Cell>
-              <Table.Cell>{employee.employee_name}</Table.Cell>
-              <Table.Cell>{employee.email}</Table.Cell>
-              <Table.Cell>{employee.role}</Table.Cell>
-              <Table.Cell>{employee.current_allocation}%</Table.Cell>
+          {benchedEmployees.map((employee) => (
+            <Table.Row key={employee.EmployeeID} onClick={() => handleRowClick(employee)}> {/* Row click handler */}
+              <Table.Cell>{employee.EmployeeID}</Table.Cell>
+              <Table.Cell>{employee.EmployeeName}</Table.Cell>
+              <Table.Cell>{employee.Email}</Table.Cell>
+              {/* <Table.Cell>{employee.role}</Table.Cell> */}
+              <Table.Cell>{employee.Allocation}%</Table.Cell>
             </Table.Row>
           ))}
         </Table.Body>

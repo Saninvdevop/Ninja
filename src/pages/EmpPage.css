@@ -1,0 +1,117 @@
+.breadcrumb {
+  display: flex;
+  align-items: center; /* Vertically center the icon and text */
+  font-size: 1.5em; /* Adjust font size for the breadcrumb */
+  color: #000000; /* Set breadcrumb text color */
+}
+
+.breadcrumb .breadcrumb-text {
+  margin: 0; /* Remove default margin */
+  font-size: 2em;
+  color: #000000; /* Same color as the breadcrumb icon */
+  font-weight: 500; /* Adjust the weight to make it slightly bold */
+}
+
+.breadcrumb .breadcrumb-divider{
+  margin: 0 10px 0 10px; /* Space between items in the breadcrumb */
+  font-size: 2.5em;
+  color: #000000; /* Same color as the breadcrumb icon */
+  font-weight: 500; /* Adjust the weight to make it slightly bold */
+}
+
+.breadcrumb .breadcrumb-text:hover {
+  text-decoration: underline; /* Add underline effect on hover */
+  color: #000000; /* Slightly darker blue on hover for a visual feedback */
+}
+
+.breadcrumb .breadcrumb-text, .breadcrumb .icon {
+  cursor: pointer; /* Change cursor to pointer to show it's clickable */
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease; /* Smooth color transition on hover */
+}
+
+.breadcrumb .icon {
+  color: #000000; /* Set the same blue color for the icon */
+  margin-right: 10px; /* Spacing between icon and text */
+  transition: color 0.2s ease; /* Smooth color transition on hover */
+}
+
+.breadcrumb .icon:hover {
+  color: #000000; /* Change icon color slightly on hover */
+}
+
+
+  .table-filter-layout {
+    display: flex;
+    justify-content: space-between; /* Ensure that tabs and search bar are spaced apart */
+    align-items: center; /* Align items vertically in the center */
+    margin-bottom: 20px;
+    flex-wrap: wrap; /* Allow content to wrap if the screen gets too small */
+  }
+  
+  .filter-tabs {
+    display: flex;
+    gap: 15px; /* Space between each tab */
+  }
+  
+  .tab {
+    padding: 10px 20px;
+    background-color: #f5f5f5;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+  }
+  
+  .tab:hover {
+    background-color: #e5e5e5;
+  }
+  
+  .tab.active {
+    background-color: #4a90e2;
+    color: white;
+  }
+  
+  .search-bar {
+    margin-left: auto;
+  }
+  
+  .search-bar input {
+    border-radius: 5px;
+    padding: 10px; /* Add padding for consistent sizing */
+    max-width: 300px; /* Set a max-width for the input to prevent it from stretching too much */
+  }
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+  }
+  
+  .pagination button {
+    background-color: #f5f5f5;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+  }
+  
+  .pagination button:hover {
+    background-color: #e5e5e5;
+  }
+  
+  .pagination button.active {
+    background-color: #4a90e2;
+    color: white;
+  }
+  
+  .pagination button:disabled {
+    background-color: #d3d3d3;
+    cursor: not-allowed;
+  }
+  
+  

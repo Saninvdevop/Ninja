@@ -1,25 +1,61 @@
-import React from 'react';
-import { Card, Table, Segment, Icon } from 'semantic-ui-react';
+import React, { useEffect, useState } from 'react';
+import { Card, Table, Segment, Icon, Grid } from 'semantic-ui-react';
+import ViewCard from '../components/ViewCards/Viewcard'; // Import ViewCard component
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import './DashboardBizOps.css'; // Import CSS for consistent styling
 
 const DashboardBizOps = () => {
   const navigate = useNavigate(); // Initialize useNavigate for navigation
+  const [currentDate, setCurrentDate] = useState(''); // State to hold current date
 
   // Hardcoded data for the cards
-  const unallocated = 20;
-  const draft = 30;
+  const [todo, setTodo] = useState();
+  const [draft, setDraft] = useState();
   const activeProjects = 80;
 
   // Hardcoded data for the table
-  const employeeData = [
-    { employee_id: 'E001', employee_name: 'Alice Johnson', email: 'alice.johnson@example.com', current_allocation: 50 },
-    { employee_id: 'E002', employee_name: 'Bob Smith', email: 'bob.smith@example.com', current_allocation: 70 },
-    { employee_id: 'E003', employee_name: 'Charlie Brown', email: 'charlie.brown@example.com', current_allocation: 60 },
-    { employee_id: 'E004', employee_name: 'Diana Prince', email: 'diana.prince@example.com', current_allocation: 80 },
-    { employee_id: 'E005', employee_name: 'Edward Norton', email: 'edward.norton@example.com', current_allocation: 90 },
-    { employee_id: 'E006', employee_name: 'Fiona Apple', email: 'fiona.apple@example.com', current_allocation: 40 },
-  ];
+  const [allocatedEmployees, setAllocatedEmployees] = useState([]);
+  const [benchedEmployees, setBenchedEmployees] = useState([]);
+  const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
+  const [loading, setLoading] = useState(true); // Loading state
+  const [totalemp, setTotalEmp] = useState();
+
+  useEffect(() => {
+  const today = new Date();
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  const formattedDate = today.toLocaleDateString('en-US', options);
+  setCurrentDate(formattedDate); // Removed the 's'
+}, []);
+
+  // Fetch data from APIs
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        setLoading(true);
+        const allocatedResponse = await fetch('http://localhost:5000/employees/drafts');
+        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
+        const totalresponse = await fetch('http://localhost:5000/employees');
+        if (!allocatedResponse.ok || !benchedResponse.ok || !totalresponse.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const allocatedData = await allocatedResponse.json();
+        const benchedData = await benchedResponse.json();
+        const total = await totalresponse.json();
+        setDraft(allocatedData.length);
+        setAllocatedEmployees(allocatedData);
+        setTodo(benchedData.length);
+        setBenchedEmployees(benchedData);
+        setTotalEmp(total.length);
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, []);
 
   // Function to navigate to Unallocated page
   const handleUnallocatedClick = () => {
@@ -33,75 +69,84 @@ const DashboardBizOps = () => {
 
   // Function to navigate to EmpPage
   const handleEmployeeDetailsClick = () => {
-    navigate('/employee-details'); // Adjust this path to match your App.js route
+    navigate('/employees'); // Adjust this path to match your App.js route
+  };
+
+  // Function to navigate to Projects page
+  const handleProjectAllocationClick = () => {
+    navigate('/projects'); // Navigate to the projects route
   };
 
   return (
-    <div className="dashboard-bizops-container">
-      <Segment className="content-wrapper">
-        {/* Personalized Greeting and Message */}
-        <div className="greeting-section">
-          <h2 className='bizopname'>Hello Ravi,</h2>
-          <p className="instruction-message">Pick where you left from </p>
+    <div className="main-layout">
+      <div className='right-content'>
+        <div className='top-content'>
+          <div className='greeting'>
+            <h1>Hello Ravi,</h1>
+            <h2>{currentDate}</h2>
+          </div>
         </div>
+        <div className='bottom-content-cards'>
+          <div className='cards'>
+            <ViewCard
+              icon="fa-users"
+              header="Unallocated"
+              value={todo}
+              onClick={handleToDoClick}
+            />
+          </div>
+          <div className='cards'>
+            <ViewCard
+              icon="fa-users"
+              header="Drafts"
+              value={draft}
+              onClick={handleUnallocatedClick}
+            />
+          </div>
+          <div className='cards'>
+            <ViewCard
+              icon="fa-users"
+              header="Employees"
+              value={draft}
+              onClick={handleEmployeeDetailsClick}
+            />
+          </div>
+          <div className='cards'>
+            <ViewCard
+              icon="fa-users"
+              header="Projects"
+              value={draft}
+              onClick={handleProjectAllocationClick}
+            />
+          </div>
+        </div>
+        <div className='last-edited'>
+            <h2>Pick Where you left from,</h2>
+            <div className='table'>
+            <Table celled striped>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.HeaderCell>Employee ID</Table.HeaderCell>
+                      <Table.HeaderCell>Employee Name</Table.HeaderCell>
+                      <Table.HeaderCell>Email</Table.HeaderCell>
+                      <Table.HeaderCell>Current Allocation %</Table.HeaderCell>
+                    </Table.Row>
+                  </Table.Header>
 
-        {/* Cards Section */}
-        <Card.Group itemsPerRow={3} className="bizops-cards">
-          <Card className="interactive-card" onClick={handleUnallocatedClick}>
-            <Card.Content>
-              <Icon name="users" className="card-icon" />
-              <Card.Header className="card-heading">Drafts</Card.Header>
-              <Card.Description className="card-value">{unallocated}</Card.Description>
-            </Card.Content>
-          </Card>
-          <Card className="interactive-card" onClick={handleToDoClick}>
-            <Card.Content>
-              <Icon name="edit" className="card-icon" />
-              <Card.Header className="card-heading">To Do</Card.Header>
-              <Card.Description className="card-value1">{draft}</Card.Description>
-            </Card.Content>
-          </Card>
-          <Card className="interactive-card">
-            <Card.Content>
-              <Icon name="briefcase" className="card-icon" />
-              <Card.Header className="card-heading">Active Projects</Card.Header>
-              <Card.Description className="card-value2">{activeProjects}</Card.Description>
-            </Card.Content>
-          </Card>
-          {/* New Card for Employee Details */}
-          <Card className="interactive-card" onClick={handleEmployeeDetailsClick}>
-            <Card.Content>
-            <Icon name="users" className="card-icon" />
-              <Card.Header className="card-heading">Employee Details</Card.Header>
-              <Card.Description className="card-value3">View Details</Card.Description>
-            </Card.Content>
-          </Card>
-        </Card.Group>
-
-        {/* Table Section */}
-        <h1 className='drafts'>Drafts</h1>
-        <Table celled striped className="employee-table">
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell>Employee ID</Table.HeaderCell>
-              <Table.HeaderCell>Employee Name</Table.HeaderCell>
-              <Table.HeaderCell>Email</Table.HeaderCell>
-              <Table.HeaderCell>Current Allocation %</Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-
-          <Table.Body>
-            {employeeData.map((employee) => (
-              <Table.Row key={employee.employee_id}>
-                <Table.Cell>{employee.employee_id}</Table.Cell>
-                <Table.Cell>{employee.employee_name}</Table.Cell>
-                <Table.Cell>{employee.email}</Table.Cell>
-                <Table.Cell>{employee.current_allocation}%</Table.Cell>
-              </Table.Row>
-            ))}
-          </Table.Body>
-        </Table>
-      </Segment>
+                  <Table.Body>
+                    {allocatedEmployees.map((employee) => (
+                      <Table.Row key={employee.EmployeeID}>
+                        <Table.Cell>{employee.EmployeeID}</Table.Cell>
+                        <Table.Cell>{employee.EmployeeName}</Table.Cell>
+                        <Table.Cell>{employee.Email}</Table.Cell>
+                        <Table.Cell>{employee.Allocation}%</Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
+            </div>
+        </div>
+      </div>
     </div>
   );
 };
