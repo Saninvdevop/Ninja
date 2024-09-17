@@ -41,7 +41,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     const fetchClientData = async () => {
       try {
         setLoading(true);
-        const Response = await fetch('http://localhost:8080/clients');
+        const Response = await fetch('http://localhost:5000/clients');
         
         if (!Response.ok) {
           throw new Error('Network response was not ok');
@@ -103,7 +103,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   // Function to fetch employee allocation data
   const fetchEmployeeData = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/detailed-view/${id}`);
+      const response = await fetch(`http://localhost:5000/detailed-view/${id}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -125,7 +125,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     const fetchProjects = async (clientName) => {
       try {
         if (clientName) {
-          const response = await fetch(`http://localhost:8080/client/${clientName}/allprojects`);
+          const response = await fetch(`http://localhost:5000/client/${clientName}/allprojects`);
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -161,7 +161,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   
   const submitAllocation = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/allocate', {
+      const response = await fetch('http://localhost:5000/api/allocate', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

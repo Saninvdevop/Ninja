@@ -19,8 +19,8 @@ const Reports = () => {
     const fetchCombinedEmployeeData = async () => {
       try {
         const [allocatedResponse, benchResponse] = await Promise.all([
-          fetch('http://localhost:8080/employees/drafts'),
-          fetch('http://localhost:8080/employees/todo')
+          fetch('http://localhost:5000/employees/drafts'),
+          fetch('http://localhost:5000/employees/todo')
         ]);
 
         if (!allocatedResponse.ok || !benchResponse.ok) {
@@ -66,7 +66,7 @@ const Reports = () => {
         setFilteredData(bench); // Show unallocated (bench) data
       } else if (value === 'bench') {
         // Fetch employees associated with client "Innover" using the new API endpoint
-        const response = await fetch('http://localhost:8080/employees/client/innover');
+        const response = await fetch('http://localhost:5000/employees/client/innover');
         if (!response.ok) {
           throw new Error('Failed to fetch employees for "Bench" filter');
         }

@@ -18,8 +18,8 @@ const ClientProjects = () => {
     const fetchEmployeeData = async () => {
       try {
         setLoading(true);
-        const allocatedResponse = await fetch(`http://localhost:8080/client/${clientId}/projects`);
-        const benchedResponse = await fetch('http://localhost:8080/employees/todo');
+        const allocatedResponse = await fetch(`http://localhost:5000/client/${clientId}/projects`);
+        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
         
         if (!allocatedResponse.ok || !benchedResponse.ok) {
           throw new Error('Network response was not ok');

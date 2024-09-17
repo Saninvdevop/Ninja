@@ -19,7 +19,7 @@ const EmpPage = () => {
   const [sortColumn, setSortColumn] = useState(null); // Track the currently sorted column
   const [sortDirection, setSortDirection] = useState(null); // Track the sort direction (asc/desc)
   const [currentPage, setCurrentPage] = useState(1); // Track current page
-  const [rowsPerPage] = useState(20); // Rows per page set to 20
+  const [rowsPerPage] = useState(5); // Rows per page set to 20
 
   useEffect(() => {
     fetchDataBasedOnFilter(filter);
@@ -33,13 +33,13 @@ const EmpPage = () => {
 
       switch (filter) {
         case 'totally_unallocated': // Use /todo API for "Totally Unallocated" filter
-          response = await fetch('http://localhost:8080/employees/todo');
+          response = await fetch('http://localhost:5000/employees/todo');
           break;
         case 'draft':
-          response = await fetch('http://localhost:8080/employees/drafts');
+          response = await fetch('http://localhost:5000/employees/drafts');
           break;
         case 'allocated': // Updated filter for "Allocated"
-          response = await fetch('http://localhost:8080/employees/drafts');
+          response = await fetch('http://localhost:5000/employees/drafts');
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -52,7 +52,7 @@ const EmpPage = () => {
           setLoading(false);
           return; // Exit after processing this filter case
         case 'benched': // New filter for "Benched"
-          response = await fetch('http://localhost:8080/employees/drafts');
+          response = await fetch('http://localhost:5000/employees/drafts');
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -68,7 +68,7 @@ const EmpPage = () => {
           return;
         case 'all':
         default:
-          response = await fetch('http://localhost:8080/employees');
+          response = await fetch('http://localhost:5000/employees');
           break;
       }
 

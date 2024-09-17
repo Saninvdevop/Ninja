@@ -25,7 +25,7 @@ const ClientDetails = ({ userRole }) => {
         const formattedProjectName = projectId.replace(/-/g, ' ');
         const encodedProjectName = encodeURIComponent(formattedProjectName);
 
-        const response = await fetch(`http://localhost:8080/project/${encodedProjectName}/employees`);
+        const response = await fetch(`http://localhost:5000/project/${encodedProjectName}/employees`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
@@ -87,7 +87,7 @@ const ClientDetails = ({ userRole }) => {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('http://localhost:8080/project/allocate-resource', {
+      const response = await fetch('http://localhost:5000/project/allocate-resource', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

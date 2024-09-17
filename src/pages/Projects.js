@@ -19,8 +19,8 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
     const fetchEmployeeData = async () => {
       try {
         setLoading(true);
-        const allocatedResponse = await fetch('http://localhost:8080/clients');
-        const benchedResponse = await fetch('http://localhost:8080/employees/todo');
+        const allocatedResponse = await fetch('http://localhost:5000/clients');
+        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
         
         if (!allocatedResponse.ok || !benchedResponse.ok) {
           throw new Error('Network response was not ok');
