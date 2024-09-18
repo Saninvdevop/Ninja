@@ -59,7 +59,7 @@ h2 {
 .controls {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Space between left and right */
+  justify-content: flex-end; /* Space between left and right */
   width: 100%;
   margin-bottom: 10px;
   flex-wrap: wrap;

@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Icon, Input, Button, Dropdown } from 'semantic-ui-react';
+import { Table, Icon, Input, Button } from 'semantic-ui-react';
 import ViewCard from '../components/ViewCards/Viewcard'; // Import ViewCard component
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import './DashboardBizOps.css'; // Import CSS for consistent styling
 import * as XLSX from 'xlsx';
-
 
 const DashboardBizOps = () => {
   const navigate = useNavigate(); // Initialize useNavigate for navigation
@@ -14,16 +13,16 @@ const DashboardBizOps = () => {
   const activeProjects = 80;
   const [allocatedEmployees, setAllocatedEmployees] = useState([]);
   const [benchedEmployees, setBenchedEmployees] = useState([]);
-  const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
+  // Removed: const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
   const [loading, setLoading] = useState(true); // Loading state
   const [totalemp, setTotalEmp] = useState();
   const [searchTerm, setSearchTerm] = useState(''); // Search term state
   const [sortColumn, setSortColumn] = useState(null); // Track which column is sorted
   const [sortDirection, setSortDirection] = useState(null); // Track sort direction
   const [currentPage, setCurrentPage] = useState(1); // Track current page
-  const [rowsPerPage] = useState(5); // Rows per page set to 20 for pagination
+  const [rowsPerPage] = useState(5); // Rows per page set to 5 for pagination
   const [filteredEmployees, setFilteredEmployees] = useState([]); // Filtered employee data
-  const [filterTags, setFilterTags] = useState([]); // State for multiple filter tags
+  // Removed: const [filterTags, setFilterTags] = useState([]); // State for multiple filter tags
 
   // Get current date
   useEffect(() => {
@@ -83,28 +82,29 @@ const DashboardBizOps = () => {
   const handleSearchChange = (e) => {
     const searchValue = e.target.value.toLowerCase();
     setSearchTerm(searchValue);
-    applyFilters(searchValue, filterTags);
+    applyFilters(searchValue); // Updated to only pass searchTerm
     setCurrentPage(1); // Reset to the first page when searching
   };
 
-  // Handle filter tag selection
-  const handleFilterChange = (e, { value }) => {
-    setFilterTags(value);
-    applyFilters(searchTerm, value);
-    setCurrentPage(1); // Reset to the first page when filtering
-  };
+  // Removed: Handle filter tag selection
+  // const handleFilterChange = (e, { value }) => {
+  //   setFilterTags(value);
+  //   applyFilters(searchTerm, value);
+  //   setCurrentPage(1); // Reset to the first page when filtering
+  // };
 
-  // Apply search and tag filters
-  const applyFilters = (searchValue, tags) => {
+  // Apply search filter only
+  const applyFilters = (searchValue) => {
     let filtered = allocatedEmployees.filter((employee) =>
       employee.EmployeeName.toLowerCase().includes(searchValue) ||
       employee.Email.toLowerCase().includes(searchValue) ||
       employee.EmployeeID.toString().toLowerCase().includes(searchValue)
     );
 
-    if (tags.length > 0) {
-      filtered = filtered.filter((employee) => tags.includes(employee.Tag));
-    }
+    // Removed: Filter based on tags
+    // if (tags.length > 0) {
+    //   filtered = filtered.filter((employee) => tags.includes(employee.Tag));
+    // }
 
     setFilteredEmployees(filtered);
   };
@@ -165,88 +165,66 @@ const DashboardBizOps = () => {
     XLSX.writeFile(workbook, 'employees.xlsx');
   };
 
-
-  // Filter Dropdown Options
-  const filterOptions = [
-    { key: 'important', text: 'Important', value: 'Important' },
-    { key: 'announcement', text: 'Announcement', value: 'Announcement' },
-    { key: 'discussion', text: 'Discussion', value: 'Discussion' },
-  ];
+  // Removed: Filter Dropdown Options
+  // const filterOptions = [
+  //   { key: 'important', text: 'Important', value: 'Important' },
+  //   { key: 'announcement', text: 'Announcement', value: 'Announcement' },
+  //   { key: 'discussion', text: 'Discussion', value: 'Discussion' },
+  // ];
 
   return (
     <div className="main-layout">
       <div className='right-content'>
-        {/* Conditionally render Greeting and Cards only on the first page */}
-        {currentPage === 1 && (
-          <>
-            <div className='top-content'>
-              <div className='greeting'>
-                <h1>Hello Ravi,</h1>
-                <h2>{currentDate}</h2>
-              </div>
+        {/* Always render Greeting and Cards */}
+        <>
+          <div className='top-content'>
+            <div className='greeting'>
+              <h1>Hello Ravi,</h1>
+              <h2>{currentDate}</h2>
             </div>
+          </div>
 
-            <div className='bottom-content-cards'>
-              <div className='cards'>
-                <ViewCard
-                  icon="fa-users"
-                  header="Unallocated"
-                  value={todo}
-                  onClick={() => navigate('/unallocated')}
-                />
-              </div>
-              <div className='cards'>
-                <ViewCard
-                  icon="fa-users"
-                  header="Drafts"
-                  value={draft}
-                  onClick={() => navigate('/todo')}
-                />
-              </div>
-              <div className='cards'>
-                <ViewCard
-                  icon="fa-users"
-                  header="Employees"
-                  value={totalemp} // Changed from draft to totalemp
-                  onClick={() => navigate('/employees')}
-                />
-              </div>
-              <div className='cards'>
-                <ViewCard
-                  icon="fa-project-diagram"
-                  header="Projects"
-                  value={activeProjects}
-                  onClick={() => navigate('/projects')}
-                />
-              </div>
+          <div className='bottom-content-cards'>
+            <div className='cards'>
+              <ViewCard
+                icon="fa-users"
+                header="Unallocated"
+                value={todo}
+                onClick={() => navigate('/unallocated')}
+              />
             </div>
-          </>
-        )}
+            <div className='cards'>
+              <ViewCard
+                icon="fa-users"
+                header="Drafts"
+                value={draft}
+                onClick={() => navigate('/todo')}
+              />
+            </div>
+            <div className='cards'>
+              <ViewCard
+                icon="fa-users"
+                header="Employees"
+                value={totalemp} // Changed from draft to totalemp
+                onClick={() => navigate('/employees')}
+              />
+            </div>
+            <div className='cards'>
+              <ViewCard
+                icon="fa-project-diagram"
+                header="Projects"
+                value={activeProjects}
+                onClick={() => navigate('/projects')}
+              />
+            </div>
+          </div>
+        </>
 
         <div className='last-edited'>
           <h2>Allocations</h2>
 
-          {/* Search, Download, and Filter Controls */}
+          {/* Search, Download */}
           <div className='controls'>
-            {/* Left Side: Filter Dropdown */}
-            <div className='left-controls'>
-              <Dropdown
-                placeholder='Filter'
-                icon='filter'
-                floating
-                labeled
-                button
-                className='icon'
-                options={filterOptions}
-                onChange={handleFilterChange}
-                clearable
-                multiple
-                selection
-                value={filterTags}
-                aria-label="Filter Employees"
-              />
-            </div>
-
             {/* Right Side: Search Input and Download Button */}
             <div className='right-controls'>
               <Input
@@ -267,9 +245,9 @@ const DashboardBizOps = () => {
                 <Icon name='download' />
                 Download
               </Button>
-
             </div>
           </div>
+
 
           {/* Employee Table with Sort, Search, and Pagination */}
           <div className='table'>

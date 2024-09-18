@@ -85,7 +85,7 @@ const Navbar = ({ userRole, setUserRole }) => {
               to="/projects"
               className="item"
             >
-              Project Allocation
+              Projects
             </Menu.Item>
           </>
         )}
