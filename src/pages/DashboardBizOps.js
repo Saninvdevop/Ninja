@@ -38,9 +38,9 @@ const DashboardBizOps = () => {
     const fetchEmployeeData = async () => {
       try {
         setLoading(true);
-        const allocatedResponse = await fetch('http://localhost:8080/employees/drafts');
-        const benchedResponse = await fetch('http://localhost:8080/employees/todo');
-        const totalResponse = await fetch('http://localhost:8080/employees');
+        const allocatedResponse = await fetch('http://localhost:5000/employees/drafts');
+        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
+        const totalResponse = await fetch('http://localhost:5000/employees');
 
         if (!allocatedResponse.ok || !benchedResponse.ok || !totalResponse.ok) {
           throw new Error('Network response was not ok');

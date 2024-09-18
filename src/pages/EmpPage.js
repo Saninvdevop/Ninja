@@ -33,13 +33,13 @@ const EmpPage = () => {
 
       switch (filter) {
         case 'unallocated': // Use /todo API for "Unallocated" filter
-          response = await fetch('http://localhost:8080/employees/todo');
+          response = await fetch('http://localhost:5000/employees/todo');
           break;
         case 'draft':
-          response = await fetch('http://localhost:8080/employees/drafts');
+          response = await fetch('http://localhost:5000/employees/drafts');
           break;
         case 'allocated': // Updated filter for "Allocated"
-          response = await fetch('http://localhost:8080/employees/drafts');
+          response = await fetch('http://localhost:5000/employees/drafts');
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -52,7 +52,7 @@ const EmpPage = () => {
           setLoading(false);
           return; // Exit after processing this filter case
         case 'bench': // New filter for "Benched"
-          response = await fetch('http://localhost:8080/employees/drafts');
+          response = await fetch('http://localhost:5000/employees/drafts');
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -68,7 +68,7 @@ const EmpPage = () => {
           return;
         case 'all':
         default:
-          response = await fetch('http://localhost:8080/employees');
+          response = await fetch('http://localhost:5000/employees');
           break;
       }
 
