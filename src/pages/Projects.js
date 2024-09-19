@@ -1,24 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Icon, Button, Modal, Form, Dropdown } from 'semantic-ui-react';
+import { Table, Icon, Button, Input } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import './Projects.css';
 
 const Projects = ({ userRole }) => { // Receive userRole as a prop
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate(); // For navigation
-  const [open, setOpen] = useState(false); // State to control modal visibility
-  const [allocation, setAllocation] = useState(''); // State for allocation dropdown
-  const [selectedClient, setSelectedClient] = useState(''); // State for selected client
-  const [selectedProject, setSelectedProject] = useState(''); // State for selected project
   const [clientData, setClientData] = useState([]);
   const [benchedEmployees, setBenchedEmployees] = useState([]);
   const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
   const [loading, setLoading] = useState(true); // Loading state
 
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState(null);
+  const [sortDirection, setSortDirection] = useState(null);
+
+  const handleRowClick = (clientId) => {
+    navigate(`/client/${clientId}/projects`); // Navigate to the client projects page
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  // Download data to Excel
+  const downloadExcel = () => {
+    // Define the data to export
+    const dataToExport = filteredAndSortedData.map(client => ({
+      Company: client.ClientName,
+      'No. of Projects': client.NoOfProjects,
+      Country: client.Country,
+      'Contract Start Date': client.StartDate,
+      'Contract End Date': client.EndDate,
+      Headcount: client.NoOfEmployees,
+    }));
+
+    // Create a worksheet
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    // Create a workbook and add the worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Clients');
+
+    // Generate buffer
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    // Create a blob from the buffer
+    const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    // Save the file
+    saveAs(data, 'clients.xlsx');
+  };
+
   // Fetch data from APIs
   useEffect(() => {
     const fetchEmployeeData = async () => {
       try {
-        setLoading(true);
         const allocatedResponse = await fetch('http://localhost:5000/clients');
         const benchedResponse = await fetch('http://localhost:5000/employees/todo');
         
@@ -41,186 +78,159 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
     fetchEmployeeData();
   }, []);
 
-  const allocationOptions = [
-    { key: 'client', text: 'Client Project', value: 'client project' },
-    { key: 'bench', text: 'Bench', value: 'bench' },
-    { key: 'corporate', text: 'Corporate', value: 'corporate' },
-  ];
+  // Filter data based on search term
+  const filteredData = clientData.filter(client => {
+    const term = searchTerm.toLowerCase();
+    return (
+      client.ClientName.toLowerCase().includes(term) ||
+      (client.Email && client.Email.toLowerCase().includes(term)) || // Ensure Email exists
+      String(client.ClientID).includes(term)
+    );
+  });
 
-  // Options for client dropdown
-  const clientOptions = clientData.map((client) => ({
-    key: client.id,
-    text: client.company,
-    value: client.id,
-  }));
+  // Sort data based on sortColumn and sortDirection
+  const sortedData = React.useMemo(() => {
+    if (!sortColumn) return filteredData;
 
-  // Options for project dropdown based on selected client
-  const projectOptions = selectedClient
-    ? clientData
-        .find((client) => client.id === selectedClient)
-        ?.projects.map((project) => ({
-          key: project,
-          text: project,
-          value: project,
-        }))
-    : [];
+    const sorted = [...filteredData].sort((a, b) => {
+      let aVal = a[sortColumn];
+      let bVal = b[sortColumn];
 
-  const handleRowClick = (clientId) => {
-    navigate(`/client/${clientId}/projects`); // Navigate to the client projects page
-  };
+      // Handle different data types
+      if (typeof aVal === 'string') {
+        aVal = aVal.toLowerCase();
+        bVal = bVal.toLowerCase();
+      }
 
-  const handleAllocationChange = (e, { value }) => {
-    setAllocation(value);
-    if (value !== 'client project') {
-      setSelectedClient(''); // Reset selected client
-      setSelectedProject(''); // Reset selected project
-    }
-  };
-
-  const handleClientChange = (e, { value }) => {
-    setSelectedClient(value);
-    setSelectedProject(''); // Reset selected project when a new client is selected
-  };
-
-  const handleSubmit = () => {
-    console.log({
-      allocation,
-      selectedClient,
-      selectedProject,
+      if (aVal > bVal) return sortDirection === 'ascending' ? 1 : -1;
+      if (aVal < bVal) return sortDirection === 'ascending' ? -1 : 1;
+      return 0;
     });
-    setOpen(false); // Close modal after submission
-  };
 
-  // Function to handle back navigation
-  const handleBackClick = () => {
-    navigate(-1); // Go back to the previous page
+    return sorted;
+  }, [filteredData, sortColumn, sortDirection]);
+
+  // Combined filtered and sorted data
+  const filteredAndSortedData = sortedData;
+
+  // Handle sorting when a header is clicked
+  const handleSort = (clickedColumn) => {
+    if (sortColumn !== clickedColumn) {
+      setSortColumn(clickedColumn);
+      setSortDirection('ascending');
+      return;
+    }
+
+    // Toggle sort direction
+    setSortDirection(sortDirection === 'ascending' ? 'descending' : 'ascending');
   };
 
   return (
     <div className='main-layout'>
-      <div className="projects-container">
-      {/* Back Arrow Icon */}
-      <Icon  name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
-
-      <div className="projects-header">
-        <h2>Clients</h2>
-        {/* Show Allocate Button only if userRole is not 'leader' */}
-        {/* {userRole !== 'leader' && (
-          <Button className="allocate-button" primary onClick={() => setOpen(true)}>
-            Allocate Resource
-          </Button>
-        )} */}
-      </div>
-      
-      <Table celled padded className="futuristic-table">
-        <Table.Header>
-          <Table.Row>
-            <Table.HeaderCell>Company</Table.HeaderCell>
-            <Table.HeaderCell>No. of Projects</Table.HeaderCell>
-            <Table.HeaderCell>Country</Table.HeaderCell>
-            <Table.HeaderCell>Contract Start Date</Table.HeaderCell>
-            <Table.HeaderCell>Contract End Date</Table.HeaderCell>
-            <Table.HeaderCell>Headcount</Table.HeaderCell>
-          </Table.Row>
-        </Table.Header>
-
-        <Table.Body>
-          {clientData.map((client, index) => (
-            <Table.Row
-              key={index}
-              onClick={() => handleRowClick(client.ClientID)} // Ensure correct navigation
-              style={{ cursor: 'pointer' }}
-            >
-              <Table.Cell>
-                <Icon name="building" /> {client.ClientName}
-              </Table.Cell>
-              <Table.Cell>{client.NoOfProjects}</Table.Cell>
-              <Table.Cell>{client.Country}</Table.Cell>
-              <Table.Cell>{client.StartDate}</Table.Cell>
-              <Table.Cell>{client.EndDate}</Table.Cell>
-              <Table.Cell>{client.NoOfEmployees}</Table.Cell>
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </Table>
-
-      {/* Modal for Allocating Resource */}
-      <Modal
-        onClose={() => setOpen(false)}
-        onOpen={() => setOpen(true)}
-        open={open}
-        size="small"
-      >
-        <Modal.Header>Allocate Resource</Modal.Header>
-        <Modal.Content>
-          <Form>
-            <Form.Input label="Resource Name" placeholder="Enter resource name" required />
-            <Form.Field>
-              <label>Allocation</label>
-              <Dropdown
-                placeholder="Select Allocation"
-                fluid
-                selection
-                options={allocationOptions}
-                value={allocation}
-                onChange={handleAllocationChange}
-                required
+      <div className='right-content'>
+        {/* Breadcrumb Section */}
+        <div className='breadcrumb'>
+          <h2 className="breadcrumb-text">Clients</h2>
+        </div>
+        {/* Search and Download Container */}
+        <div className="controls">
+           {/* Search Bar */}
+           <Input
+              icon="search"
+              placeholder="Search by name, email, or ID..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="search-bar"
               />
-            </Form.Field>
-            {allocation === 'client project' && (
-              <>
-                <Form.Field>
-                  <label>Client Name</label>
-                  <Dropdown
-                    placeholder="Select Client"
-                    fluid
-                    selection
-                    options={clientOptions}
-                    value={selectedClient}
-                    onChange={handleClientChange}
-                    required
-                  />
-                </Form.Field>
-                {selectedClient && (
-                  <Form.Field>
-                    <label>Client Project</label>
-                    <Dropdown
-                      placeholder="Select Client Project"
-                      fluid
-                      selection
-                      options={projectOptions}
-                      value={selectedProject}
-                      onChange={(e, { value }) => setSelectedProject(value)}
-                      required
-                    />
-                  </Form.Field>
+  
+              {/* Download Button */}
+              <Button
+                icon
+                labelPosition="left"
+                color="blue"
+                onClick={downloadExcel}
+                className="download-button"
+                >
+                <Icon name="download" />
+                Download
+              </Button>
+        </div>
+      
+        <div className='table'>
+          {loading ? (
+            <div>Loading...</div>
+          ) : (
+            <Table celled striped selectable sortable>
+              <Table.Header>
+                <Table.Row>
+                  <Table.HeaderCell
+                    sorted={sortColumn === 'ClientName' ? sortDirection : null}
+                    onClick={() => handleSort('ClientName')}
+                  >
+                    Company
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
+                    sorted={sortColumn === 'NoOfProjects' ? sortDirection : null}
+                    onClick={() => handleSort('NoOfProjects')}
+                  >
+                    No. of Projects
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
+                    sorted={sortColumn === 'Country' ? sortDirection : null}
+                    onClick={() => handleSort('Country')}
+                  >
+                    Country
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
+                    sorted={sortColumn === 'StartDate' ? sortDirection : null}
+                    onClick={() => handleSort('StartDate')}
+                  >
+                    Contract Start Date
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
+                    sorted={sortColumn === 'EndDate' ? sortDirection : null}
+                    onClick={() => handleSort('EndDate')}
+                  >
+                    Contract End Date
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
+                    sorted={sortColumn === 'NoOfEmployees' ? sortDirection : null}
+                    onClick={() => handleSort('NoOfEmployees')}
+                  >
+                    Headcount
+                  </Table.HeaderCell>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {filteredAndSortedData.length > 0 ? (
+                  filteredAndSortedData.map((client) => (
+                    <Table.Row
+                      key={client.ClientID}
+                      onClick={() => handleRowClick(client.ClientID)} // Ensure correct navigation
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <Table.Cell>
+                        <Icon name="building" /> {client.ClientName}
+                      </Table.Cell>
+                      <Table.Cell>{client.NoOfProjects}</Table.Cell>
+                      <Table.Cell>{client.Country}</Table.Cell>
+                      <Table.Cell>{client.StartDate}</Table.Cell>
+                      <Table.Cell>{client.EndDate}</Table.Cell>
+                      <Table.Cell>{client.NoOfEmployees}</Table.Cell>
+                    </Table.Row>
+                  ))
+                ) : (
+                  <Table.Row>
+                    <Table.Cell colSpan="6" textAlign="center">
+                      No matching clients found.
+                    </Table.Cell>
+                  </Table.Row>
                 )}
-              </>
-            )}
-            <Form.Input
-              label="Percentage Allocation"
-              placeholder="Enter percentage (e.g., 50%)"
-              type="number"
-              min="0"
-              max="100"
-              required
-            />
-          </Form>
-        </Modal.Content>
-        <Modal.Actions>
-          <Button color="black" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            content="Submit"
-            labelPosition="right"
-            icon="checkmark"
-            onClick={handleSubmit}
-            primary
-          />
-        </Modal.Actions>
-      </Modal>
-    </div>
+              </Table.Body>
+            </Table>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
