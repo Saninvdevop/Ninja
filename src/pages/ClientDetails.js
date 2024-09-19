@@ -169,19 +169,20 @@ const ClientDetails = ({ userRole }) => {
             </h2>
         </div>
         {/* Success Message */}
-        {showMessage && <Message success header="Success" className="toaster-message" content="Resource successfully added!" />}
-        {/* Allocate Resource Button - Only show if the user is not a leader */}
-      {userRole !== 'leader' && (
-        <Button className='add-icon1' icon color="green" onClick={() => setOpen(true)}>
-          <Icon name="plus" />
-        </Button>
-      )}
+        <div className='controls'>
+          {showMessage && <Message success header="Success" className="toaster-message" content="Resource successfully added!" />}
+          {/* Allocate Resource Button - Only show if the user is not a leader */}
+          {userRole !== 'leader' && (
+            <Button positive icon="plus" onClick={() => setOpen(true)} content="Allocate Resource" />
+          )}
+        </div>
 
       {/* Employees Table */}
+      <div className='table'>
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <Table celled padded className="employee-table4">
+        <Table celled striped sortable>
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell>Employee Name</Table.HeaderCell>
@@ -203,6 +204,7 @@ const ClientDetails = ({ userRole }) => {
           </Table.Body>
         </Table>
       )}
+      </div>
 
       {/* Modal for Allocating Resource - Only accessible if not a leader */}
       {userRole !== 'leader' && (
