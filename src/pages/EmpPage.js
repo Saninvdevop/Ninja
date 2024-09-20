@@ -19,66 +19,43 @@ const EmpPage = () => {
   const [sortColumn, setSortColumn] = useState(null); // Track the currently sorted column
   const [sortDirection, setSortDirection] = useState(null); // Track the sort direction (asc/desc)
   const [currentPage, setCurrentPage] = useState(1); // Track current page
-  const rowsPerPage = 10; // Rows per page set to 10
+  const rowsPerPage = 20; // Rows per page set to 20
 
   useEffect(() => {
     fetchDataBasedOnFilter(filter);
   }, [filter]); // Re-fetch data whenever the filter changes
-
-  // Function to fetch data based on filter
   const fetchDataBasedOnFilter = async (filter) => {
     try {
       setLoading(true);
-      let response;
+      let endpoint;
 
       switch (filter) {
-        case 'unallocated': // Use /todo API for "Unallocated" filter
-          response = await fetch('http://localhost:5000/employees/todo');
+        case 'unallocated':
+          endpoint = 'http://localhost:8080/employees/unallocated';
           break;
         case 'draft':
-          response = await fetch('http://localhost:5000/employees/drafts');
+          endpoint = 'http://localhost:8080/employees/draft';
           break;
-        case 'allocated': // Updated filter for "Allocated"
-          response = await fetch('http://localhost:5000/employees/drafts');
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          const allocatedEmployees = await response.json();
-          // Filter employees with 100% allocation only
-          const fullyAllocatedEmployees = allocatedEmployees.filter(employee => employee.Allocation === 100);
-          setEmployeeData(fullyAllocatedEmployees);
-          setFilteredEmployees(fullyAllocatedEmployees); // Initialize filtered employees
-          setCount(fullyAllocatedEmployees.length);
-          setLoading(false);
-          return; // Exit after processing this filter case
-        case 'bench': // New filter for "Benched"
-          response = await fetch('http://localhost:5000/employees/drafts');
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          const allEmployees = await response.json();
-          // Filter employees where Client is "Innover" and Project is "Benched"
-          const benchEmployees = allEmployees.filter(employee =>
-            employee.ClientName === 'Innover' && employee.ProjectName === 'Benched'
-          );
-          setEmployeeData(benchEmployees);
-          setFilteredEmployees(benchEmployees); 
-          setCount(benchEmployees.length);
-          setLoading(false);
-          return;
+        case 'allocated':
+          endpoint = 'http://localhost:8080/employees/allocated';
+          break;
+        case 'bench':
+          endpoint = 'http://localhost:8080/employees/bench';
+          break;
         case 'all':
         default:
-          response = await fetch('http://localhost:5000/employees');
+          endpoint = 'http://localhost:8080/employees';
           break;
       }
 
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
 
       const data = await response.json();
       setEmployeeData(data);
-      setFilteredEmployees(data); // Initialize filtered employees
+      setFilteredEmployees(data);
       setCount(data.length);
     } catch (error) {
       console.error('Fetch error:', error);
@@ -121,14 +98,18 @@ const EmpPage = () => {
     const filtered = employeeData.filter((employee) => {
       // Convert employee properties to lowercase for comparison
       const employeeName = employee.EmployeeName.toLowerCase();
-      const email = employee.Email.toLowerCase();
+      const email = employee.EmployeeEmail.toLowerCase(); // Updated to EmployeeEmail
       const employeeId = (employee?.EmployeeID || '').toString().toLowerCase();
+      const employeeRole = (employee.EmployeeRole || '').toLowerCase();
+      const projects = (employee.Projects || []).join(', ').toLowerCase();
 
       // Check if the employee matches the search term
       const matchesSearchTerm =
         employeeName.includes(lowerSearchTerm) ||
         email.includes(lowerSearchTerm) ||
-        employeeId.includes(lowerSearchTerm);
+        employeeId.includes(lowerSearchTerm) ||
+        employeeRole.includes(lowerSearchTerm) ||
+        projects.includes(lowerSearchTerm);
 
       return matchesSearchTerm;
     });
@@ -139,7 +120,7 @@ const EmpPage = () => {
   };
 
   // Handle filter dropdown change
-  const handleFilterChange = (e, { value }) => {
+  const handleFilterChange = (value) => { // Simplified parameter
     setFilter(value); // Update filter, triggering useEffect to fetch new data
     setSearchTerm(''); // Reset search term when changing filter
   };
@@ -149,7 +130,7 @@ const EmpPage = () => {
     navigate(`/employee/${employee.EmployeeID}`, {
       state: {
         employee,
-        allocationPercentage: employee.Allocation, // Pass the current allocation percentage
+        allocationPercentage: employee.Current_Allocation, // Pass the current allocation percentage
       },
     });
   };
@@ -173,8 +154,11 @@ const EmpPage = () => {
     const worksheet = XLSX.utils.json_to_sheet(filteredEmployees.map((employee) => ({
       'Employee ID': employee.EmployeeID,
       'Employee Name': employee.EmployeeName,
-      'Email': employee.Email,
-      'Current Allocation %': employee.Allocation,
+      'Email': employee.EmployeeEmail, // Updated to EmployeeEmail
+      'Current Allocation %': employee.Current_Allocation,
+      'Employee Role': employee.EmployeeRole, // Added EmployeeRole
+      'Projects': employee.Projects.join(', '),
+      // Add other fields if necessary
     })));
     
     const workbook = XLSX.utils.book_new();
@@ -215,31 +199,31 @@ const EmpPage = () => {
           <div className="filter-tabs">
             <button
               className={`tab ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => setFilter('all')}
+              onClick={() => handleFilterChange('all')}
             >
               All
             </button>
             <button
               className={`tab ${filter === 'unallocated' ? 'active' : ''}`}
-              onClick={() => setFilter('unallocated')}
+              onClick={() => handleFilterChange('unallocated')}
             >
               Unallocated
             </button>
             <button
               className={`tab ${filter === 'draft' ? 'active' : ''}`}
-              onClick={() => setFilter('draft')}
+              onClick={() => handleFilterChange('draft')}
             >
               Draft
             </button>
             <button
               className={`tab ${filter === 'allocated' ? 'active' : ''}`}
-              onClick={() => setFilter('allocated')}
+              onClick={() => handleFilterChange('allocated')}
             >
               Allocated
             </button>
             <button
               className={`tab ${filter === 'bench' ? 'active' : ''}`}
-              onClick={() => setFilter('bench')}
+              onClick={() => handleFilterChange('bench')}
             >
               Bench
             </button>
@@ -270,7 +254,6 @@ const EmpPage = () => {
           </div>
         </div>
 
-        {/* Employee Table Section */}
         <div className='table'>
           <Table celled striped sortable>
             <Table.Header>
@@ -288,14 +271,20 @@ const EmpPage = () => {
                   Employee Name
                 </Table.HeaderCell>
                 <Table.HeaderCell
-                  sorted={sortColumn === 'Email' ? sortDirection : null}
-                  onClick={() => handleSort('Email')}
+                  sorted={sortColumn === 'EmployeeRole' ? sortDirection : null}
+                  onClick={() => handleSort('EmployeeRole')}
                 >
-                  Email
+                  Employee Role
                 </Table.HeaderCell>
                 <Table.HeaderCell
-                  sorted={sortColumn === 'Allocation' ? sortDirection : null}
-                  onClick={() => handleSort('Allocation')}
+                  sorted={sortColumn === 'Projects' ? sortDirection : null}
+                  onClick={() => handleSort('Projects')}
+                >
+                  Projects
+                </Table.HeaderCell>
+                <Table.HeaderCell
+                  sorted={sortColumn === 'Current_Allocation' ? sortDirection : null}
+                  onClick={() => handleSort('Current_Allocation')}
                 >
                   Current Allocation %
                 </Table.HeaderCell>
@@ -304,7 +293,7 @@ const EmpPage = () => {
             <Table.Body>
               {loading ? (
                 <Table.Row>
-                  <Table.Cell colSpan="4" textAlign="center">
+                  <Table.Cell colSpan="5" textAlign="center">
                     Loading...
                   </Table.Cell>
                 </Table.Row>
@@ -313,13 +302,14 @@ const EmpPage = () => {
                   <Table.Row key={employee.EmployeeID} onClick={() => handleEmployeeClick(employee)} style={{ cursor: 'pointer' }}>
                     <Table.Cell>{employee.EmployeeID}</Table.Cell>
                     <Table.Cell>{employee.EmployeeName}</Table.Cell>
-                    <Table.Cell>{employee.Email}</Table.Cell>
-                    <Table.Cell>{employee.Allocation}%</Table.Cell>
+                    <Table.Cell>{employee.EmployeeRole}</Table.Cell>
+                    <Table.Cell>{employee.Projects.join(', ')}</Table.Cell>
+                    <Table.Cell>{employee.Current_Allocation}%</Table.Cell>
                   </Table.Row>
                 ))
               ) : (
                 <Table.Row>
-                  <Table.Cell colSpan="4" textAlign="center">
+                  <Table.Cell colSpan="5" textAlign="center">
                     No employees found.
                   </Table.Cell>
                 </Table.Row>

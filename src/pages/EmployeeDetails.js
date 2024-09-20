@@ -138,7 +138,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   // Function to fetch employee allocation data
   const fetchEmployeeData = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/detailed-view/${id}`);
+      const response = await fetch(`http://localhost:5000/employee-view/${id}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -458,8 +458,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
                   <div>
                     <p><strong>Joining Date:</strong> Jan 1, 2022</p>
                     <p><strong>Ending Date:</strong> Dec 31, 2024</p>
-                    <p><strong>Hard Skills:</strong> Data Analysis, Python, SQL</p>
-                    <p><strong>Soft Skills:</strong> Teamwork, Communication, Problem-solving</p>
+                    <p><strong>TYOE:</strong> Data Analysis, Python, SQL</p>
+                    <p><strong>Skills:</strong> Teamwork, Communication, Problem-solving</p>
                   </div>
                 }
                 position="top right"
@@ -502,8 +502,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
               <div className="info-item">
                 <Icon name="phone" size="large" />
                 <div>
-                  <p>Contact Number</p>
-                  <p>+44 20 7946 0958</p>
+                  <p>Keka Status</p>
+                  <p>Active</p>
                 </div>
               </div>
 
