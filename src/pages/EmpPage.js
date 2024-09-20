@@ -98,7 +98,6 @@ const EmpPage = () => {
     const filtered = employeeData.filter((employee) => {
       // Convert employee properties to lowercase for comparison
       const employeeName = employee.EmployeeName.toLowerCase();
-      const email = employee.EmployeeEmail.toLowerCase(); // Updated to EmployeeEmail
       const employeeId = (employee?.EmployeeID || '').toString().toLowerCase();
       const employeeRole = (employee.EmployeeRole || '').toLowerCase();
       const projects = (employee.Projects || []).join(', ').toLowerCase();
@@ -106,7 +105,6 @@ const EmpPage = () => {
       // Check if the employee matches the search term
       const matchesSearchTerm =
         employeeName.includes(lowerSearchTerm) ||
-        email.includes(lowerSearchTerm) ||
         employeeId.includes(lowerSearchTerm) ||
         employeeRole.includes(lowerSearchTerm) ||
         projects.includes(lowerSearchTerm);
@@ -140,31 +138,36 @@ const EmpPage = () => {
     navigate(-1); // Go back to the previous page
   };
 
-  // Filter options for the dropdown (if you decide to use it)
-  const filterOptions = [
-    { key: 'all', text: 'All', value: 'all' },
-    { key: 'unallocated', text: 'Unallocated', value: 'unallocated' },
-    { key: 'draft', text: 'Draft', value: 'draft' },
-    { key: 'allocated', text: 'Allocated', value: 'allocated' }, // Updated filter option for Allocated
-    { key: 'bench', text: 'Bench', value: 'bench' }, // New filter option for Benched
-  ];
 
-  // Function to download current filtered and sorted data as Excel
-  const downloadExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filteredEmployees.map((employee) => ({
-      'Employee ID': employee.EmployeeID,
-      'Employee Name': employee.EmployeeName,
-      'Email': employee.EmployeeEmail, // Updated to EmployeeEmail
-      'Current Allocation %': employee.Current_Allocation,
-      'Employee Role': employee.EmployeeRole, // Added EmployeeRole
-      'Projects': employee.Projects.join(', '),
-      // Add other fields if necessary
-    })));
-    
+  const downloadExcel = async () => {
+    const filters = ['all', 'unallocated', 'draft', 'allocated', 'bench'];
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees');
-    
-    XLSX.writeFile(workbook, 'employee-data.xlsx');
+  
+    try {
+      for (const filter of filters) {
+        const endpoint = `http://localhost:8080/employees${filter === 'all' ? '' : `/${filter}`}`;
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${filter} data`);
+        }
+        const data = await response.json();
+  
+        const worksheet = XLSX.utils.json_to_sheet(data.map((employee) => ({
+          'Employee ID': employee.EmployeeID,
+          'Employee Name': employee.EmployeeName,
+          'Employee Role': employee.EmployeeRole,
+          'Projects': employee.Projects.join(', '),
+          'Current Allocation %': employee.Current_Allocation,
+        })));
+  
+        XLSX.utils.book_append_sheet(workbook, worksheet, filter.charAt(0).toUpperCase() + filter.slice(1));
+      }
+  
+      XLSX.writeFile(workbook, 'employee-data.xlsx');
+    } catch (error) {
+      console.error('Error downloading Excel file:', error);
+      // You might want to show an error message to the user here
+    }
   };
 
   // Pagination logic
@@ -234,7 +237,7 @@ const EmpPage = () => {
             {/* Search Bar */}
             <Input
               icon="search"
-              placeholder="Search by name, email, or ID..."
+              placeholder="Search by ID, or Name..."
               value={searchTerm}
               onChange={handleSearchChange}
               className="search-bar"
