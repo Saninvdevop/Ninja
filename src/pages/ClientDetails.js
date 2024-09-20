@@ -130,27 +130,59 @@ const ClientDetails = ({ userRole }) => {
 
   return (
     <div className='main-layout'>
-      <div className="client-details-container">
-      {/* Back Arrow Icon */}
-      <Icon name="arrow left" size="large" style={{ cursor: 'pointer', marginBottom: '20px' }} onClick={handleBackClick} />
-
-      <h2 className='emphead'>{`Employees for ${projectName}`}</h2>
-
-      {/* Success Message */}
-      {showMessage && <Message success header="Success" className="toaster-message" content="Resource successfully added!" />}
-
-      {/* Allocate Resource Button - Only show if the user is not a leader */}
-      {userRole !== 'leader' && (
-        <Button className='add-icon1' icon color="green" onClick={() => setOpen(true)}>
-          <Icon name="plus" />
-        </Button>
-      )}
+      <div className='right-content'>
+        <div className='breadcrumb'>
+            {/* Back Arrow Icon */}
+            <Icon 
+              name="arrow left" 
+              size="large" 
+              className="icon"
+              onClick={handleBackClick} 
+              style={{ cursor: 'pointer' }}
+            />
+            {/* Previous Screen Link */}
+            <h2 
+              className="breadcrumb-text" 
+              onClick={() => navigate('/projects')}
+              style={{ cursor: 'pointer', display: 'inline', marginLeft: '10px' }}
+            >
+              Clients
+            </h2>
+            {/* Divider between breadcrumb items */}
+            <span className="breadcrumb-divider"> / </span>
+            
+            {/* Previous Screen Link */}
+            <h2 
+              className="breadcrumb-text" 
+              onClick={() => navigate(`/client/${clientId}/projects`)}
+              style={{ cursor: 'pointer', display: 'inline', marginLeft: '10px' }}
+            >
+              Projects
+            </h2>
+          
+            {/* Divider between breadcrumb items */}
+            <span className="breadcrumb-divider"> / </span>
+            
+            {/* Current Client Name */}
+            <h2 className="breadcrumb-text" style={{ display: 'inline' }}>
+              {`Project Details`}
+            </h2>
+        </div>
+        {/* Success Message */}
+        <div className='controls'>
+          {showMessage && <Message success header="Success" className="toaster-message" content="Resource successfully added!" />}
+          {/* Allocate Resource Button - Only show if the user is not a leader */}
+          {userRole !== 'leader' && (
+            <Button positive icon="plus" onClick={() => setOpen(true)} content="Allocate Resource" />
+          )}
+        </div>
 
       {/* Employees Table */}
+      <div className='table'>
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <Table celled padded className="employee-table4">
+        <Table celled striped sortable>
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell>Employee Name</Table.HeaderCell>
@@ -172,6 +204,7 @@ const ClientDetails = ({ userRole }) => {
           </Table.Body>
         </Table>
       )}
+      </div>
 
       {/* Modal for Allocating Resource - Only accessible if not a leader */}
       {userRole !== 'leader' && (
@@ -269,8 +302,9 @@ const ClientDetails = ({ userRole }) => {
           </Modal.Actions>
         </Modal>
       )}
-    </div>
-    </div>
+
+      </div>
+  </div>
   );
 };
 
