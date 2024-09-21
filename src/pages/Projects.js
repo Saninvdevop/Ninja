@@ -27,6 +27,7 @@ const Projects = ({ userRole }) => {
       Company: client.ClientName,
       'No. of Projects': client.NoOfProjects,
       Country: client.ClientCountry,
+      "Client Partner": client.ClientPartner,
       Headcount: client.Headcount // Add Headcount to Excel
     }));
 
@@ -65,6 +66,7 @@ const Projects = ({ userRole }) => {
     return (
       client.ClientName.toLowerCase().includes(term) ||
       client.ClientCountry.toLowerCase().includes(term) ||
+      client.ClientPartner.toLowerCase().includes(term) ||
       String(client.ClientID).includes(term)
     );
   });
@@ -158,6 +160,12 @@ const Projects = ({ userRole }) => {
                     Country
                   </Table.HeaderCell>
                   <Table.HeaderCell
+                    sorted={sortColumn === 'ClientPartner' ? sortDirection : null}
+                    onClick={() => handleSort('ClientPartner')}
+                  >
+                    Client Partner
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
                     sorted={sortColumn === 'Headcount' ? sortDirection : null}
                     onClick={() => handleSort('Headcount')}
                   >
@@ -179,6 +187,7 @@ const Projects = ({ userRole }) => {
                       </Table.Cell>
                       <Table.Cell>{client.NoOfProjects}</Table.Cell>
                       <Table.Cell>{client.ClientCountry}</Table.Cell>
+                      <Table.Cell>{client.ClientPartner}</Table.Cell>
                       <Table.Cell>{client.Headcount}</Table.Cell> {/* Render Headcount */}
                     </Table.Row>
                   ))
