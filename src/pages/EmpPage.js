@@ -1,3 +1,4 @@
+// All Employees Page
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, Input, Button } from 'semantic-ui-react';
@@ -241,6 +242,7 @@ const EmpPage = () => {
               value={searchTerm}
               onChange={handleSearchChange}
               className="search-bar"
+              style={{ marginRight: '10px', width: '300px' }}
             />
 
             {/* Download Button */}

@@ -1,3 +1,4 @@
+// Clients Page
 import React, { useState, useEffect } from 'react';
 import { Table, Icon, Button, Input } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom';
@@ -101,6 +102,8 @@ const Projects = ({ userRole }) => {
     setSortDirection(sortDirection === 'ascending' ? 'descending' : 'ascending');
   };
 
+  
+
   return (
     <div className='main-layout'>
       <div className='right-content'>
@@ -108,12 +111,14 @@ const Projects = ({ userRole }) => {
           <h2 className="breadcrumb-text">Clients</h2>
         </div>
         <div className="controls">
+            
            <Input
               icon="search"
-              placeholder="Search by name, country, or ID..."
+              placeholder="Search Client"
               value={searchTerm}
               onChange={handleSearchChange}
               className="search-bar"
+              style={{ marginRight: '10px', width: '300px' }}
            />
   
            <Button

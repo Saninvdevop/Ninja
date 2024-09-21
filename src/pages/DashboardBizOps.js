@@ -1,3 +1,4 @@
+// Bizops Dashboard Page
 import React, { useEffect, useState } from 'react';
 import { Table, Icon, Input, Button } from 'semantic-ui-react';
 import ViewCard from '../components/ViewCards/Viewcard'; // Import ViewCard component
@@ -233,7 +234,7 @@ const DashboardBizOps = () => {
                 value={searchTerm}
                 onChange={handleSearchChange}
                 aria-label="Search Employees"
-                style={{ marginRight: '10px' }}
+                style={{ marginRight: '10px', width: '300px' }}
               />
               <Button
                 icon
