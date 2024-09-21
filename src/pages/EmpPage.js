@@ -101,6 +101,7 @@ const EmpPage = () => {
       const employeeName = employee.EmployeeName.toLowerCase();
       const employeeId = (employee?.EmployeeID || '').toString().toLowerCase();
       const employeeRole = (employee.EmployeeRole || '').toLowerCase();
+      const employeeContractType = (employee.EmployeeContractType || '').toLowerCase();
       const projects = (employee.Projects || []).join(', ').toLowerCase();
 
       // Check if the employee matches the search term
@@ -157,6 +158,7 @@ const EmpPage = () => {
           'Employee ID': employee.EmployeeID,
           'Employee Name': employee.EmployeeName,
           'Employee Role': employee.EmployeeRole,
+          'Employee Contract Type': employee.EmployeeContractType,
           'Projects': employee.Projects.join(', '),
           'Current Allocation %': employee.Current_Allocation,
         })));
@@ -282,6 +284,12 @@ const EmpPage = () => {
                   Employee Role
                 </Table.HeaderCell>
                 <Table.HeaderCell
+                  sorted={sortColumn === 'EmployeeContractType' ? sortDirection : null}
+                  onClick={() => handleSort('EmployeeContractType')}
+                >
+                  Employee Contract Type
+                </Table.HeaderCell>
+                <Table.HeaderCell
                   sorted={sortColumn === 'Projects' ? sortDirection : null}
                   onClick={() => handleSort('Projects')}
                 >
@@ -308,6 +316,7 @@ const EmpPage = () => {
                     <Table.Cell>{employee.EmployeeID}</Table.Cell>
                     <Table.Cell>{employee.EmployeeName}</Table.Cell>
                     <Table.Cell>{employee.EmployeeRole}</Table.Cell>
+                    <Table.Cell>{employee.EmployeeContractType}</Table.Cell>
                     <Table.Cell>{employee.Projects.join(', ')}</Table.Cell>
                     <Table.Cell>{employee.Current_Allocation}%</Table.Cell>
                   </Table.Row>

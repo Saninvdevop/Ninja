@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Icon, Table, Button, Modal, Form, Dropdown, Popup } from 'semantic-ui-react';
 import 'chart.js/auto';
 import './EmployeeDetails.css';
@@ -13,21 +13,19 @@ import { saveAs } from 'file-saver'; // Import FileSaver
 const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   const { id } = useParams(); 
   const [error, setError] = useState(null);
-  const location = useLocation();
   const navigate = useNavigate(); // Initialize useNavigate for navigation
-  const { employee, allocationPercentage: initialAllocation } = location.state; // Get the employee and initial allocation percentage from state
   
-  // Client data and project data from Projects.js
+  const [employeeData, setEmployeeData] = useState(null); // New state for employee details
+  const [allocations, setAllocations] = useState([]); // Assuming allocations are separate
   const [clientData, setClientData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [allocations, setAllocations] = useState([]);
   const [projectOptions, setProjectOptions] = useState([]);
   const [open, setOpen] = useState(false);
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState(null); 
   const [newAllocation, setNewAllocation] = useState({
-    employeeName: employee.EmployeeName,
-    employeeId: employee.EmployeeID,
+    employeeName: '',
+    employeeId: '',
     clientName: '',
     projectName: '',
     status: '',
@@ -40,6 +38,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
 
   // Add the handleDownloadExcel function
   const handleDownloadExcel = () => {
+    if (!employeeData) return; // Ensure employee data is available
+
     // Create a new workbook and a worksheet
     const workbook = XLSX.utils.book_new();
     
@@ -67,26 +67,26 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     const blob = new Blob([workbookOut], { type: 'application/octet-stream' });
     
     // Trigger the download using FileSaver
-    saveAs(blob, `${employee.EmployeeName}_Allocations.xlsx`);
+    saveAs(blob, `${employeeData.EmployeeName}_Allocations.xlsx`);
   };
-
 
   // Fetch client data from API
   useEffect(() => {
     const fetchClientData = async () => {
       try {
         setLoading(true);
-        const Response = await fetch('http://localhost:5000/clients');
+        const response = await fetch('http://localhost:5000/clients');
         
-        if (!Response.ok) {
+        if (!response.ok) {
           throw new Error('Network response was not ok');
         }
 
-        const Data = await Response.json();
-        setClientData(Data);
+        const data = await response.json();
+        setClientData(data);
         
       } catch (error) {
         console.error('Fetch error:', error);
+        setError('Failed to load client data');
       } finally {
         setLoading(false);
       }
@@ -94,6 +94,31 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
 
     fetchClientData();
   }, []);
+
+  // Fetch employee data from API
+  const fetchEmployeeData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:8080/employee-details/${id}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setEmployeeData(data);
+      // If allocations are part of employee data, set them here
+      // setAllocations(data.allocations || []);
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setError('Failed to load employee data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch employee data on component mount
+  useEffect(() => {
+    fetchEmployeeData();
+  }, [id]);
 
   // Options for client dropdown
   const clientOptions = clientData.map((client) => ({
@@ -129,31 +154,10 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     }
   };
 
-
   // State to manage selected client and project
   const [selectedClient, setSelectedClient] = useState('');
   // State to manage the currently edited allocation
   const [editIndex, setEditIndex] = useState(null);
-
-  // Function to fetch employee allocation data
-  const fetchEmployeeData = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/employee-view/${id}`);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const data = await response.json();
-      setAllocations(data);
-    } catch (error) {
-      console.error('Fetch error:', error);
-      setError('Failed to load employee data');
-    }
-  };
-
-  // Fetch employee data on component mount
-  useEffect(() => {
-    fetchEmployeeData();
-  }, [id]);
 
   // Fetch project options based on selected client
   useEffect(() => {
@@ -250,8 +254,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
 
     // Clear form fields after saving
     setNewAllocation({
-      employeeName: employee.EmployeeName,
-      employeeId: employee.EmployeeID,
+      employeeName: '',
+      employeeId: '',
       clientName: '',
       projectName: '',
       status: '',
@@ -278,17 +282,30 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   const handleEditAllocation = (index) => {
     const allocationToEdit = allocations[index];
     setNewAllocation(allocationToEdit); // Set the state with values from the selected allocation
-    setSelectedClient(allocationToEdit.ClientID); // Set selected client to populate project dropdown
+    setSelectedClient(allocationToEdit.ClientName); // Set selected client to populate project dropdown
     setEditIndex(index);
 
-    // Populate project options based on the selected client
-    const selectedClientData = clientData.find((client) => client.company === allocationToEdit.clientName);
-    const projects = selectedClientData?.projects.map((project) => ({
-      key: project,
-      text: project,
-      value: project,
-    })) || [];
-    setProjectOptions(projects);
+    // Fetch projects for the selected client
+    const fetchProjectsForEdit = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/client/${allocationToEdit.ClientName}/allprojects`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const projects = await response.json();
+        const projectOptions = projects.map(project => ({
+          key: project.ProjectName,
+          text: project.ProjectName,
+          value: project.ProjectName,
+        }));
+        setProjectOptions([{ key: 'none', text: 'None', value: '' }, ...projectOptions]);
+      } catch (error) {
+        setError('Failed to load projects');
+        console.error('Fetch error:', error);
+      }
+    };
+
+    fetchProjectsForEdit();
 
     setOpen(true); // Open the modal
   };
@@ -311,7 +328,6 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
       : ['#FFA500', '#e0e0e0']; // Orange for partial allocation
 
   const labels = ['Allocated', 'Unallocated'];
-  
 
   // Function to handle submission when doughnut chart turns into a button
   const handleSubmit = () => {
@@ -321,16 +337,16 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   // Function to open the modal and set the pre-filled values
   const handleOpenModal = () => {
     setNewAllocation({
-      employeeName: employee.EmployeeName,
-      employeeId: employee.EmployeeID,
+      employeeName: employeeData ? employeeData.EmployeeName : '',
+      employeeId: employeeData ? employeeData.EmployeeId : '',
       clientName: '',
       projectName: '',
       status: '',
       allocation: '',
       startDate: '',
       endDate: '',
-      billingRate: '', // New field for Billing Rate
-      timeSheetApprover: '', // New field for Time Sheet Approver
+      billingRate: '',
+      timeSheetApprover: '',
     });
     setEditIndex(null); // Reset edit index
     setOpen(true); // Open the modal
@@ -349,6 +365,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
         : prev.status,
     }));
   };
+
   // Check if all fields are filled in the modal form
   const isFormValid = () => {
     return (
@@ -362,6 +379,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
       newAllocation.timeSheetApprover
     );
   };
+
   const handleBackClick = () => {
     navigate(-1); // Go back to the previous page
   };
@@ -399,195 +417,230 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     }
   };
 
-  
+  // Helper function to generate default image based on employee name
+  const getDefaultImage = (name) => {
+    if (!name) return 'https://via.placeholder.com/150';
+    const firstChar = name.charAt(0).toUpperCase();
+    // You can replace this URL with your logic to generate images based on the first character
+    return `https://ui-avatars.com/api/?name=${firstChar}&background=random&size=150`;
+  };
 
   return (
     <div className="main-layout">
       <div className='right-content'>
         <div className='breadcrumb'>
-        {/* Back Arrow Icon */}
-        <Icon 
-          name="arrow left" 
-          size="large" 
-          className="icon"
-          onClick={handleBackClick} 
-        />
-        
-        {/* Previous Screen Link */}
-        <h2 
-          className="breadcrumb-text" 
-          onClick={() => navigate('/employees')}
-        >
-          Employees
-        </h2>
-        
-        {/* Divider between breadcrumb items */}
-        <span className="breadcrumb-divider"> / </span>
-        
-        {/* Current Employee Name */}
-        <h2 className="breadcrumb-text">
-          {employee.EmployeeName || "Employee Details"}
-        </h2>
-        {/* Save and Discard Icons */}
-        {/* Save and Discard Buttons (Right Aligned) */}
-        <div className='breadcrumb-actions'>
-          <Popup
-            content="Discard Changes"
-            trigger={
-              <Button 
-                icon={<IoMdClose size={24} />} // Discard Icon
-                onClick={handleBackClick} 
-              />
-            }
+          {/* Back Arrow Icon */}
+          <Icon 
+            name="arrow left" 
+            size="large" 
+            className="icon"
+            onClick={handleBackClick} 
           />
+          
+          {/* Previous Screen Link */}
+          <h2 
+            className="breadcrumb-text" 
+            onClick={() => navigate('/employees')}
+          >
+            Employees
+          </h2>
+          
+          {/* Divider between breadcrumb items */}
+          <span className="breadcrumb-divider"> / </span>
+          
+          {/* Current Employee Name */}
+          <h2 className="breadcrumb-text">
+            {employeeData ? employeeData.EmployeeName : "Employee Details"}
+          </h2>
+          
+          {/* Save and Discard Buttons (Right Aligned) */}
+          <div className='breadcrumb-actions'>
+            <Popup
+              content="Discard Changes"
+              trigger={
+                <Button 
+                  icon={<IoMdClose size={24} />} // Discard Icon
+                  onClick={handleBackClick} 
+                />
+              }
+            />
             {renderActionButton()}
           </div>
         </div>
-        <div className='middle-content'>
-          <div className="employee-card">
-            <div className="card-header">
-              <img src="https://via.placeholder.com/150" alt="Employee Profile" className="profile-img" />
-              <div className="employee-info">
-                <h2>Oliver Smith</h2>
-                <p className="employee-id">ID: 12345</p>
+        
+        {loading && <p>Loading...</p>}
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+        
+        {!loading && employeeData && (
+          <div className='middle-content'>
+            <div className="employee-card">
+              <div className="card-header">
+                {/* Employee Image or Default Image */}
+                <img 
+                  src={employeeData.EmployeePhotoDetails ? employeeData.EmployeePhotoDetails : getDefaultImage(employeeData.EmployeeName)} 
+                  alt="Employee Profile" 
+                  className="profile-img" 
+                />
+                <div className="employee-info">
+                  {/* Employee Name */}
+                  <h2>{employeeData.EmployeeName}</h2>
+                  {/* Employee ID */}
+                  <p className="employee-id">ID: {employeeData.EmployeeId}</p>
+                </div>
+                {/* Info Icon with Popup */}
+                <Popup
+                  trigger={<i className="info icon" style={{ cursor: 'pointer', fontSize: '1.5em' }} />}
+                  content={
+                    <div>
+                      <p><strong>Joining Date:</strong> {new Date(employeeData.EmployeeJoiningDate).toLocaleDateString()}</p>
+                      <p><strong>Ending Date:</strong> {employeeData.EmployeeEndingDate ? new Date(employeeData.EmployeeEndingDate).toLocaleDateString() : 'N/A'}</p>
+                      <p><strong>TYOE:</strong> {employeeData.EmployeeTYOE} {employeeData.EmployeeRole}</p>
+                      <p><strong>Skills:</strong> {employeeData.EmployeeSkills}</p>
+                      <p><strong>Contract Type:</strong> {employeeData.EmployeeContractType}</p>
+                    </div>
+                  }
+                  position="top right"
+                  on="click" // Click to show the popup
+                />
               </div>
-              {/* Info Icon with Popup */}
-              <Popup
-                trigger={<i className="info icon" style={{ cursor: 'pointer', fontSize: '1.5em' }} />}
-                content={
+
+              <div className="top-info">
+                <div className="info-item">
+                  <Icon name="briefcase" size="large" />
                   <div>
-                    <p><strong>Joining Date:</strong> Jan 1, 2022</p>
-                    <p><strong>Ending Date:</strong> Dec 31, 2024</p>
-                    <p><strong>TYOE:</strong> Data Analysis, Python, SQL</p>
-                    <p><strong>Skills:</strong> Teamwork, Communication, Problem-solving</p>
+                    <p>Role</p>
+                    {/* Employee Role */}
+                    <p>{employeeData.EmployeeRole}</p>
                   </div>
-                }
-                position="top right"
-                on="click" // Click to show the popup
+                </div>
+
+                <div className="info-item">
+                  <Icon name="building" size="large" />
+                  <div>
+                    <p>Studio</p>
+                    {/* Employee Studio */}
+                    <p>{employeeData.EmployeeStudio}</p>
+                  </div>
+                </div>
+
+                <div className="info-item">
+                  <Icon name="chart line" size="large" />
+                  <div>
+                    <p>Sub-studio</p>
+                    {/* Employee Sub-Studio */}
+                    <p>{employeeData.EmployeeSubStudio}</p>
+                  </div>
+                </div>
+                <div className="info-item">
+                  <Icon name="mail" size="large" />
+                  <div>
+                    <p>Email</p>
+                    {/* Employee Email */}
+                    <p>{employeeData.EmployeeEmail}</p>
+                  </div>
+                </div>
+
+                <div className="info-item">
+                  <Icon name="phone" size="large" />
+                  <div>
+                    <p>Keka Status</p>
+                    {/* Employee Keka Status */}
+                    <p>{employeeData.EmployeeKekaStatus}</p>
+                  </div>
+                </div>
+
+                <div className="info-item">
+                  <Icon name="map marker alternate" size="large" />
+                  <div>
+                    <p>Location</p>
+                    {/* Employee Location */}
+                    <p>{employeeData.EmployeeLocation}</p>
+                  </div>
+                </div>
+              </div>
+              {/* Buttons Section */}
+              <div className="button-section">
+                <Button primary icon="download" content="Download" onClick={handleDownloadExcel}/>
+                {userRole === 'bizops' && (
+                  <Button positive icon="plus" onClick={handleOpenModal} content="Allocate Resource" />
+                )}
+              </div>
+            </div>
+            <div className="allocation-chart">
+              <AllocationDonutChart 
+                total={totalAllocationPercentage} 
+                dataValues={dataValues} 
+                labels={labels} 
+                colors={colors}
               />
             </div>
+          </div>
+        )}
+        
+        {!loading && employeeData && (
+          <div className="bottom-content">
+            <div className='table'>
+              <Table celled sortable>
+                <Table.Header>
+                  <Table.Row>
+                    <Table.HeaderCell onClick={() => handleSort('EmployeeName')}>
+                      Employee Name {renderSortIcon('EmployeeName')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('EmployeeId')}>
+                      Employee ID {renderSortIcon('EmployeeId')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('ClientName')}>
+                      Client Name {renderSortIcon('ClientName')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('ProjectName')}>
+                      Project Name {renderSortIcon('ProjectName')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('Allocation')}>
+                      Allocation % {renderSortIcon('Allocation')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('ProjectStatus')}>
+                      Status {renderSortIcon('ProjectStatus')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('AllocationStartDate')}>
+                      Start Date {renderSortIcon('AllocationStartDate')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('AllocationEndDate')}>
+                      End Date {renderSortIcon('AllocationEndDate')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell>Actions</Table.HeaderCell>
+                  </Table.Row>
+                </Table.Header>
 
-            <div className="top-info">
-              <div className="info-item">
-                <Icon name="briefcase" size="large" />
-                <div>
-                  <p>Role</p>
-                  <p>Senior Data Analyst</p>
-                </div>
-              </div>
-
-              <div className="info-item">
-                <Icon name="building" size="large" />
-                <div>
-                  <p>Studio</p>
-                  <p>Data & Insights</p>
-                </div>
-              </div>
-
-              <div className="info-item">
-                <Icon name="chart line" size="large" />
-                <div>
-                  <p>Sub-studio</p>
-                  <p>Advance Analytics</p>
-                </div>
-              </div>
-              <div className="info-item">
-                <Icon name="mail" size="large" />
-                <div>
-                  <p>Email</p>
-                  <p>oliver.smith@example.com</p>
-                </div>
-              </div>
-
-              <div className="info-item">
-                <Icon name="phone" size="large" />
-                <div>
-                  <p>Keka Status</p>
-                  <p>Active</p>
-                </div>
-              </div>
-
-              <div className="info-item">
-                <Icon name="map marker alternate" size="large" />
-                <div>
-                  <p>Location</p>
-                  <p>London, UK</p>
-                </div>
-              </div>
+                <Table.Body>
+                  {allocations.length > 0 ? (
+                    allocations.map((alloc, index) => (
+                      <Table.Row key={index}>
+                        <Table.Cell>{alloc.EmployeeName}</Table.Cell>
+                        <Table.Cell>{alloc.EmployeeID}</Table.Cell>
+                        <Table.Cell>{alloc.ClientName}</Table.Cell>
+                        <Table.Cell>{alloc.ProjectName}</Table.Cell>
+                        <Table.Cell>{alloc.Allocation}%</Table.Cell>
+                        <Table.Cell>{alloc.ProjectStatus}</Table.Cell>
+                        <Table.Cell>{alloc.AllocationStartDate}</Table.Cell>
+                        <Table.Cell>{alloc.AllocationEndDate}</Table.Cell>
+                        <Table.Cell>
+                          <Button icon="edit" onClick={() => handleEditAllocation(index)} />
+                          <Button icon="trash" color="red" onClick={() => handleDeleteAllocation(index)} />
+                        </Table.Cell>
+                      </Table.Row>
+                    ))
+                  ) : (
+                    <Table.Row>
+                      <Table.Cell colSpan="9" textAlign="center">
+                        No allocations found.
+                      </Table.Cell>
+                    </Table.Row>
+                  )}
+                </Table.Body>
+              </Table>
             </div>
-            {/* Buttons Section */}
-            <div className="button-section">
-              <Button primary icon="download" content="Download" onClick={handleDownloadExcel}/>
-              {userRole === 'bizops' && (
-                <Button positive icon="plus" onClick={handleOpenModal} content="Allocate Resource" />
-              )}
-            </div>
           </div>
-          <div className="allocation-chart">
-            <AllocationDonutChart 
-              total={totalAllocationPercentage} 
-              dataValues={dataValues} 
-              labels={labels} 
-              colors={colors}
-            />
-          </div>
-          
-        </div>
-        <div className="bottom-content">
-          
-          <div className='table'>
-          <Table celled sortable>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell onClick={() => handleSort('EmployeeName')}>
-                  Employee Name {renderSortIcon('EmployeeName')}
-                </Table.HeaderCell>
-                <Table.HeaderCell onClick={() => handleSort('EmployeeID')}>
-                  Employee ID {renderSortIcon('EmployeeID')}
-                </Table.HeaderCell>
-                <Table.HeaderCell onClick={() => handleSort('ClientName')}>
-                  Client Name {renderSortIcon('ClientName')}
-                </Table.HeaderCell>
-                <Table.HeaderCell onClick={() => handleSort('ProjectName')}>
-                  Project Name {renderSortIcon('ProjectName')}
-                </Table.HeaderCell>
-                <Table.HeaderCell onClick={() => handleSort('Allocation')}>
-                  Allocation % {renderSortIcon('Allocation')}
-                </Table.HeaderCell>
-                <Table.HeaderCell onClick={() => handleSort('ProjectStatus')}>
-                  Status {renderSortIcon('ProjectStatus')}
-                </Table.HeaderCell>
-                <Table.HeaderCell onClick={() => handleSort('AllocationStartDate')}>
-                  Start Date {renderSortIcon('AllocationStartDate')}
-                </Table.HeaderCell>
-                <Table.HeaderCell onClick={() => handleSort('AllocationEndDate')}>
-                  End Date {renderSortIcon('AllocationEndDate')}
-                </Table.HeaderCell>
-                <Table.HeaderCell>Actions</Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-
-            <Table.Body>
-              {allocations.map((alloc, index) => (
-                <Table.Row key={index}>
-                  <Table.Cell>{alloc.EmployeeName}</Table.Cell>
-                  <Table.Cell>{alloc.EmployeeID}</Table.Cell>
-                  <Table.Cell>{alloc.ClientName}</Table.Cell>
-                  <Table.Cell>{alloc.ProjectName}</Table.Cell>
-                  <Table.Cell>{alloc.Allocation}%</Table.Cell>
-                  <Table.Cell>{alloc.ProjectStatus}</Table.Cell>
-                  <Table.Cell>{alloc.AllocationStartDate}</Table.Cell>
-                  <Table.Cell>{alloc.AllocationEndDate}</Table.Cell>
-                  <Table.Cell>
-                    <Button icon="edit" onClick={() => handleEditAllocation(index)} />
-                    <Button icon="trash" color="red" onClick={() => handleDeleteAllocation(index)} />
-                  </Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
-          </div>
-        </div>
+        )}
       </div>
       {/* Modal for Adding or Editing Allocation */}
       <Modal
@@ -596,13 +649,14 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
         size="tiny"
         dimmer="blurring"
       >
-        <Modal.Header>{editIndex !== null ? 'Edit Allocation' : 'Add New Allocation'}
+        <Modal.Header>
+          {editIndex !== null ? 'Edit Allocation' : 'Add New Allocation'}
           <Icon 
-              name="close" 
-              size="25px"
-              style={{ float: 'right', cursor: 'pointer' }} 
-              onClick={() => setOpen(false)} 
-            />
+            name="close" 
+            size="25px"
+            style={{ float: 'right', cursor: 'pointer' }} 
+            onClick={() => setOpen(false)} 
+          />
         </Modal.Header>
         <Modal.Content>
           <Form>
@@ -624,22 +678,9 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
                 placeholder="Select Client"
                 fluid
                 selection
-                options={[
-                  ...clientData.map((client) => ({
-                    key: client.ClientName,
-                    text: client.ClientName,
-                    value: client.ClientName,
-                  })),
-                  { key: 'Innover', text: 'Innover', value: 'Innover' }, // Add "Innover" as a client option
-                ]}
+                options={clientOptions}
                 value={newAllocation.clientName}
-                onChange={(e, { value }) => {
-                  setNewAllocation((prev) => ({
-                    ...prev,
-                    clientName: value,
-                    projectName: value === 'Innover' ? 'Benched' : '', // Auto-fill project to "Benched" if "Innover" is selected
-                  }));
-                }}
+                onChange={handleClientChange}
               />
             </Form.Field>
             <Form.Field>
@@ -763,9 +804,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
           </Button>
         </Modal.Actions>
       </Modal>
-
     </div>
-
   );
 };
 
