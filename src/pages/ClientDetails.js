@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Table, Icon, Button, Modal, Form, Dropdown, Popup, Message } from 'semantic-ui-react';
+import { Table, Icon, Button, Modal, Form, Dropdown, Message, Loader } from 'semantic-ui-react';
 import './ClientDetails.css'; // Custom CSS for styling
-import { IoSaveOutline } from "react-icons/io5"; // Import Save Icon
 import { IoMdClose } from "react-icons/io"; // Import Discard Icon
 import { MdCheck } from "react-icons/md";
 import * as XLSX from 'xlsx'; // Import SheetJS
@@ -26,9 +25,7 @@ const ClientDetails = ({ userRole }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Remove the previous clientName and projectName derivation
-  // const clientName = clientId.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-  // const projectName = projectId.replace('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+  const [isDownloading, setIsDownloading] = useState(false); // New state for download process
 
   // Placeholder employee options
   const employeeOptions = [
@@ -37,7 +34,7 @@ const ClientDetails = ({ userRole }) => {
     // Add more placeholder options as needed
   ];
 
-  // Fetch allocations from the backend API
+  // Fetch allocations from the backend API based on selected filter
   const fetchAllocations = async (currentFilter) => {
     setLoading(true);
     setError(null);
@@ -118,35 +115,86 @@ const ClientDetails = ({ userRole }) => {
     return sorted;
   }, [employeesData, sortConfig]);
 
-  // Handle Download Excel
-  const downloadExcel = () => {
-    if (employeesData.length === 0) {
-      // Optionally, notify user that there's no data to download
-      return;
+  // Handle Download Excel for All Filters
+  const downloadExcel = async () => {
+    setIsDownloading(true); // Start download process
+    setError(null); // Reset any existing errors
+
+    try {
+      // Fetch allocations for all filters using the new endpoint
+      const response = await fetch(`http://localhost:8080/project-details-all/${clientId}/${projectId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const { clientName, projectName, allocations } = data;
+
+        // Create a new workbook
+        const workbook = XLSX.utils.book_new();
+
+        // Define the order and names of the sheets
+        const sheetOrder = ['active', 'closed', 'all'];
+        const sheetNames = {
+          active: 'Active',
+          closed: 'Closed',
+          all: 'All'
+        };
+
+        sheetOrder.forEach((filterKey) => {
+          const currentAllocations = allocations[filterKey];
+          const sheetName = sheetNames[filterKey] || filterKey;
+
+          // Prepare data for the sheet
+          const worksheetData = currentAllocations.map((alloc) => ({
+            'Employee Name': alloc.EmployeeName,
+            'Role': alloc.EmployeeRole,
+            'Allocation %': alloc.AllocationPercent,
+            'Allocation Status': alloc.AllocationStatus,
+            'Billing Type': alloc.AllocationBillingType,
+            'Billed Check': alloc.AllocationBilledCheck,
+            'Billing Rate': alloc.AllocationBillingRate,
+            'TimeSheet Approver': alloc.AllocationTimeSheetApprover,
+            'Start Date': alloc.AllocationStartDate,
+            'End Date': alloc.AllocationEndDate || 'N/A',
+            'Modified By': alloc.ModifiedBy,
+            'Modified At': alloc.ModifiedAt
+          }));
+
+          // If there are no allocations for this filter, add a placeholder row
+          if (worksheetData.length === 0) {
+            worksheetData.push({ 'Message': 'No allocations found for this filter.' });
+          }
+
+          // Convert JSON to sheet
+          const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+
+          // Append the sheet to the workbook
+          XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+        });
+
+        // Generate Excel buffer
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+        // Create a blob from the buffer
+        const dataBlob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+
+        // Define the filename with current date
+        const currentDate = new Date().toISOString().split('T')[0];
+        const filename = `${clientName}_${projectName}_Allocations_${currentDate}.xlsx`;
+
+        // Trigger the download
+        saveAs(dataBlob, filename);
+
+        // Notify the user that the download has started
+        setShowMessage(true);
+        setTimeout(() => setShowMessage(false), 3000);
+      } else {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+    } catch (err) {
+      console.error('Error during Excel download:', err);
+      setError('Failed to download allocations. Please try again.');
+    } finally {
+      setIsDownloading(false); // End download process
     }
-
-    // Prepare data for Excel
-    const worksheetData = sortedData.map((alloc) => ({
-      'Employee Name': alloc.EmployeeName,
-      'Role': alloc.EmployeeRole,
-      'Allocation %': alloc.AllocationPercent,
-      'Allocation Status': alloc.AllocationStatus,
-      'Billing Type': alloc.AllocationBillingType,
-      'Billed Check': alloc.AllocationBilledCheck,
-      'Billing Rate': alloc.AllocationBillingRate,
-      'TimeSheet Approver': alloc.AllocationTimeSheetApprover,
-      'Start Date': alloc.AllocationStartDate,
-      'End Date': alloc.AllocationEndDate || 'N/A',
-      'Modified By': alloc.ModifiedBy,
-      'Modified At': alloc.ModifiedAt
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, `${filter.charAt(0).toUpperCase() + filter.slice(1)}`);
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    saveAs(data, `${clientName}_${projectName}_Allocations_${filter.charAt(0).toUpperCase() + filter.slice(1)}.xlsx`);
   };
 
   // Handle Allocation Submission
@@ -208,7 +256,7 @@ const ClientDetails = ({ userRole }) => {
           {/* Current Client Name */}
           <h2 
             className="breadcrumb-text" 
-            onClick={() => navigate(`/clients/${clientId}`)}
+            onClick={() => navigate(`/client/${clientId}/projects`)}
             style={{ cursor: 'pointer', display: 'inline', marginLeft: '10px' }}
           >
             {clientName || 'Loading...'}
@@ -224,9 +272,9 @@ const ClientDetails = ({ userRole }) => {
         </div>
 
         {/* Control Buttons */}
-        <div className='controls'>
+        <div className='controls' style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           {/* Filter Tabs */}
-          <div className="filter-tabs">
+          <div className="filter-tabs" style={{ display: 'flex', gap: '10px', flexGrow: 1 }}>
             <button
               className={`tab ${filter === 'active' ? 'active' : ''}`}
               onClick={() => handleFilterChange('active')}
@@ -255,9 +303,18 @@ const ClientDetails = ({ userRole }) => {
               color="blue"
               onClick={downloadExcel}
               className="download-button"
+              disabled={isDownloading} // Disable button during download
             >
-              <Icon name="download" />
-              Download
+              {isDownloading ? (
+                <>
+                  <Loader active inline size='small' /> Downloading...
+                </>
+              ) : (
+                <>
+                  <Icon name="download" />
+                  Download All Filters
+                </>
+              )}
             </Button>
             {userRole === 'bizops' && (
               <Button 
@@ -275,7 +332,7 @@ const ClientDetails = ({ userRole }) => {
           <Message
             success
             header='Success'
-            content='Resource allocated successfully!'
+            content='Excel file is being downloaded.'
             onDismiss={() => setShowMessage(false)}
           />
         )}
@@ -291,11 +348,13 @@ const ClientDetails = ({ userRole }) => {
         )}
 
         {/* Allocations Table */}
-        <div className='table'>
+        <div className='table-container'>
           {loading ? (
-            <p>Loading allocations...</p>
+            <Loader active inline='centered' size='large'>
+              Loading allocations...
+            </Loader>
           ) : (
-            <Table celled striped sortable>
+            <Table celled sortable>
               <Table.Header>
                 <Table.Row>
                   <Table.HeaderCell
@@ -459,7 +518,7 @@ const ClientDetails = ({ userRole }) => {
             <Button 
               positive 
               onClick={handleSubmit}
-              disabled={!resourceName || !allocationPercentage}
+              disabled={!resourceName || allocationPercentage === ''}
             >
               <MdCheck size={20} /> Allocate
             </Button>
