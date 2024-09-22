@@ -188,7 +188,19 @@
 .bottom-content{
   margin-top: 2%;
 }
-  
+  /* Scrollable table container */
+.table-container {
+  overflow-x: auto;
+}
+
+.table-container .ui.table {
+  min-width: 1800px; /* Adjust based on the number of columns */
+}
+
+/* Style the table headers to indicate they are sortable */
+.ui.table th {
+  cursor: pointer;
+}
   .table {
     width: 100%; /* Take full width */
     table-layout: fixed; /* Fixed layout for better control */
@@ -221,4 +233,5 @@
   .table tr:hover {
     background-color: #e9ecef; /* Highlight row on hover */
   }
+  
   

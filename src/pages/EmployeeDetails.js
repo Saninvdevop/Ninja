@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Icon, Table, Button, Modal, Form, Dropdown, Popup } from 'semantic-ui-react';
-import 'chart.js/auto';
+import { Icon, Table, Button, Modal, Form, Dropdown, Popup } from 'semantic-ui-react';
 import './EmployeeDetails.css';
 import { IoSaveOutline } from "react-icons/io5"; // Import Save Icon
 import { IoMdClose } from "react-icons/io"; // Import Discard Icon
@@ -15,8 +14,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   const [error, setError] = useState(null);
   const navigate = useNavigate(); // Initialize useNavigate for navigation
   
-  const [employeeData, setEmployeeData] = useState(null); // New state for employee details
-  const [allocations, setAllocations] = useState([]); // Assuming allocations are separate
+  const [employeeData, setEmployeeData] = useState(null); // State for employee details
+  const [allocations, setAllocations] = useState([]); // Allocations data
   const [clientData, setClientData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [projectOptions, setProjectOptions] = useState([]);
@@ -36,39 +35,78 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     timeSheetApprover: '',
   });
 
+  const [filter, setFilter] = useState('active'); // Set default filter to 'active'
+  const [currentAllocation, setCurrentAllocation] = useState(0); // State for current allocation percentage
+
   // Add the handleDownloadExcel function
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     if (!employeeData) return; // Ensure employee data is available
 
-    // Create a new workbook and a worksheet
-    const workbook = XLSX.utils.book_new();
-    
-    // Convert allocations data to worksheet
-    const worksheetData = allocations.map(alloc => ({
-      'Employee Name': alloc.EmployeeName,
-      'Employee ID': alloc.EmployeeID,
-      'Client Name': alloc.ClientName,
-      'Project Name': alloc.ProjectName,
-      'Allocation %': alloc.Allocation,
-      'Status': alloc.ProjectStatus,
-      'Start Date': alloc.AllocationStartDate,
-      'End Date': alloc.AllocationEndDate,
-    }));
-    
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-    
-    // Append worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Allocations');
-    
-    // Generate buffer
-    const workbookOut = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    
-    // Create a Blob from the buffer
-    const blob = new Blob([workbookOut], { type: 'application/octet-stream' });
-    
-    // Trigger the download using FileSaver
-    saveAs(blob, `${employeeData.EmployeeName}_Allocations.xlsx`);
+    try {
+      // Define the filters
+      const filters = ['active', 'closed', 'all'];
+      
+      // Prepare an array of fetch promises
+      const fetchPromises = filters.map(filterType =>
+        fetch(`http://localhost:8080/employee-details/${id}/allocations?filter=${filterType}`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Failed to fetch ${filterType} allocations`);
+            }
+            return response.json();
+          })
+      );
+
+      // Wait for all fetches to complete
+      const results = await Promise.all(fetchPromises);
+
+      // Create a new workbook
+      const workbook = XLSX.utils.book_new();
+
+      // Map each result to its corresponding filter
+      results.forEach((data, index) => {
+        const filterType = filters[index];
+        const sheetName = filterType.charAt(0).toUpperCase() + filterType.slice(1); // Capitalize first letter
+
+        // Convert allocations data to worksheet
+        const worksheetData = data.allocations.map(alloc => ({
+          'Allocation ID': alloc.AllocationID,
+          'Client ID': alloc.ClientID,
+          'Client Name': alloc.ClientName, // Added ClientName
+          'Project ID': alloc.ProjectID,
+          'Project Name': alloc.ProjectName, // Added ProjectName
+          'Allocation Status': alloc.AllocationStatus,
+          'Allocation %': alloc.AllocationPercent,
+          'Billing Type': alloc.AllocationBillingType,
+          'Billed Check': alloc.AllocationBilledCheck,
+          'Billing Rate': alloc.AllocationBillingRate,
+          'TimeSheet Approver': alloc.AllocationTimeSheetApprover,
+          'Start Date': alloc.AllocationStartDate,
+          'End Date': alloc.AllocationEndDate,
+          'Modified By': alloc.ModifiedBy,
+          'Modified At': alloc.ModifiedAt,
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+
+        // Append worksheet to workbook with the sheet name
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      });
+
+      // Generate buffer
+      const workbookOut = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+      // Create a Blob from the buffer
+      const blob = new Blob([workbookOut], { type: 'application/octet-stream' });
+
+      // Trigger the download using FileSaver
+      saveAs(blob, `${employeeData.EmployeeName}_Allocations.xlsx`);
+    } catch (error) {
+      console.error('Error during Excel download:', error);
+      setError('Failed to download allocations');
+    }
   };
+
 
   // Fetch client data from API
   useEffect(() => {
@@ -105,8 +143,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
       }
       const data = await response.json();
       setEmployeeData(data);
-      // If allocations are part of employee data, set them here
-      // setAllocations(data.allocations || []);
+      // Allocations are fetched separately
     } catch (error) {
       console.error('Fetch error:', error);
       setError('Failed to load employee data');
@@ -115,16 +152,36 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     }
   };
 
-  // Fetch employee data on component mount
+  // Fetch allocations based on filter
+  const fetchAllocations = async (currentFilter) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:8080/employee-details/${id}/allocations?filter=${currentFilter}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setAllocations(data.allocations);
+      setCurrentAllocation(data.currentAllocation);
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setError('Failed to load allocations');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch employee data and allocations on component mount and when filter changes
   useEffect(() => {
     fetchEmployeeData();
-  }, [id]);
+    fetchAllocations(filter);
+  }, [id, filter]);
 
   // Options for client dropdown
   const clientOptions = clientData.map((client) => ({
     key: client.ClientID,
     text: client.ClientName,
-    value: client.ClientName, // Using company name as value to match table entries
+    value: client.ClientName, // Using client name as value to match table entries
   }));
 
   // Sorting function
@@ -134,6 +191,9 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
       direction = 'descending';
     }
     const sortedData = [...allocations].sort((a, b) => {
+      if (a[column] === null) return 1;
+      if (b[column] === null) return -1;
+      if (a[column] === b[column]) return 0;
       if (direction === 'ascending') {
         return a[column] > b[column] ? 1 : -1;
       }
@@ -209,12 +269,13 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
           EmployeeID: newAllocation.employeeId,
           ClientName: newAllocation.clientName,
           ProjectName: newAllocation.projectName,
-          Allocation: newAllocation.allocation,
-          Role: newAllocation.status,
+          AllocationPercent: newAllocation.allocation,
+          AllocationStatus: newAllocation.status,
           AllocationStartDate: newAllocation.startDate,
           AllocationEndDate: newAllocation.endDate,
-          TimesheetApproval: newAllocation.timeSheetApprover,
-          BillingRate: newAllocation.billingRate,
+          AllocationTimeSheetApprover: newAllocation.timeSheetApprover,
+          AllocationBillingRate: newAllocation.billingRate,
+          ModifiedBy: 'Admin', // Adjust as needed
         }),
       });
 
@@ -224,8 +285,10 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
 
       const data = await response.json();
       console.log('Allocation saved successfully:', data);
+      setError(null); // Clear any previous errors
     } catch (error) {
       console.error('Error saving allocation:', error);
+      setError('Failed to save allocation');
     }
   };
 
@@ -233,7 +296,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     if (editIndex !== null) {
       // Edit existing allocation
       const updatedAllocations = [...allocations];
-      updatedAllocations[editIndex] = { ...newAllocation, allocation: parseInt(newAllocation.allocation) };
+      updatedAllocations[editIndex] = { ...newAllocation, AllocationPercent: parseInt(newAllocation.allocation) };
       setAllocations(updatedAllocations);
     } else {
       // Add new allocation
@@ -241,7 +304,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
         ...allocations,
         {
           ...newAllocation,
-          allocation: parseInt(newAllocation.allocation),
+          AllocationPercent: parseInt(newAllocation.allocation),
         },
       ]);
     }
@@ -250,7 +313,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     await submitAllocation();
 
     // Fetch updated data to refresh UI
-    fetchEmployeeData();
+    fetchAllocations(filter);
 
     // Clear form fields after saving
     setNewAllocation({
@@ -273,17 +336,48 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   };
 
   // Function to handle deletion of an allocation
-  const handleDeleteAllocation = (index) => {
-    const updatedAllocations = allocations.filter((_, i) => i !== index);
-    setAllocations(updatedAllocations);
+  const handleDeleteAllocation = async (allocationId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/allocations/${allocationId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      // Remove the allocation from state
+      setAllocations(prevAllocations => prevAllocations.filter(alloc => alloc.AllocationID !== allocationId));
+      setError(null); // Clear any previous errors
+    } catch (error) {
+      console.error('Error deleting allocation:', error);
+      setError('Failed to delete allocation');
+    }
   };
 
   // Function to handle edit button click
-  const handleEditAllocation = (index) => {
-    const allocationToEdit = allocations[index];
-    setNewAllocation(allocationToEdit); // Set the state with values from the selected allocation
-    setSelectedClient(allocationToEdit.ClientName); // Set selected client to populate project dropdown
-    setEditIndex(index);
+  const handleEditAllocation = (allocationId) => {
+    const allocationToEdit = allocations.find(alloc => alloc.AllocationID === allocationId);
+    if (!allocationToEdit) {
+      setError('Allocation not found');
+      return;
+    }
+
+    setNewAllocation({
+      employeeName: employeeData.EmployeeName,
+      employeeId: employeeData.EmployeeId,
+      clientName: allocationToEdit.ClientName,
+      projectName: allocationToEdit.ProjectName,
+      status: allocationToEdit.AllocationStatus,
+      allocation: allocationToEdit.AllocationPercent.toString(),
+      startDate: allocationToEdit.AllocationStartDate,
+      endDate: allocationToEdit.AllocationEndDate,
+      billingRate: allocationToEdit.AllocationBillingRate.toString(),
+      timeSheetApprover: allocationToEdit.AllocationTimeSheetApprover,
+    });
+    setSelectedClient(allocationToEdit.ClientName);
+    const editIndex = allocations.findIndex(alloc => alloc.AllocationID === allocationId);
+    setEditIndex(editIndex);
 
     // Fetch projects for the selected client
     const fetchProjectsForEdit = async () => {
@@ -312,18 +406,16 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
 
   // Calculate total allocation percentage based on allocations data
   const calculateTotalAllocationPercentage = () => {
-    return allocations.reduce((total, alloc) => total + parseFloat(alloc.Allocation || 0), 0);
+    return allocations.reduce((total, alloc) => total + parseFloat(alloc.AllocationPercent || 0), 0);
   };
 
   const totalAllocationPercentage = calculateTotalAllocationPercentage();
-  // Calculate the remaining percentage to show in the doughnut chart
-  const remainingPercentage = 100 - totalAllocationPercentage;
   // Data for the donut chart
-  const dataValues = [totalAllocationPercentage, remainingPercentage];
+  const dataValues = [currentAllocation, 100 - currentAllocation];
   const colors =
-    totalAllocationPercentage === 100
+    currentAllocation === 100
       ? ['#77dd77', '#e0e0e0'] // Green if 100% allocated
-      : remainingPercentage === 100
+      : currentAllocation === 0
       ? ['#FF0000', '#e0e0e0'] // Red if 0% allocated
       : ['#FFA500', '#e0e0e0']; // Orange for partial allocation
 
@@ -386,7 +478,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
 
   // Render the button based on allocation percentage
   const renderActionButton = () => {
-    if (totalAllocationPercentage === 100) {
+    if (currentAllocation === 100) {
       // Render Submit button if allocation is 100%
       return (
         <Popup
@@ -421,7 +513,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   const getDefaultImage = (name) => {
     if (!name) return 'https://via.placeholder.com/150';
     const firstChar = name.charAt(0).toUpperCase();
-    // You can replace this URL with your logic to generate images based on the first character
+    // Replace this URL with your logic to generate images based on the first character
     return `https://ui-avatars.com/api/?name=${firstChar}&background=random&size=150`;
   };
 
@@ -568,7 +660,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
             </div>
             <div className="allocation-chart">
               <AllocationDonutChart 
-                total={totalAllocationPercentage} 
+                total={currentAllocation} 
                 dataValues={dataValues} 
                 labels={labels} 
                 colors={colors}
@@ -579,27 +671,65 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
         
         {!loading && employeeData && (
           <div className="bottom-content">
-            <div className='table'>
+            <div className='table-filter-layout'>
+              {/* Filter Tabs */}
+              <div className="filter-tabs">
+                <button
+                  className={`tab ${filter === 'active' ? 'active' : ''}`}
+                  onClick={() => setFilter('active')}
+                >
+                  Active
+                </button>
+                <button
+                  className={`tab ${filter === 'closed' ? 'active' : ''}`}
+                  onClick={() => setFilter('closed')}
+                >
+                  Closed
+                </button>
+                <button
+                  className={`tab ${filter === 'all' ? 'active' : ''}`}
+                  onClick={() => setFilter('all')}
+                >
+                  All
+                </button>
+              </div>
+            </div>
+            <div className='table-container'> {/* Add a container for horizontal scrolling */}
               <Table celled sortable>
                 <Table.Header>
                   <Table.Row>
-                    <Table.HeaderCell onClick={() => handleSort('EmployeeName')}>
-                      Employee Name {renderSortIcon('EmployeeName')}
+                    <Table.HeaderCell onClick={() => handleSort('AllocationID')}>
+                      Allocation ID {renderSortIcon('AllocationID')}
                     </Table.HeaderCell>
-                    <Table.HeaderCell onClick={() => handleSort('EmployeeId')}>
-                      Employee ID {renderSortIcon('EmployeeId')}
+                    <Table.HeaderCell onClick={() => handleSort('ClientID')}>
+                      Client ID {renderSortIcon('ClientID')}
                     </Table.HeaderCell>
                     <Table.HeaderCell onClick={() => handleSort('ClientName')}>
                       Client Name {renderSortIcon('ClientName')}
                     </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('ProjectID')}>
+                      Project ID {renderSortIcon('ProjectID')}
+                    </Table.HeaderCell>
                     <Table.HeaderCell onClick={() => handleSort('ProjectName')}>
                       Project Name {renderSortIcon('ProjectName')}
                     </Table.HeaderCell>
-                    <Table.HeaderCell onClick={() => handleSort('Allocation')}>
-                      Allocation % {renderSortIcon('Allocation')}
+                    <Table.HeaderCell onClick={() => handleSort('AllocationStatus')}>
+                      Allocation Status {renderSortIcon('AllocationStatus')}
                     </Table.HeaderCell>
-                    <Table.HeaderCell onClick={() => handleSort('ProjectStatus')}>
-                      Status {renderSortIcon('ProjectStatus')}
+                    <Table.HeaderCell onClick={() => handleSort('AllocationPercent')}>
+                      Allocation % {renderSortIcon('AllocationPercent')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('AllocationBillingType')}>
+                      Billing Type {renderSortIcon('AllocationBillingType')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('AllocationBilledCheck')}>
+                      Billed Check {renderSortIcon('AllocationBilledCheck')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('AllocationBillingRate')}>
+                      Billing Rate {renderSortIcon('AllocationBillingRate')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('AllocationTimeSheetApprover')}>
+                      TimeSheet Approver {renderSortIcon('AllocationTimeSheetApprover')}
                     </Table.HeaderCell>
                     <Table.HeaderCell onClick={() => handleSort('AllocationStartDate')}>
                       Start Date {renderSortIcon('AllocationStartDate')}
@@ -607,31 +737,44 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
                     <Table.HeaderCell onClick={() => handleSort('AllocationEndDate')}>
                       End Date {renderSortIcon('AllocationEndDate')}
                     </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('ModifiedBy')}>
+                      Modified By {renderSortIcon('ModifiedBy')}
+                    </Table.HeaderCell>
+                    <Table.HeaderCell onClick={() => handleSort('ModifiedAt')}>
+                      Modified At {renderSortIcon('ModifiedAt')}
+                    </Table.HeaderCell>
                     <Table.HeaderCell>Actions</Table.HeaderCell>
                   </Table.Row>
                 </Table.Header>
 
                 <Table.Body>
                   {allocations.length > 0 ? (
-                    allocations.map((alloc, index) => (
-                      <Table.Row key={index}>
-                        <Table.Cell>{alloc.EmployeeName}</Table.Cell>
-                        <Table.Cell>{alloc.EmployeeID}</Table.Cell>
-                        <Table.Cell>{alloc.ClientName}</Table.Cell>
-                        <Table.Cell>{alloc.ProjectName}</Table.Cell>
-                        <Table.Cell>{alloc.Allocation}%</Table.Cell>
-                        <Table.Cell>{alloc.ProjectStatus}</Table.Cell>
-                        <Table.Cell>{alloc.AllocationStartDate}</Table.Cell>
-                        <Table.Cell>{alloc.AllocationEndDate}</Table.Cell>
+                    allocations.map((alloc) => (
+                      <Table.Row key={alloc.AllocationID}>
+                        <Table.Cell>{alloc.AllocationID}</Table.Cell>
+                        <Table.Cell>{alloc.ClientID}</Table.Cell>
+                        <Table.Cell>{alloc.ClientName}</Table.Cell> {/* Display ClientName */}
+                        <Table.Cell>{alloc.ProjectID}</Table.Cell>
+                        <Table.Cell>{alloc.ProjectName}</Table.Cell> {/* Display ProjectName */}
+                        <Table.Cell>{alloc.AllocationStatus}</Table.Cell>
+                        <Table.Cell>{alloc.AllocationPercent}%</Table.Cell>
+                        <Table.Cell>{alloc.AllocationBillingType}</Table.Cell>
+                        <Table.Cell>{alloc.AllocationBilledCheck}</Table.Cell>
+                        <Table.Cell>${alloc.AllocationBillingRate.toFixed(2)}</Table.Cell>
+                        <Table.Cell>{alloc.AllocationTimeSheetApprover}</Table.Cell>
+                        <Table.Cell>{new Date(alloc.AllocationStartDate).toLocaleDateString()}</Table.Cell>
+                        <Table.Cell>{alloc.AllocationEndDate ? new Date(alloc.AllocationEndDate).toLocaleDateString() : 'N/A'}</Table.Cell>
+                        <Table.Cell>{alloc.ModifiedBy}</Table.Cell>
+                        <Table.Cell>{new Date(alloc.ModifiedAt).toLocaleString()}</Table.Cell>
                         <Table.Cell>
-                          <Button icon="edit" onClick={() => handleEditAllocation(index)} />
-                          <Button icon="trash" color="red" onClick={() => handleDeleteAllocation(index)} />
+                          <Button icon="edit" onClick={() => handleEditAllocation(alloc.AllocationID)} />
+                          <Button icon="trash" color="red" onClick={() => handleDeleteAllocation(alloc.AllocationID)} />
                         </Table.Cell>
                       </Table.Row>
                     ))
                   ) : (
                     <Table.Row>
-                      <Table.Cell colSpan="9" textAlign="center">
+                      <Table.Cell colSpan="16" textAlign="center"> {/* Updated colSpan to 16 to include new columns */}
                         No allocations found.
                       </Table.Cell>
                     </Table.Row>
@@ -709,6 +852,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
                   { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
                   { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
                   { key: 'allocated', text: 'Allocated', value: 'Allocated' },
+                  { key: 'closed', text: 'Closed', value: 'Closed' }, // Added 'Closed' option
                 ]}
                 value={newAllocation.status}
                 onChange={(e, { value }) => setNewAllocation({ ...newAllocation, status: value })}
@@ -722,29 +866,29 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
               value={newAllocation.allocation}
               onChange={(e) => {
                 // Parse the value and ensure it's between 0 and the remaining allocation
-                let allocationValue = Math.max(0, Math.min(e.target.value, 100 - totalAllocationPercentage)); 
+                let allocationValue = Math.max(0, Math.min(parseInt(e.target.value), 100 - currentAllocation)); 
 
                 // Update the newAllocation state with the valid allocation value
-                setNewAllocation((prev) => ({ ...prev, allocation: allocationValue }));
+                setNewAllocation((prev) => ({ ...prev, allocation: allocationValue.toString() }));
 
                 // Update status based on conditions dynamically
-                if (newAllocation.clientName && newAllocation.projectName && (!allocationValue || allocationValue === '0')) {
+                if (newAllocation.clientName && newAllocation.projectName && (!allocationValue || allocationValue === 0)) {
                   setNewAllocation((prev) => ({ ...prev, status: 'Project Unallocated' }));
-                } else if (newAllocation.clientName && newAllocation.projectName && allocationValue && allocationValue !== '0') {
+                } else if (newAllocation.clientName && newAllocation.projectName && allocationValue && allocationValue !== 0) {
                   setNewAllocation((prev) => ({ ...prev, status: 'Allocated' }));
                 } else if (newAllocation.clientName && !newAllocation.projectName) {
                   setNewAllocation((prev) => ({ ...prev, status: 'Client Unallocated' }));
                 }
               }}
               min={0} // Prevent negative values
-              max={100 - totalAllocationPercentage} // Set the maximum to the remaining allocation
+              max={100 - currentAllocation} // Set the maximum to the remaining allocation
               required
             />
 
             {/* Display remaining allocation */}
             {newAllocation.allocation && (
               <p style={{ color: 'gray', fontSize: '12px', marginTop: '5px' }}>
-                {100 - totalAllocationPercentage - newAllocation.allocation}% allocation remaining.
+                {100 - currentAllocation - parseInt(newAllocation.allocation)}% allocation remaining.
               </p>
             )}
 
@@ -755,22 +899,31 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
               value={newAllocation.billingRate}
               onChange={(e) => {
                 // Ensure the billing rate is always non-negative
-                const billingRate = Math.max(0, e.target.value);
+                const billingRate = Math.max(0, parseFloat(e.target.value));
                 setNewAllocation((prev) => ({ ...prev, billingRate }));
               }}
               min={0} // Prevent negative values
               required
             />
 
-            <Form.Input
-              label="Time Sheet Approver"
-              placeholder="Enter Time Sheet Approver"
-              value={newAllocation.timeSheetApprover}
-              onChange={(e) =>
-                setNewAllocation({ ...newAllocation, timeSheetApprover: e.target.value })
-              }
-              required
-            />
+            <Form.Field>
+              <label>Time Sheet Approver</label>
+              <Dropdown
+                placeholder="Select Approver"
+                fluid
+                selection
+                options={[
+                  { key: 'rajendra', text: 'Rajendra', value: 'Rajendra' },
+                  { key: 'kiran', text: 'Kiran', value: 'Kiran' },
+                  { key: 'shishir', text: 'Shishir', value: 'Shishir' },
+                ]}
+                value={newAllocation.timeSheetApprover}
+                onChange={(e, { value }) =>
+                  setNewAllocation({ ...newAllocation, timeSheetApprover: value })
+                }
+                required
+              />
+            </Form.Field>
             <Form.Input
               label="Start Date"
               type="date"
