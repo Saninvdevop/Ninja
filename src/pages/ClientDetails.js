@@ -1,3 +1,4 @@
+// Client -> project -> employees
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Table, Icon, Button, Modal, Form, Dropdown, Message, Loader } from 'semantic-ui-react';
@@ -297,6 +298,15 @@ const ClientDetails = ({ userRole }) => {
 
           {/* Download and Allocate Buttons */}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            
+            {userRole === 'bizops' && (
+              <Button 
+                positive 
+                icon="plus" 
+                onClick={() => setOpen(true)} 
+                content="Allocate Resource" 
+              />
+            )}
             <Button
               icon
               labelPosition="left"
@@ -312,18 +322,10 @@ const ClientDetails = ({ userRole }) => {
               ) : (
                 <>
                   <Icon name="download" />
-                  Download All Filters
+                  Download
                 </>
               )}
             </Button>
-            {userRole === 'bizops' && (
-              <Button 
-                positive 
-                icon="plus" 
-                onClick={() => setOpen(true)} 
-                content="Allocate Resource" 
-              />
-            )}
           </div>
         </div>
 
