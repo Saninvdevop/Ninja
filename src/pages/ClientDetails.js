@@ -43,6 +43,7 @@ const ClientDetails = ({ userRole }) => {
       const response = await fetch(`http://localhost:8080/project-details/${clientId}/${projectId}?filter=${currentFilter}`);
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched Data:', data); // Add this line for debugging
         setClientName(data.clientName);
         setProjectName(data.projectName);
         setEmployeesData(data.allocations);
@@ -52,11 +53,12 @@ const ClientDetails = ({ userRole }) => {
         setProjectName('Unknown Project'); // Or handle appropriately
         setEmployeesData([]); // Clear allocations
       } else {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
       console.error('Fetch error:', err);
-      setError('Failed to load allocations');
+      setError(err.message || 'Failed to load allocations');
       setEmployeesData([]); // Clear allocations on error
     } finally {
       setLoading(false);
@@ -126,6 +128,7 @@ const ClientDetails = ({ userRole }) => {
       const response = await fetch(`http://localhost:8080/project-details-all/${clientId}/${projectId}`);
       if (response.ok) {
         const data = await response.json();
+        console.log('Excel Download Data:', data); // Add this line for debugging
         const { clientName, projectName, allocations } = data;
 
         // Create a new workbook
@@ -188,11 +191,12 @@ const ClientDetails = ({ userRole }) => {
         setShowMessage(true);
         setTimeout(() => setShowMessage(false), 3000);
       } else {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
       console.error('Error during Excel download:', err);
-      setError('Failed to download allocations. Please try again.');
+      setError(err.message || 'Failed to download allocations. Please try again.');
     } finally {
       setIsDownloading(false); // End download process
     }
@@ -363,85 +367,86 @@ const ClientDetails = ({ userRole }) => {
                     sorted={sortConfig.key === 'EmployeeName' ? sortConfig.direction : null}
                     onClick={() => handleSort('EmployeeName')}
                   >
-                    Employee Name <Icon name="sort" />
+                    Employee Name
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'EmployeeRole' ? sortConfig.direction : null}
                     onClick={() => handleSort('EmployeeRole')}
                   >
-                    Role <Icon name="sort" />
+                    Role
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'AllocationPercent' ? sortConfig.direction : null}
                     onClick={() => handleSort('AllocationPercent')}
                   >
-                    Allocation % <Icon name="sort" />
+                    Allocation %
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'AllocationStatus' ? sortConfig.direction : null}
                     onClick={() => handleSort('AllocationStatus')}
                   >
-                    Allocation Status <Icon name="sort" />
+                    Allocation Status
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'AllocationBillingType' ? sortConfig.direction : null}
                     onClick={() => handleSort('AllocationBillingType')}
                   >
-                    Billing Type <Icon name="sort" />
+                    Billing Type
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'AllocationBilledCheck' ? sortConfig.direction : null}
                     onClick={() => handleSort('AllocationBilledCheck')}
                   >
-                    Billed Check <Icon name="sort" />
+                    Billed Check
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'AllocationBillingRate' ? sortConfig.direction : null}
                     onClick={() => handleSort('AllocationBillingRate')}
                   >
-                    Billing Rate <Icon name="sort" />
+                    Billing Rate
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'AllocationTimeSheetApprover' ? sortConfig.direction : null}
                     onClick={() => handleSort('AllocationTimeSheetApprover')}
                   >
-                    TimeSheet Approver <Icon name="sort" />
+                    TimeSheet Approver
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'AllocationStartDate' ? sortConfig.direction : null}
                     onClick={() => handleSort('AllocationStartDate')}
                   >
-                    Start Date <Icon name="sort" />
+                    Start Date
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'AllocationEndDate' ? sortConfig.direction : null}
                     onClick={() => handleSort('AllocationEndDate')}
                   >
-                    End Date <Icon name="sort" />
+                    End Date
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'ModifiedBy' ? sortConfig.direction : null}
                     onClick={() => handleSort('ModifiedBy')}
                   >
-                    Modified By <Icon name="sort" />
+                    Modified By
                   </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortConfig.key === 'ModifiedAt' ? sortConfig.direction : null}
                     onClick={() => handleSort('ModifiedAt')}
                   >
-                    Modified At <Icon name="sort" />
+                    Modified At
                   </Table.HeaderCell>
                 </Table.Row>
               </Table.Header>
+
 
               <Table.Body>
                 {sortedData.length > 0 ? (
                   sortedData.map((employee, index) => (
                     <Table.Row key={index}>
                       <Table.Cell>
-                        <Icon name="user" /> {employee.EmployeeName}
+                        <Icon name="user" /> {employee.EmployeeName || 'N/A'}
                       </Table.Cell>
-                      <Table.Cell>{employee.EmployeeRole}</Table.Cell>
+                      <Table.Cell>{employee.EmployeeRole || 'N/A'}</Table.Cell>
                       <Table.Cell>{employee.AllocationPercent}%</Table.Cell>
                       <Table.Cell>{employee.AllocationStatus}</Table.Cell>
                       <Table.Cell>{employee.AllocationBillingType}</Table.Cell>
