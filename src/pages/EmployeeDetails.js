@@ -12,6 +12,8 @@ import * as XLSX from 'xlsx'; // Import SheetJS
 import { saveAs } from 'file-saver'; // Import FileSaver
 import AllocationModal from '../components/AllocationModal/AllocationModal'; // Import the new modal component
 import axios from 'axios'; // Using axios for HTTP requests
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   const { id } = useParams(); 
@@ -21,8 +23,6 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   const [employeeData, setEmployeeData] = useState(null); // State for employee details
   const [allocations, setAllocations] = useState([]); // Allocations data
   const [loading, setLoading] = useState(true);
-  const [clientOptions, setClientOptions] = useState([]);   // For Client Dropdown
-  const [projectOptions, setProjectOptions] = useState([]); // For Project Dropdown
   const [modalOpen, setModalOpen] = useState(false); // State to control modal visibility
   const [currentAllocation, setCurrentAllocation] = useState(0); // State for current allocation percentage
   const [filter, setFilter] = useState('active'); // Set default filter to 'active'
@@ -64,39 +64,10 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     }
   };
 
-  // Fetch clients and projects data
-  const fetchClientsAndProjects = async () => {
-    try {
-      const response = await axios.get('http://localhost:8080/modal/data');
-      const { clients, projects } = response.data;
-
-      // Prepare clientOptions
-      const clientsData = clients.map(client => ({
-        key: client.ClientID,
-        text: client.ClientName,
-        value: client.ClientID,
-      }));
-      setClientOptions(clientsData);
-
-      // Prepare projectOptions
-      const projectsData = projects.map(project => ({
-        key: project.ProjectID,
-        text: project.ProjectName,
-        value: project.ProjectID,
-        ClientID: project.ClientID, // To filter projects based on client selection
-      }));
-      setProjectOptions(projectsData);
-    } catch (err) {
-      console.error('Error fetching clients and projects:', err);
-      setError('Failed to load clients and projects');
-    }
-  };
-
   // Fetch allocations and employee data on component mount and when filter changes
   useEffect(() => {
     fetchEmployeeData();
     fetchAllocations(filter);
-    fetchClientsAndProjects(); // Fetch clients and projects
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, filter]);
 
@@ -158,15 +129,16 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
 
       // Optionally, display a success message based on commitType
       if (commitType === 'draft') {
-        alert('Allocations saved as draft successfully!');
+        toast.success('Allocations saved as draft successfully!');
       } else if (commitType === 'submit') {
-        alert('Allocations submitted successfully!');
+        toast.success('Allocations submitted successfully!');
       }
+      
 
       setError(null); // Clear any previous errors
     } catch (err) {
       console.error('Error committing allocations:', err);
-      setError('Failed to commit allocations. Please try again.');
+      toast.error('Failed to commit allocations. Please try again.');
     }
   };
 
@@ -296,18 +268,6 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     }
   };
 
-  const mergedAllocations = allocations.map((alloc) => {
-    // Check if there's a pending edit for this allocation
-    const pendingEdit = pendingEdits.find((edit) => edit.AllocationID === alloc.AllocationID);
-    return pendingEdit ? { ...alloc, ...pendingEdit } : alloc;
-  });
-  
-  // Include pending additions
-  const finalAllocations = [
-    ...mergedAllocations.filter((alloc) => !pendingDeletions.includes(alloc.AllocationID)),
-    ...pendingAdditions,
-  ];
-
   // Helper function to generate default image based on employee name
   const getDefaultImage = (name) => {
     if (!name) return 'https://via.placeholder.com/150';
@@ -315,6 +275,19 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     // Replace this URL with your logic to generate images based on the first character
     return `https://ui-avatars.com/api/?name=${firstChar}&background=random&size=150`;
   };
+
+  // Merge allocations with pending changes
+  const mergedAllocations = allocations.map((alloc) => {
+    // Check if there's a pending edit for this allocation
+    const pendingEdit = pendingEdits.find((edit) => edit.AllocationID === alloc.AllocationID);
+    return pendingEdit ? { ...alloc, ...pendingEdit } : alloc;
+  });
+
+  // Include pending additions and exclude pending deletions
+  const finalAllocations = [
+    ...mergedAllocations.filter((alloc) => !pendingDeletions.includes(alloc.AllocationID)),
+    ...pendingAdditions.map((alloc, index) => ({ ...alloc, AllocationID: `new-${index}` })), // Assign temporary IDs for new allocations
+  ];
 
   return (
     <div className="main-layout">
@@ -639,13 +612,10 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
         onClose={() => setModalOpen(false)}
         onSave={handleSaveAllocation}
         employeeData={employeeData} // Pass the employee object
-        clientOptions={clientOptions} // Pass client options
-        projectOptions={projectOptions} // Pass project options
         allocationData={allocationToEdit} // Pass allocation details when editing
         userRole={userRole}
       />
     </div>
   );
 }
-
-export default EmployeeDetails;
+  export default EmployeeDetails;
