@@ -79,7 +79,15 @@ const DashboardBizOps = () => {
     setSortDirection(direction);
   };
 
+  const handleUnallocatedClick = () => {
+    navigate('/employees', { state: { filter: 'unallocated' } });
+  };  
+
+  const handleToDoClick = () => {
+    navigate('/employees', { state: { filter: 'draft' } });
+  };  
   // Handle search
+  
   const handleSearchChange = (e) => {
     const searchValue = e.target.value.toLowerCase();
     setSearchTerm(searchValue);
@@ -191,7 +199,7 @@ const DashboardBizOps = () => {
                 icon="fa-users"
                 header="Unallocated"
                 value={todo}
-                onClick={() => navigate('/unallocated')}
+                onClick={handleUnallocatedClick}
               />
             </div>
             <div className='cards'>
@@ -199,7 +207,7 @@ const DashboardBizOps = () => {
                 icon="fa-users"
                 header="Drafts"
                 value={draft}
-                onClick={() => navigate('/todo')}
+                onClick={handleToDoClick}
               />
             </div>
             <div className='cards'>

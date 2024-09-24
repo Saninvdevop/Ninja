@@ -1,8 +1,9 @@
 // src/components/AllocationModal/AllocationModal.jsx
 
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Dropdown, Icon } from 'semantic-ui-react';
+import { Modal, Button, Form, Dropdown, Icon, Grid } from 'semantic-ui-react';
 import PropTypes from 'prop-types';
+import axios from 'axios';
 
 const AllocationModal = ({
   open,
@@ -13,6 +14,7 @@ const AllocationModal = ({
   clientOptions,      // Array of client options for Dropdown
   projectOptions,     // Array of project options for Dropdown
   userRole,
+  
 }) => {
   // Initialize state with either existing allocation data or default values
   const [formData, setFormData] = useState({
@@ -179,197 +181,212 @@ const AllocationModal = ({
 
   return (
     <Modal open={open} onClose={onClose} size="small" dimmer="blurring">
-      <Modal.Header>
-        {allocationData ? 'Edit Allocation' : 'Add New Allocation'}
-        <Icon
-          name="close"
-          size="large"
-          style={{ float: 'right', cursor: 'pointer' }}
-          onClick={onClose}
-        />
-      </Modal.Header>
-      <Modal.Content>
-        <Form>
-          <Form.Input
-            label="Employee Name"
-            placeholder="Employee Name"
-            name="employeeName"
-            value={formData.employeeName}
-            readOnly
-          />
-          <Form.Input
-            label="Employee ID"
-            placeholder="Employee ID"
-            name="employeeId"
-            value={formData.employeeId}
-            readOnly
-          />
-          <Form.Field>
-            <label>Client</label>
-            <Dropdown
-              placeholder="Select Client"
-              fluid
-              selection
-              options={clientOptions}
-              name="clientId"
-              value={formData.clientId}
+  <Modal.Header>
+    {allocationData ? 'Edit Allocation' : 'Add New Allocation'}
+    <Icon
+      name="close"
+      size="large"
+      style={{ float: 'right', cursor: 'pointer' }}
+      onClick={onClose}
+    />
+  </Modal.Header>
+  <Modal.Content>
+    <Form>
+      <Grid columns={2}>
+        {/* First Row: Employee Name and Employee ID */}
+        <Grid.Row>
+          <Grid.Column>
+            <Form.Input
+              label="Employee Name"
+              placeholder="Employee Name"
+              name="employeeName"
+              value={formData.employeeName}
+              readOnly
+            />
+          </Grid.Column>
+          <Grid.Column>
+            <Form.Input
+              label="Employee ID"
+              placeholder="Employee ID"
+              name="employeeId"
+              value={formData.employeeId}
+              readOnly
+            />
+          </Grid.Column>
+        </Grid.Row>
+
+        {/* Second Row: Client and Project */}
+        <Grid.Row>
+          <Grid.Column>
+            <Form.Field>
+              <label>Client</label>
+              <Dropdown
+                placeholder="Select Client"
+                fluid
+                selection
+                options={clientOptions}
+                name="clientId"
+                value={formData.clientId}
+                onChange={handleChange}
+                required
+              />
+            </Form.Field>
+          </Grid.Column>
+          <Grid.Column>
+            <Form.Field>
+              <label>Project</label>
+              <Dropdown
+                placeholder="Select Project"
+                fluid
+                selection
+                options={
+                  formData.clientId === 'Innover'
+                    ? [{ key: 'Benched', text: 'Benched', value: 'Benched' }]
+                    : projectOptions.filter(
+                        (project) => project.ClientID === formData.clientId
+                      )
+                }
+                name="projectId"
+                value={formData.projectId}
+                onChange={handleChange}
+                disabled={formData.clientId === 'Innover'}
+                required
+              />
+            </Form.Field>
+          </Grid.Column>
+        </Grid.Row>
+
+        {/* Third Row: Status and Allocation % */}
+        <Grid.Row>
+          <Grid.Column>
+            <Form.Field>
+              <label>Status</label>
+              <Dropdown
+                placeholder="Select Status"
+                fluid
+                selection
+                options={[
+                  { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
+                  { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
+                  { key: 'allocated', text: 'Allocated', value: 'Allocated' },
+                  { key: 'closed', text: 'Closed', value: 'Closed' },
+                ]}
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                required
+              />
+            </Form.Field>
+          </Grid.Column>
+          <Grid.Column>
+            <Form.Field>
+              <label>Allocation %</label>
+              <Dropdown
+                placeholder="Select allocation percentage"
+                fluid
+                selection
+                options={[
+                  { key: '0', text: '0%', value: 0 },
+                  { key: '25', text: '25%', value: 25 },
+                  { key: '50', text: '50%', value: 50 },
+                  { key: '75', text: '75%', value: 75 },
+                  { key: '100', text: '100%', value: 100 },
+                ]}
+                name="allocationPercent"
+                value={formData.allocationPercent}
+                onChange={handleChange}
+                required
+              />
+              {formData.allocationPercent && (
+                <p style={{ color: 'gray', fontSize: '12px', marginTop: '5px' }}>
+                  {100 - parseInt(formData.allocationPercent, 10)}% allocation remaining.
+                </p>
+              )}
+            </Form.Field>
+          </Grid.Column>
+        </Grid.Row>
+
+        {/* Fourth Row: Billing Rate and Time Sheet Approver */}
+        <Grid.Row>
+          <Grid.Column>
+            <Form.Field>
+              <label>Billing Rate (USD)</label>
+              <Form.Input
+                placeholder="Enter billing rate"
+                type="number"
+                name="billingRate"
+                value={formData.billingRate}
+                onChange={handleChange}
+                min={0}
+                max={999}
+                step="0.01"
+                required
+              />
+              {formData.billingRate > 999 && (
+                <p style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>
+                  Billing rate should not exceed more than three digits
+                </p>
+              )}
+            </Form.Field>
+          </Grid.Column>
+          <Grid.Column>
+            <Form.Field>
+              <label>Time Sheet Approver</label>
+              <Dropdown
+                placeholder="Select Approver"
+                fluid
+                selection
+                options={[
+                  { key: 'rajendra', text: 'Rajendra', value: 'Rajendra' },
+                  { key: 'kiran', text: 'Kiran', value: 'Kiran' },
+                  { key: 'shishir', text: 'Shishir', value: 'Shishir' },
+                ]}
+                name="timeSheetApprover"
+                value={formData.timeSheetApprover}
+                onChange={handleChange}
+                required
+              />
+            </Form.Field>
+          </Grid.Column>
+        </Grid.Row>
+
+        {/* Fifth Row: Start Date and End Date */}
+        <Grid.Row>
+          <Grid.Column>
+            <Form.Input
+              label="Start Date"
+              type="date"
+              placeholder="Enter start date"
+              name="startDate"
+              value={formData.startDate}
               onChange={handleChange}
               required
             />
-          </Form.Field>
-          <Form.Field>
-            <label>Project</label>
-            <Dropdown
-              placeholder="Select Project"
-              fluid
-              selection
-              options={
-                formData.clientId === 'Innover' // Adjust if 'Innover' is a ClientID or ClientName
-                  ? [
-                      { key: 'Benched', text: 'Benched', value: 'Benched' },
-                    ]
-                  : projectOptions.filter(
-                      (project) => project.ClientID === formData.clientId
-                    )
-              }
-              name="projectId"
-              value={formData.projectId}
+          </Grid.Column>
+          <Grid.Column>
+            <Form.Input
+              label="End Date"
+              type="date"
+              placeholder="Enter end date"
+              name="endDate"
+              value={formData.endDate}
               onChange={handleChange}
-              disabled={formData.clientId === 'Innover'}
-              required
+              required={formData.status === 'Allocated'}
+              disabled={!formData.status || formData.status !== 'Allocated'}
             />
-          </Form.Field>
-          <Form.Field>
-            <label>Status</label>
-            <Dropdown
-              placeholder="Select Status"
-              fluid
-              selection
-              options={[
-                {
-                  key: 'client-unallocated',
-                  text: 'Client Unallocated',
-                  value: 'Client Unallocated',
-                },
-                {
-                  key: 'project-unallocated',
-                  text: 'Project Unallocated',
-                  value: 'Project Unallocated',
-                },
-                {
-                  key: 'allocated',
-                  text: 'Allocated',
-                  value: 'Allocated',
-                },
-                {
-                  key: 'closed',
-                  text: 'Closed',
-                  value: 'Closed',
-                },
-              ]}
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              required
-            />
-          </Form.Field>
-          <Form.Input
-            label="Allocation %"
-            type="number"
-            placeholder="Enter allocation percentage"
-            name="allocationPercent"
-            value={formData.allocationPercent}
-            onChange={handleChange}
-            min={0}
-            max={100}
-            required
-          />
-          {/* Display remaining allocation if needed */}
-          {formData.allocationPercent && (
-            <p
-              style={{
-                color: 'gray',
-                fontSize: '12px',
-                marginTop: '5px',
-              }}
-            >
-              {100 - parseInt(formData.allocationPercent, 10)}% allocation
-              remaining.
-            </p>
-          )}
-          <Form.Input
-            label="Billing Rate (USD)"
-            placeholder="Enter billing rate"
-            type="number"
-            name="billingRate"
-            value={formData.billingRate}
-            onChange={handleChange}
-            min={0}
-            step="0.01"
-            required
-          />
-          <Form.Field>
-            <label>Time Sheet Approver</label>
-            <Dropdown
-              placeholder="Select Approver"
-              fluid
-              selection
-              options={[
-                {
-                  key: 'rajendra',
-                  text: 'Rajendra',
-                  value: 'Rajendra',
-                },
-                {
-                  key: 'kiran',
-                  text: 'Kiran',
-                  value: 'Kiran',
-                },
-                {
-                  key: 'shishir',
-                  text: 'Shishir',
-                  value: 'Shishir',
-                },
-              ]}
-              name="timeSheetApprover"
-              value={formData.timeSheetApprover}
-              onChange={handleChange}
-              required
-            />
-          </Form.Field>
-          <Form.Input
-            label="Start Date"
-            type="date"
-            placeholder="Enter start date"
-            name="startDate"
-            value={formData.startDate}
-            onChange={handleChange}
-            required
-          />
-          <Form.Input
-            label="End Date"
-            type="date"
-            placeholder="Enter end date"
-            name="endDate"
-            value={formData.endDate}
-            onChange={handleChange}
-            required={formData.status === 'Allocated'}
-            disabled={!formData.status || formData.status !== 'Allocated'}
-          />
-        </Form>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </Modal.Content>
-      <Modal.Actions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button
-          color="blue"
-          onClick={handleSubmit}
-          disabled={!isFormValid()}
-        >
-          {allocationData ? 'Update' : 'Save'}
-        </Button>
-      </Modal.Actions>
-    </Modal>
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
+    </Form>
+    {error && <p style={{ color: 'red' }}>{error}</p>}
+  </Modal.Content>
+  <Modal.Actions>
+    <Button onClick={onClose}>Cancel</Button>
+    <Button color="blue" onClick={handleSubmit} disabled={!isFormValid()}>
+      {allocationData ? 'Update' : 'Save'}
+    </Button>
+  </Modal.Actions>
+</Modal>
   );
 };
 

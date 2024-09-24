@@ -1,13 +1,13 @@
 // All Employees Page
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Table, Input, Button } from 'semantic-ui-react';
 import './EmpPage.css';
 import * as XLSX from 'xlsx';
 
 const EmpPage = () => {
   const navigate = useNavigate(); // For navigation to employee details
-
+  const location = useLocation();
   // State for employee data and loading status
   const [employeeData, setEmployeeData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -25,6 +25,29 @@ const EmpPage = () => {
   useEffect(() => {
     fetchDataBasedOnFilter(filter);
   }, [filter]); // Re-fetch data whenever the filter changes
+  useEffect
+    (
+      () => {
+        if
+          (location.state?.filter) {
+          setFilter
+            (location.state.filter);
+        }
+        else {
+          // Check if navigating directly to "unallocated"
+          if
+            (location.pathname.
+              includes
+              (
+                'unallocated'
+              )) {
+            setFilter
+              (
+                'unallocated'
+              );
+          }
+        }
+      }, [location]);
   const fetchDataBasedOnFilter = async (filter) => {
     try {
       setLoading(true);
@@ -144,7 +167,7 @@ const EmpPage = () => {
   const downloadExcel = async () => {
     const filters = ['all', 'unallocated', 'draft', 'allocated', 'bench'];
     const workbook = XLSX.utils.book_new();
-  
+
     try {
       for (const filter of filters) {
         const endpoint = `http://localhost:8080/employees${filter === 'all' ? '' : `/${filter}`}`;
@@ -153,7 +176,7 @@ const EmpPage = () => {
           throw new Error(`Failed to fetch ${filter} data`);
         }
         const data = await response.json();
-  
+
         const worksheet = XLSX.utils.json_to_sheet(data.map((employee) => ({
           'Employee ID': employee.EmployeeID,
           'Employee Name': employee.EmployeeName,
@@ -162,10 +185,10 @@ const EmpPage = () => {
           'Projects': employee.Projects.join(', '),
           'Current Allocation %': employee.Current_Allocation,
         })));
-  
+
         XLSX.utils.book_append_sheet(workbook, worksheet, filter.charAt(0).toUpperCase() + filter.slice(1));
       }
-  
+
       XLSX.writeFile(workbook, 'employee-data.xlsx');
     } catch (error) {
       console.error('Error downloading Excel file:', error);
