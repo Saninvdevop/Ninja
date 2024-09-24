@@ -4,16 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Dropdown, Icon, Loader, Message, Input } from 'semantic-ui-react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const AllocationModal = ({
   open,
   onClose,
   onSave,
   employeeData,
-  allocationData,
+  allocationData, // Renamed to camelCase
   userRole,
-  currentAllocation,
-  stagedChangesPercent
 }) => {
   // Initialize state with either existing allocation data or default values
   const [formData, setFormData] = useState({
@@ -40,6 +39,10 @@ const AllocationModal = ({
   const [fetchError, setFetchError] = useState(null);
   const [remainingAllocation, setRemainingAllocation] = useState(100);
   const [existingAllocations, setExistingAllocations] = useState([]);
+
+  // New State Variables for Dynamic Remaining Allocation
+  const [fetchedRemainingAllocation, setFetchedRemainingAllocation] = useState(100);
+  const [originalAllocationPercent, setOriginalAllocationPercent] = useState(0);
 
   // Allocation Percent Options
   const allocationOptions = [
@@ -111,7 +114,7 @@ const AllocationModal = ({
 
       try {
         const response = await axios.get(`http://localhost:8080/employee-allocations/${employeeData.EmployeeId}`);
-        setRemainingAllocation(response.data.remainingAllocation);
+        setFetchedRemainingAllocation(response.data.remainingAllocation);
       } catch (err) {
         console.error('Error fetching remaining allocation:', err);
         setError('Failed to compute remaining allocation.');
@@ -132,22 +135,15 @@ const AllocationModal = ({
         clientId: allocationData.ClientID || '',
         projectId: allocationData.ProjectID || '',
         status: allocationData.AllocationStatus || '',
-        allocationPercent: allocationData.AllocationPercent
-          ? allocationData.AllocationPercent
-          : '',
+        allocationPercent: allocationData.AllocationPercent ? allocationData.AllocationPercent : '',
         billingType: allocationData.AllocationBillingType || '',
         billedCheck: allocationData.AllocationBilledCheck || '',
-        billingRate: allocationData.AllocationBillingRate
-          ? allocationData.AllocationBillingRate
-          : '',
+        billingRate: allocationData.AllocationBillingRate ? allocationData.AllocationBillingRate : '',
         timeSheetApprover: allocationData.AllocationTimeSheetApprover || '',
-        startDate: allocationData.AllocationStartDate
-          ? allocationData.AllocationStartDate.substring(0, 10)
-          : '',
-        endDate: allocationData.AllocationEndDate
-          ? allocationData.AllocationEndDate.substring(0, 10)
-          : '',
+        startDate: allocationData.AllocationStartDate ? allocationData.AllocationStartDate.substring(0, 10) : '',
+        endDate: allocationData.AllocationEndDate ? allocationData.AllocationEndDate.substring(0, 10) : '',
       });
+      setOriginalAllocationPercent(allocationData.AllocationPercent || 0);
     } else {
       // Reset form for adding new allocation
       setFormData({
@@ -164,6 +160,7 @@ const AllocationModal = ({
         startDate: '',
         endDate: '',
       });
+      setOriginalAllocationPercent(0);
     }
 
     // Reset error when allocationData changes
@@ -173,6 +170,7 @@ const AllocationModal = ({
   // Reset form when modal is closed
   useEffect(() => {
     if (!open) {
+      // Reset form when modal is closed
       setFormData({
         employeeName: employeeData ? employeeData.EmployeeName : '',
         employeeId: employeeData ? employeeData.EmployeeId : '',
@@ -189,8 +187,27 @@ const AllocationModal = ({
       });
       setError(null);
       setFetchError(null);
+      setFetchedRemainingAllocation(100);
+      setOriginalAllocationPercent(0);
+      setRemainingAllocation(100);
     }
   }, [open, employeeData, allocationData]);
+
+  // Compute Remaining Allocation Dynamically
+  useEffect(() => {
+    let newRemaining = 0;
+    const currentAllocationPercent = parseInt(formData.allocationPercent, 10) || 0;
+
+    if (allocationData) {
+      // Editing existing allocation
+      newRemaining = fetchedRemainingAllocation + (originalAllocationPercent || 0) - currentAllocationPercent;
+    } else {
+      // Adding new allocation
+      newRemaining = fetchedRemainingAllocation - currentAllocationPercent;
+    }
+
+    setRemainingAllocation(newRemaining >= 0 ? newRemaining : 0);
+  }, [fetchedRemainingAllocation, originalAllocationPercent, formData.allocationPercent, allocationData]);
 
   // Helper function to check date overlap
   const isOverlapping = (newStart, newEnd, existingStart, existingEnd) => {
@@ -249,13 +266,6 @@ const AllocationModal = ({
         setFormData((prev) => ({ ...prev, status: '' }));
       }
     }
-
-    // Update remaining allocation if allocationPercent changes
-    if (name === 'allocationPercent') {
-      const selectedValue = parseInt(value, 10);
-      const newRemaining = 100 - currentAllocation - stagedChangesPercent - selectedValue;
-      setRemainingAllocation(newRemaining >= 0 ? newRemaining : 0);
-    }
   };
 
   // Validate form fields
@@ -301,6 +311,7 @@ const AllocationModal = ({
 
     // Additional validation for AllocationEndDate
     if (endDate && startDate && new Date(endDate) < new Date(startDate)) {
+      setError('End Date cannot be before Start Date.');
       return false;
     }
 
@@ -308,7 +319,7 @@ const AllocationModal = ({
   };
 
   // Handle form submission
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Basic validation
     if (!isFormValid()) {
       if (!error) {
@@ -317,68 +328,90 @@ const AllocationModal = ({
       return;
     }
 
-    // Check for overlapping allocations
-    const overlapping = existingAllocations.some(alloc => {
-      // If editing, exclude the current allocation
-      if (allocationData && alloc.AllocationID === allocationData.AllocationID) {
-        return false;
+    try {
+      // Check for overlapping allocations
+      const overlapResponse = await axios.get(`http://localhost:8080/employee-details/${formData.employeeId}/allocations`);
+      const allocationsList = overlapResponse.data.allocations;
+
+      const hasOverlap = allocationsList.some(alloc => {
+        // If editing, exclude the current allocation
+        if (allocationData && alloc.AllocationID === allocationData.AllocationID) {
+          return false;
+        }
+
+        // Check if the project is the same
+        if (alloc.ProjectID !== formData.projectId) {
+          return false;
+        }
+
+        // Check for date overlap
+        return isOverlapping(
+          formData.startDate,
+          formData.endDate,
+          alloc.AllocationStartDate,
+          alloc.AllocationEndDate
+        );
+      });
+
+      if (hasOverlap) {
+        setError('Allocation overlaps with an existing allocation for the same project.');
+        return;
       }
 
-      // Check if the project is the same
-      if (alloc.ProjectID !== formData.projectId) {
-        return false;
+      // Check total allocation does not exceed 100%
+      if (allocationData) {
+        // If editing, subtract the current allocation percent from total allocation
+        const totalAllocationResponse = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`);
+        const totalAllocation = 100 - totalAllocationResponse.data.remainingAllocation;
+        const adjustedTotal = totalAllocation - originalAllocationPercent + parseInt(formData.allocationPercent, 10);
+
+        if (adjustedTotal > 100) {
+          setError('Total allocation percentage cannot exceed 100%.');
+          return;
+        }
+      } else {
+        // If adding new allocation
+        const totalAllocationResponse = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`);
+        const totalAllocation = 100 - totalAllocationResponse.data.remainingAllocation;
+
+        if (totalAllocation + parseInt(formData.allocationPercent, 10) > 100) {
+          setError('Total allocation percentage cannot exceed 100%.');
+          return;
+        }
       }
 
-      // Check for date overlap
-      return isOverlapping(
-        formData.startDate,
-        formData.endDate,
-        alloc.AllocationStartDate,
-        alloc.AllocationEndDate
-      );
-    });
+      // Prepare the payload
+      const payload = {
+        EmployeeID: formData.employeeId,
+        ClientID: formData.clientId,
+        ProjectID: formData.projectId,
+        AllocationStatus: formData.status,
+        AllocationPercent: parseInt(formData.allocationPercent, 10),
+        AllocationStartDate: formData.startDate,
+        AllocationEndDate: formData.endDate || null,
+        AllocationTimeSheetApprover: formData.timeSheetApprover,
+        AllocationBillingType: formData.billingType,
+        AllocationBilledCheck: formData.billedCheck,
+        AllocationBillingRate: formData.billedCheck === 'Yes' ? parseFloat(formData.billingRate) : null,
+        ModifiedBy: 'Admin', // Adjust as needed or pass as a prop
+      };
 
-    if (overlapping) {
-      setError('Allocation overlaps with an existing allocation for the same project.');
-      return;
+      if (allocationData && allocationData.AllocationID) {
+        // Editing existing allocation
+        await axios.put(`http://localhost:8080/allocations/${allocationData.AllocationID}`, payload);
+        toast.success('Allocation updated successfully!');
+      } else {
+        // Adding new allocation
+        await axios.post('http://localhost:8080/api/allocate', payload);
+        toast.success('Allocation added successfully!');
+      }
+
+      onSave(); // Refresh allocations in parent component
+      onClose(); // Close the modal
+    } catch (err) {
+      console.error('Error adding/updating allocation:', err);
+      setError(err.response?.data?.message || 'Failed to add/update allocation.');
     }
-
-    // Check total allocation does not exceed 100%
-    if (currentAllocation + stagedChangesPercent + parseInt(formData.allocationPercent, 10) > 100) {
-      setError('Total allocation percentage cannot exceed 100%.');
-      return;
-    }
-
-    // Prepare the payload
-    const payload = {
-      EmployeeID: formData.employeeId,
-      ClientID: formData.clientId,
-      ProjectID: formData.projectId,
-      AllocationStatus: formData.status,
-      AllocationPercent: parseInt(formData.allocationPercent, 10),
-      AllocationStartDate: formData.startDate,
-      AllocationEndDate: formData.endDate || null,
-      AllocationTimeSheetApprover: formData.timeSheetApprover,
-      AllocationBillingType: formData.billingType,
-      AllocationBilledCheck: formData.billedCheck,
-      ModifiedBy: 'Admin', // Adjust as needed or pass as a prop
-    };
-
-    if (formData.billedCheck === 'Yes') {
-      payload.AllocationBillingRate = parseFloat(formData.billingRate);
-    } else {
-      payload.AllocationBillingRate = null;
-    }
-
-    // If editing, include AllocationID
-    if (allocationData && allocationData.AllocationID) {
-      payload.AllocationID = allocationData.AllocationID;
-    }
-
-    // Call the onSave prop with the payload
-    onSave(payload);
-
-    // Reset the form (handled by useEffect on modal close)
   };
 
   // Helper function to generate project options based on selected client
@@ -526,7 +559,7 @@ const AllocationModal = ({
                 placeholder="Select Allocation Percentage"
                 fluid
                 selection
-                options={allocationOptions.filter(option => option.value <= (100 - currentAllocation - stagedChangesPercent))}
+                options={allocationOptions.filter(option => option.value <= remainingAllocation)}
                 name="allocationPercent"
                 value={formData.allocationPercent}
                 onChange={handleChange}
@@ -554,53 +587,53 @@ const AllocationModal = ({
             </Form.Field>
 
             <Form.Field required>
-                <label>Billed Check</label>
-                <Dropdown
-                    placeholder="Select Billed Check"
-                    fluid
-                    selection
-                    options={billedCheckOptions}
-                    name="billedCheck"
-                    value={formData.billedCheck}
-                    onChange={(e, { name, value }) => {
-                    setFormData(prev => ({
-                        ...prev,
-                        [name]: value,
-                        billingRate: value === 'No' ? 0 : prev.billingRate,  // Automatically set billingRate to 0 when "No"
-                    }));
-                    }}
-                    selection
-                    clearable
-                />
+              <label>Billed Check</label>
+              <Dropdown
+                placeholder="Select Billed Check"
+                fluid
+                selection
+                options={billedCheckOptions}
+                name="billedCheck"
+                value={formData.billedCheck}
+                onChange={(e, { name, value }) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    [name]: value,
+                    billingRate: value === 'No' ? '' : prev.billingRate,  // Clear billingRate if 'No'
+                  }));
+                }}
+                selection
+                clearable
+              />
             </Form.Field>
 
-            <Form.Field required={formData.billedCheck === 'Yes'}>
+            {formData.billedCheck === 'Yes' && (
+              <Form.Field required>
                 <label>Billing Rate (USD)</label>
                 <Input
-                    label={{ basic: true, content: '$' }}
-                    labelPosition="left"
-                    placeholder="Enter billing rate"
-                    name="billingRate"
-                    value={formData.billedCheck === 'Yes' ? formData.billingRate : 0} // Set value to 0 when billedCheck is 'No'
-                    onChange={handleChange}
-                    type="number"
-                    min={0}
-                    max={9999}
-                    step="0.01"
-                    maxLength={5} // Allows up to 4 digits plus decimal
-                    icon={{ name: 'dollar', color: 'grey' }}
-                    iconPosition="left"
-                    disabled={formData.billedCheck !== 'Yes'}  // Disable when billedCheck is 'No'
-                    // Prevent entering more than 4 digits
-                    onKeyDown={(e) => {
+                  label={{ basic: true, content: '$' }}
+                  labelPosition="left"
+                  placeholder="Enter billing rate"
+                  name="billingRate"
+                  value={formData.billingRate}
+                  onChange={handleChange}
+                  type="number"
+                  min={0}
+                  max={9999}
+                  step="0.01"
+                  maxLength={5} // Allows up to 4 digits plus decimal
+                  icon={{ name: 'dollar', color: 'grey' }}
+                  iconPosition="left"
+                  // Prevent entering more than 4 digits
+                  onKeyDown={(e) => {
                     const currentLength = e.target.value.length;
                     if (currentLength >= 5 && e.key !== 'Backspace' && e.key !== 'Delete') {
-                        e.preventDefault();
+                      e.preventDefault();
                     }
-                    }}
+                  }}
                 />
-            </Form.Field>
-
+              </Form.Field>
+            )}
 
             <Form.Field required>
               <label>Time Sheet Approver</label>
@@ -630,18 +663,19 @@ const AllocationModal = ({
                 />
               </Form.Field>
 
-              <Form.Field required={formData.status === 'Allocated'}>
-                <label>End Date</label>
-                <Input
-                  type="date"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleChange}
-                  required={formData.startDate}
-                  disabled={formData.startDate === ''}
-                  min={formData.startDate || '2020-01-01'} // Ensure end date is not before start date
-                />
-              </Form.Field>
+              {formData.status === 'Allocated' && (
+                <Form.Field required>
+                  <label>End Date</label>
+                  <Input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleChange}
+                    required={formData.status === 'Allocated'}
+                    min={formData.startDate || '2020-01-01'} // Ensure end date is not before start date
+                  />
+                </Form.Field>
+              )}
             </Form.Group>
           </Form>
         )}
@@ -674,7 +708,7 @@ AllocationModal.propTypes = {
   employeeData: PropTypes.shape({
     EmployeeName: PropTypes.string,
     EmployeeId: PropTypes.string,
-  }),       // Object containing EmployeeName and EmployeeID
+  }), // Object containing EmployeeName and EmployeeID
   allocationData: PropTypes.shape({
     AllocationID: PropTypes.number,
     ClientID: PropTypes.number,
@@ -687,10 +721,8 @@ AllocationModal.propTypes = {
     AllocationTimeSheetApprover: PropTypes.string,
     AllocationBillingType: PropTypes.string,
     AllocationBilledCheck: PropTypes.string,
-  }),     // Allocation details or null
+  }), // Allocation details or null
   userRole: PropTypes.string.isRequired,
-  currentAllocation: PropTypes.number.isRequired, // Passed from parent
-  stagedChangesPercent: PropTypes.number.isRequired, // Passed from parent
 };
 
 export default AllocationModal;
