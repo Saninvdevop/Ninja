@@ -4,7 +4,7 @@ import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 
 Chart.register(ArcElement, Tooltip, Legend);
 
-const AllocationDonutChart = ({ total, dataValues, labels, colors }) => {
+const AllocationDonutChart = ({ total, stagedTotal, dataValues, labels, colors }) => {
   const data = {
     labels: labels,
     datasets: [
@@ -48,7 +48,7 @@ const AllocationDonutChart = ({ total, dataValues, labels, colors }) => {
             textAlign: 'center',
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 30, fontWeight: 'bold' }}>{total}%</h2>
+          <h2 style={{ margin: 0, fontSize: 30, fontWeight: 'bold' }}>{total }%</h2>
           <p style={{ margin: 0, fontSize: 12, fontWeight: 500 }}>Allocated</p>
         </div>
       </div>

@@ -32,6 +32,7 @@ const AllocationModal = ({
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  const [timeSheetApprovers, setTimeSheetApprovers] = useState([]);
 
   // Fetch clients and projects when the modal opens
   useEffect(() => {
@@ -40,9 +41,10 @@ const AllocationModal = ({
       setFetchError(null);
       try {
         const response = await axios.get('http://localhost:8080/modal/data');
-        const { clients, projects } = response.data;
+        const { clients, projects, timeSheetApprovers } = response.data;
         setClients(clients);
         setProjects(projects);
+        setTimeSheetApprovers(timeSheetApprovers);
       } catch (err) {
         console.error('Error fetching clients and projects:', err);
         setFetchError('Failed to load clients and projects.');
@@ -125,6 +127,17 @@ const AllocationModal = ({
       ...prev,
       [name]: value,
     }));
+    // If project is changed, update the time sheet approver options
+    if (name === 'projectId') {
+      const selectedProject = projects.find(project => project.ProjectID === value);
+      if (selectedProject && selectedProject.ProjectManager) {
+        setTimeSheetApprovers(prev => 
+          prev.includes(selectedProject.ProjectManager) 
+            ? prev 
+            : [...prev, selectedProject.ProjectManager]
+        );
+      }
+    }
 
     // Dynamically update status based on allocation percentage and selected fields
     if (name === 'allocationPercent') {
@@ -219,6 +232,36 @@ const AllocationModal = ({
         value: project.ProjectID,
       }));
   };
+  const getTimeSheetApproverOptions = () => {
+    const staticOptions = [
+      {
+        key: 'rajendra',
+        text: 'Rajendra',
+        value: 'Rajendra',
+      },
+      {
+        key: 'kiran',
+        text: 'Kiran',
+        value: 'Kiran',
+      },
+      {
+        key: 'shishir',
+        text: 'Shishir',
+        value: 'Shishir',
+      },
+    ];
+  
+    const dynamicOptions = timeSheetApprovers.map(approver => ({
+      key: approver,
+      text: approver,
+      value: approver,
+    }));
+  
+    // Combine both static and dynamic options
+    return [...staticOptions, ...dynamicOptions];
+  };
+  
+
 
   return (
     <Modal open={open} onClose={onClose} size="small" dimmer="blurring">
@@ -361,23 +404,7 @@ const AllocationModal = ({
                 placeholder="Select Approver"
                 fluid
                 selection
-                options={[
-                  {
-                    key: 'rajendra',
-                    text: 'Rajendra',
-                    value: 'Rajendra',
-                  },
-                  {
-                    key: 'kiran',
-                    text: 'Kiran',
-                    value: 'Kiran',
-                  },
-                  {
-                    key: 'shishir',
-                    text: 'Shishir',
-                    value: 'Shishir',
-                  },
-                ]}
+                options={getTimeSheetApproverOptions()}
                 name="timeSheetApprover"
                 value={formData.timeSheetApprover}
                 onChange={handleChange}
