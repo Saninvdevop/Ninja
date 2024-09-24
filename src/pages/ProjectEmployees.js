@@ -36,8 +36,8 @@ const ProjectEmployees = () => {
       <Table celled padded className="employee-table">
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell>Employee Name</Table.HeaderCell>
-            <Table.HeaderCell>Role</Table.HeaderCell>
+            <Table.HeaderCell>Employee Nambe</Table.HeaderCell>
+            <Table.HeaderCell>Roltte</Table.HeaderCell>
             <Table.HeaderCell>Status</Table.HeaderCell>
           </Table.Row>
         </Table.Header>

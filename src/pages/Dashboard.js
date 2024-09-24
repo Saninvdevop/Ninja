@@ -1,3 +1,4 @@
+// Leaders Dashboard Page
 import React from 'react';
 import { Icon } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate

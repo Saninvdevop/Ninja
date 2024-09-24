@@ -1,3 +1,4 @@
+// Clients Page
 import React, { useState, useEffect } from 'react';
 import { Table, Icon, Button, Input } from 'semantic-ui-react';
 import { useNavigate } from 'react-router-dom';
@@ -5,69 +6,52 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import './Projects.css';
 
-const Projects = ({ userRole }) => { // Receive userRole as a prop
+const Projects = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const navigate = useNavigate(); // For navigation
+  const navigate = useNavigate();
   const [clientData, setClientData] = useState([]);
-  const [benchedEmployees, setBenchedEmployees] = useState([]);
-  const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
-  const [loading, setLoading] = useState(true); // Loading state
-
-  // Sorting state
+  const [loading, setLoading] = useState(true);
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState(null);
 
   const handleRowClick = (clientId) => {
-    navigate(`/client/${clientId}/projects`); // Navigate to the client projects page
+    navigate(`/client/${clientId}/projects`);
   };
 
-  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  // Download data to Excel
   const downloadExcel = () => {
-    // Define the data to export
     const dataToExport = filteredAndSortedData.map(client => ({
+      'Client ID': client.ClientID,
       Company: client.ClientName,
       'No. of Projects': client.NoOfProjects,
-      Country: client.Country,
-      'Contract Start Date': client.StartDate,
-      'Contract End Date': client.EndDate,
-      Headcount: client.NoOfEmployees,
+      Country: client.ClientCountry,
+      "Client Partner": client.ClientPartner,
+      Headcount: client.Headcount // Add Headcount to Excel
     }));
 
-    // Create a worksheet
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    // Create a workbook and add the worksheet
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Clients');
 
-    // Generate buffer
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    // Create a blob from the buffer
     const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    // Save the file
     saveAs(data, 'clients.xlsx');
   };
 
-  // Fetch data from APIs
   useEffect(() => {
-    const fetchEmployeeData = async () => {
+    const fetchData = async () => {
       try {
-        const allocatedResponse = await fetch('http://localhost:5000/clients');
-        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
+        const response = await fetch('http://localhost:8080/clients');
         
-        if (!allocatedResponse.ok || !benchedResponse.ok) {
+        if (!response.ok) {
           throw new Error('Network response was not ok');
         }
 
-        const allocatedData = await allocatedResponse.json();
-        const benchedData = await benchedResponse.json();
-
-        setClientData(allocatedData);
-        setBenchedEmployees(benchedData);
+        const data = await response.json();
+        setClientData(data);
       } catch (error) {
         console.error('Fetch error:', error);
       } finally {
@@ -75,28 +59,26 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
       }
     };
 
-    fetchEmployeeData();
+    fetchData();
   }, []);
 
-  // Filter data based on search term
   const filteredData = clientData.filter(client => {
     const term = searchTerm.toLowerCase();
     return (
       client.ClientName.toLowerCase().includes(term) ||
-      (client.Email && client.Email.toLowerCase().includes(term)) || // Ensure Email exists
+      client.ClientCountry.toLowerCase().includes(term) ||
+      client.ClientPartner.toLowerCase().includes(term) ||
       String(client.ClientID).includes(term)
     );
   });
 
-  // Sort data based on sortColumn and sortDirection
   const sortedData = React.useMemo(() => {
     if (!sortColumn) return filteredData;
 
-    const sorted = [...filteredData].sort((a, b) => {
+    return [...filteredData].sort((a, b) => {
       let aVal = a[sortColumn];
       let bVal = b[sortColumn];
 
-      // Handle different data types
       if (typeof aVal === 'string') {
         aVal = aVal.toLowerCase();
         bVal = bVal.toLowerCase();
@@ -106,14 +88,10 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
       if (aVal < bVal) return sortDirection === 'ascending' ? -1 : 1;
       return 0;
     });
-
-    return sorted;
   }, [filteredData, sortColumn, sortDirection]);
 
-  // Combined filtered and sorted data
   const filteredAndSortedData = sortedData;
 
-  // Handle sorting when a header is clicked
   const handleSort = (clickedColumn) => {
     if (sortColumn !== clickedColumn) {
       setSortColumn(clickedColumn);
@@ -121,39 +99,38 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
       return;
     }
 
-    // Toggle sort direction
     setSortDirection(sortDirection === 'ascending' ? 'descending' : 'ascending');
   };
+
+  
 
   return (
     <div className='main-layout'>
       <div className='right-content'>
-        {/* Breadcrumb Section */}
         <div className='breadcrumb'>
           <h2 className="breadcrumb-text">Clients</h2>
         </div>
-        {/* Search and Download Container */}
         <div className="controls">
-           {/* Search Bar */}
+            
            <Input
               icon="search"
-              placeholder="Search by name, email, or ID..."
+              placeholder="Search Client"
               value={searchTerm}
               onChange={handleSearchChange}
               className="search-bar"
-              />
+              style={{ marginRight: '10px', width: '300px' }}
+           />
   
-              {/* Download Button */}
-              <Button
-                icon
-                labelPosition="left"
-                color="blue"
-                onClick={downloadExcel}
-                className="download-button"
-                >
-                <Icon name="download" />
-                Download
-              </Button>
+           <Button
+             icon
+             labelPosition="left"
+             color="blue"
+             onClick={downloadExcel}
+             className="download-button"
+           >
+             <Icon name="download" />
+             Download
+           </Button>
         </div>
       
         <div className='table'>
@@ -163,6 +140,12 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
             <Table celled striped selectable sortable>
               <Table.Header>
                 <Table.Row>
+                  <Table.HeaderCell
+                    sorted={sortColumn === 'ClientID' ? sortDirection : null}
+                    onClick={() => handleSort('ClientID')}
+                  >
+                    Client ID
+                  </Table.HeaderCell>
                   <Table.HeaderCell
                     sorted={sortColumn === 'ClientName' ? sortDirection : null}
                     onClick={() => handleSort('ClientName')}
@@ -176,26 +159,20 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
                     No. of Projects
                   </Table.HeaderCell>
                   <Table.HeaderCell
-                    sorted={sortColumn === 'Country' ? sortDirection : null}
-                    onClick={() => handleSort('Country')}
+                    sorted={sortColumn === 'ClientCountry' ? sortDirection : null}
+                    onClick={() => handleSort('ClientCountry')}
                   >
                     Country
                   </Table.HeaderCell>
                   <Table.HeaderCell
-                    sorted={sortColumn === 'StartDate' ? sortDirection : null}
-                    onClick={() => handleSort('StartDate')}
+                    sorted={sortColumn === 'ClientPartner' ? sortDirection : null}
+                    onClick={() => handleSort('ClientPartner')}
                   >
-                    Contract Start Date
+                    Client Partner
                   </Table.HeaderCell>
                   <Table.HeaderCell
-                    sorted={sortColumn === 'EndDate' ? sortDirection : null}
-                    onClick={() => handleSort('EndDate')}
-                  >
-                    Contract End Date
-                  </Table.HeaderCell>
-                  <Table.HeaderCell
-                    sorted={sortColumn === 'NoOfEmployees' ? sortDirection : null}
-                    onClick={() => handleSort('NoOfEmployees')}
+                    sorted={sortColumn === 'Headcount' ? sortDirection : null}
+                    onClick={() => handleSort('Headcount')}
                   >
                     Headcount
                   </Table.HeaderCell>
@@ -206,22 +183,22 @@ const Projects = ({ userRole }) => { // Receive userRole as a prop
                   filteredAndSortedData.map((client) => (
                     <Table.Row
                       key={client.ClientID}
-                      onClick={() => handleRowClick(client.ClientID)} // Ensure correct navigation
+                      onClick={() => handleRowClick(client.ClientID)}
                       style={{ cursor: 'pointer' }}
                     >
+                      <Table.Cell>{client.ClientID}</Table.Cell>
                       <Table.Cell>
                         <Icon name="building" /> {client.ClientName}
                       </Table.Cell>
                       <Table.Cell>{client.NoOfProjects}</Table.Cell>
-                      <Table.Cell>{client.Country}</Table.Cell>
-                      <Table.Cell>{client.StartDate}</Table.Cell>
-                      <Table.Cell>{client.EndDate}</Table.Cell>
-                      <Table.Cell>{client.NoOfEmployees}</Table.Cell>
+                      <Table.Cell>{client.ClientCountry}</Table.Cell>
+                      <Table.Cell>{client.ClientPartner}</Table.Cell>
+                      <Table.Cell>{client.Headcount}</Table.Cell> {/* Render Headcount */}
                     </Table.Row>
                   ))
                 ) : (
                   <Table.Row>
-                    <Table.Cell colSpan="6" textAlign="center">
+                    <Table.Cell colSpan="5" textAlign="center">
                       No matching clients found.
                     </Table.Cell>
                   </Table.Row>

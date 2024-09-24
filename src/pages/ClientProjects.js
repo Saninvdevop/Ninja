@@ -1,48 +1,37 @@
+// inside Clients -> Projects
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Table, Icon, Button, Input, Loader, Message } from 'semantic-ui-react';
+import './ClientDetails.css';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import './ClientDetails.css';
-import { IoMdClose } from "react-icons/io"; 
 
 const ClientProjects = () => {
-  const { clientId } = useParams(); // Get the clientId from the URL
-  const navigate = useNavigate(); // Initialize useNavigate for navigation
+  const { clientId } = useParams();
+  const navigate = useNavigate();
 
-  // State variables
   const [projects, setProjects] = useState([]);
-  const [benchedEmployees, setBenchedEmployees] = useState([]);
-  const [filter, setFilter] = useState('allocated'); // Default filter is "allocated"
-  const [loading, setLoading] = useState(true); // Loading state
-  const [error, setError] = useState(null); // Error state
-
-  // Search state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Sorting state
+  const [filter, setFilter] = useState('all');  // Add filter state
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState(null);
 
-  // Fetch data from APIs
   useEffect(() => {
-    const fetchEmployeeData = async () => {
+    const fetchProjects = async () => {
       try {
         setLoading(true);
-        setError(null); // Reset error state before fetching
+        setError(null);
 
-        const allocatedResponse = await fetch(`http://localhost:5000/client/${clientId}/projects`);
-        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
+        const response = await fetch(`http://localhost:8080/client/${clientId}/projects`);
 
-        if (!allocatedResponse.ok || !benchedResponse.ok) {
+        if (!response.ok) {
           throw new Error('Network response was not ok');
         }
 
-        const allocatedData = await allocatedResponse.json();
-        const benchedData = await benchedResponse.json();
-
-        setProjects(allocatedData);
-        setBenchedEmployees(benchedData);
+        const data = await response.json();
+        setProjects(data);
       } catch (error) {
         console.error('Fetch error:', error);
         setError('Failed to fetch project data. Please try again later.');
@@ -51,60 +40,52 @@ const ClientProjects = () => {
       }
     };
 
-    fetchEmployeeData();
+    fetchProjects();
   }, [clientId]);
 
-  // Format client name from clientId
-  const clientName = clientId
-    ? clientId.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
-    : "Project Details";
-
-  // Handle project row click
-  const handleProjectClick = (projectName) => {
-    navigate(`/client/${clientId}/project/${projectName.toLowerCase().replace(/ /g, '-')}`);
-  };
-
-  // Function to handle back navigation
   const handleBackClick = () => {
-    navigate(-1); // Go back to the previous page
+    navigate(-1);
   };
 
-  // Handle search input change
+  const handleFilterChange = (selectedFilter) => {
+    setFilter(selectedFilter);
+  };
+
+  // Apply filters based on the selected status filter
+  const filteredProjects = projects.filter(project => {
+    const term = searchTerm.toLowerCase();
+    const matchesSearchTerm = (
+      String(project.ProjectID).includes(term) ||
+      project.ProjectName.toLowerCase().includes(term) ||
+      project.ProjectStatus.toLowerCase().includes(term) ||
+      project.ProjectManager.toLowerCase().includes(term)
+    );
+
+    const matchesFilter = filter === 'all' || project.ProjectStatus.toLowerCase() === filter;
+    
+    return matchesSearchTerm && matchesFilter;
+  });
+
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  // Handle sorting
   const handleSort = (clickedColumn) => {
     if (sortColumn !== clickedColumn) {
       setSortColumn(clickedColumn);
       setSortDirection('ascending');
       return;
     }
-
-    // Toggle sort direction
     setSortDirection(sortDirection === 'ascending' ? 'descending' : 'ascending');
   };
 
-  // Filter projects based on search term
-  const filteredProjects = projects.filter(project => {
-    const term = searchTerm.toLowerCase();
-    return (
-      project.ProjectName.toLowerCase().includes(term) ||
-      project.Status.toLowerCase().includes(term) ||
-      project.Category.toLowerCase().includes(term)
-    );
-  });
-
-  // Sort projects based on sortColumn and sortDirection
   const sortedProjects = React.useMemo(() => {
     if (!sortColumn) return filteredProjects;
 
-    const sorted = [...filteredProjects].sort((a, b) => {
+    return [...filteredProjects].sort((a, b) => {
       let aVal = a[sortColumn];
       let bVal = b[sortColumn];
 
-      // Handle different data types
       if (typeof aVal === 'string') {
         aVal = aVal.toLowerCase();
         bVal = bVal.toLowerCase();
@@ -114,44 +95,46 @@ const ClientProjects = () => {
       if (aVal < bVal) return sortDirection === 'ascending' ? -1 : 1;
       return 0;
     });
-
-    return sorted;
   }, [filteredProjects, sortColumn, sortDirection]);
 
-  // Download data to Excel
-  const downloadExcel = () => {
-    if (sortedProjects.length === 0) {
-      alert('No data available to download.');
-      return;
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Completed': return 'grey';
+      case 'In Progress': return 'green';
+      case 'On Hold': return 'yellow';
+      default: return 'grey';
     }
+  };
 
-    // Define the data to export
-    const dataToExport = sortedProjects.map(project => ({
-      'Project Name': project.ProjectName,
-      'Status': project.Status,
-      'Category': project.Category,
-      // Add more fields as needed
+  const downloadExcel = () => {
+    const data = sortedProjects.map((project) => ({
+      ClientId: clientId, // Adding ClientId to each row
+      ProjectID: project.ProjectID,
+      ProjectName: project.ProjectName,
+      ProjectStatus: project.ProjectStatus,
+      ProjectManager: project.ProjectManager,
+      ProjectStartDate: new Date(project.ProjectStartDate).toLocaleDateString(),
+      ProjectEndDate: project.ProjectEndDate ? new Date(project.ProjectEndDate).toLocaleDateString() : 'Ongoing',
+      Headcount: project.Headcount
     }));
 
-    // Create a worksheet
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    // Create a workbook and add the worksheet
+    const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Projects');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Client Projects');
 
-    // Generate buffer
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    // Create a blob from the buffer
-    const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    // Save the file
-    saveAs(data, 'projects.xlsx');
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+    saveAs(blob, `Client_${clientId}_Projects.xlsx`);
+  };
+
+  const handleProjectClick = (projectId) => {
+    navigate(`/client/${clientId}/project/${projectId}`);
   };
 
   return (
     <div className='main-layout'>
       <div className='right-content'>
         <div className='breadcrumb'>
-          {/* Back Arrow Icon */}
           <Icon 
             name="arrow left" 
             size="large" 
@@ -160,7 +143,6 @@ const ClientProjects = () => {
             style={{ cursor: 'pointer' }}
           />
           
-          {/* Previous Screen Link */}
           <h2 
             className="breadcrumb-text" 
             onClick={() => navigate('/projects')}
@@ -169,39 +151,63 @@ const ClientProjects = () => {
             Clients
           </h2>
         
-          {/* Divider between breadcrumb items */}
           <span className="breadcrumb-divider"> / </span>
           
-          {/* Current Client Name */}
           <h2 className="breadcrumb-text" style={{ display: 'inline' }}>
-            {`Projects for ${clientName}`}
+            {projects[0]?.ClientName || 'Loading...'}
           </h2>
         </div>
 
-        {/* Search and Download Container */}
-        <div className="controls" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px' }}>
-          {/* Search Bar */}
-          <Input
-            icon="search"
-            placeholder="Search by project name, status, or category..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="search-bar"
-            style={{ marginRight: '10px', width: '300px' }}
-          />
-
-          {/* Download Button */}
-          <Button
-            icon
-            labelPosition="left"
-            color="blue"
-            onClick={downloadExcel}
-            className="download-button"
-          >
-            <Icon name="download" />
-            Download
-          </Button>
+        <div className="controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div className="filter-tabs" style={{ display: 'flex', gap: '10px', flexGrow: 1 }}>
+            <button
+              className={`tab ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('all')}
+            >
+              All
+            </button>
+            <button
+              className={`tab ${filter === 'in progress' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('in progress')}
+            >
+              In Progress
+            </button>
+            <button
+              className={`tab ${filter === 'on hold' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('on hold')}
+            >
+              On Hold
+            </button>
+            <button
+              className={`tab ${filter === 'completed' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('completed')}
+            >
+              Completed
+            </button>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <Input
+              icon="search"
+              placeholder="Search projects..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="search-bar"
+              style={{ width: '300px' }}
+            />
+            <Button
+              icon
+              labelPosition="left"
+              color="blue"
+              onClick={downloadExcel}
+              className="download-button"
+            >
+              <Icon name="download" />
+              Download
+            </Button>
+          </div>
         </div>
+
       
         <div className='table'>
           {loading ? (
@@ -215,47 +221,40 @@ const ClientProjects = () => {
             <Table celled striped selectable sortable>
               <Table.Header>
                 <Table.Row>
-                  <Table.HeaderCell
-                    sorted={sortColumn === 'ProjectName' ? sortDirection : null}
-                    onClick={() => handleSort('ProjectName')}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Project Name
-                  </Table.HeaderCell>
-                  <Table.HeaderCell
-                    sorted={sortColumn === 'Status' ? sortDirection : null}
-                    onClick={() => handleSort('Status')}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Status
-                  </Table.HeaderCell>
-                  <Table.HeaderCell
-                    sorted={sortColumn === 'Category' ? sortDirection : null}
-                    onClick={() => handleSort('Category')}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Category
-                  </Table.HeaderCell>
+                  <Table.HeaderCell sorted={sortColumn === 'ProjectID' ? sortDirection : null} onClick={() => handleSort('ProjectID')}>Project ID</Table.HeaderCell>
+                  <Table.HeaderCell sorted={sortColumn === 'ProjectName' ? sortDirection : null} onClick={() => handleSort('ProjectName')}>Project Name</Table.HeaderCell>
+                  <Table.HeaderCell sorted={sortColumn === 'ProjectStatus' ? sortDirection : null} onClick={() => handleSort('ProjectStatus')}>Status</Table.HeaderCell>
+                  <Table.HeaderCell sorted={sortColumn === 'ProjectManager' ? sortDirection : null} onClick={() => handleSort('ProjectManager')}>Project Manager</Table.HeaderCell>
+                  <Table.HeaderCell sorted={sortColumn === 'ProjectStartDate' ? sortDirection : null} onClick={() => handleSort('ProjectStartDate')}>Start Date</Table.HeaderCell>
+                  <Table.HeaderCell sorted={sortColumn === 'ProjectEndDate' ? sortDirection : null} onClick={() => handleSort('ProjectEndDate')}>End Date</Table.HeaderCell>
+                  <Table.HeaderCell sorted={sortColumn === 'Headcount' ? sortDirection : null} onClick={() => handleSort('Headcount')}>Headcount</Table.HeaderCell>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
                 {sortedProjects.length > 0 ? (
                   sortedProjects.map((project) => (
-                    <Table.Row
-                      key={project.ProjectID || project.ProjectName} // Use a unique identifier
-                      onClick={() => handleProjectClick(project.ProjectName)}
+                    <Table.Row 
+                      key={project.ProjectID} 
+                      onClick={() => handleProjectClick(project.ProjectID)}
                       style={{ cursor: 'pointer' }}
                     >
+                      <Table.Cell>{project.ProjectID}</Table.Cell>
                       <Table.Cell>
                         <Icon name="folder" /> {project.ProjectName}
                       </Table.Cell>
-                      <Table.Cell>{project.Status}</Table.Cell>
-                      <Table.Cell>{project.Category}</Table.Cell>
+                      <Table.Cell>
+                        <Icon name="circle" color={getStatusColor(project.ProjectStatus)} />
+                        {project.ProjectStatus}
+                      </Table.Cell>
+                      <Table.Cell>{project.ProjectManager}</Table.Cell>
+                      <Table.Cell>{new Date(project.ProjectStartDate).toLocaleDateString()}</Table.Cell>
+                      <Table.Cell>{project.ProjectEndDate ? new Date(project.ProjectEndDate).toLocaleDateString() : 'Ongoing'}</Table.Cell>
+                      <Table.Cell>{project.Headcount}</Table.Cell>
                     </Table.Row>
                   ))
                 ) : (
                   <Table.Row>
-                    <Table.Cell colSpan="3" textAlign="center">
+                    <Table.Cell colSpan="6" textAlign="center">
                       No matching projects found.
                     </Table.Cell>
                   </Table.Row>
