@@ -1,0 +1,29 @@
+/* src/components/AllocationModal/AllocationModal.css */
+
+.allocation-modal .ui.modal {
+    max-width: 800px; /* Adjust modal width as needed */
+  }
+  
+  .allocation-remaining {
+    color: #555;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  
+  /* Optional: Add hover effects to form fields */
+  .allocation-modal .ui.form input:focus {
+    border-color: #2185d0 !important;
+    box-shadow: 0 0 0 0.2rem rgba(34, 167, 240, 0.25) !important;
+  }
+  
+  /* Optional: Style the save button */
+  .allocation-modal .ui.button.blue {
+    background-color: #2185d0 !important;
+    color: white !important;
+  }
+  
+  /* Optional: Reduce padding/margins for compactness */
+  .allocation-modal .ui.form .field {
+    margin-bottom: 1em !important;
+  }
+  

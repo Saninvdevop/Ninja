@@ -850,6 +850,8 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
         employeeData={employeeData} // Pass the employee object
         allocationData={allocationToEdit} // Pass allocation details when editing
         userRole={userRole}
+        currentAllocation={currentAllocation} // Pass current allocation
+        stagedChangesPercent={stagedChangesPercent} // Pass staged changes
       />
 
       {/* Confirmation Modal for Discarding Changes */}
