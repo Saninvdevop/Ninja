@@ -14,7 +14,7 @@ const ClientProjects = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');  // Add filter state
+  const [filter, setFilter] = useState('in progress');  // Add filter state
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState(null);
 
@@ -161,12 +161,6 @@ const ClientProjects = () => {
         <div className="controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div className="filter-tabs" style={{ display: 'flex', gap: '10px', flexGrow: 1 }}>
             <button
-              className={`tab ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => handleFilterChange('all')}
-            >
-              All
-            </button>
-            <button
               className={`tab ${filter === 'in progress' ? 'active' : ''}`}
               onClick={() => handleFilterChange('in progress')}
             >
@@ -183,6 +177,12 @@ const ClientProjects = () => {
               onClick={() => handleFilterChange('completed')}
             >
               Completed
+            </button>
+            <button
+              className={`tab ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('all')}
+            >
+              All
             </button>
           </div>
           
