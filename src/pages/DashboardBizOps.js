@@ -32,39 +32,20 @@ const DashboardBizOps = () => {
     const formattedDate = today.toLocaleDateString('en-US', options);
     setCurrentDate(formattedDate);
   }, []);
+  
 
-  // Fetch data from APIs
-  useEffect(() => {
-    const fetchEmployeeData = async () => {
-      try {
-        setLoading(true);
-        const allocatedResponse = await fetch('http://localhost:5000/employees/drafts');
-        const benchedResponse = await fetch('http://localhost:5000/employees/todo');
-        const totalResponse = await fetch('http://localhost:5000/employees');
+  const handleUnallocatedClick = () => {
+    navigate('/employees', { state: { filter: 'unallocated' } });
+  };
 
-        if (!allocatedResponse.ok || !benchedResponse.ok || !totalResponse.ok) {
-          throw new Error('Network response was not ok');
-        }
+  const handleDraftClick = () => {
+    navigate('/employees', { state: { filter: 'draft' } });
+  };
 
-        const allocatedData = await allocatedResponse.json();
-        const benchedData = await benchedResponse.json();
-        const totalData = await totalResponse.json();
-
-        setDraft(allocatedData.length);
-        setAllocatedEmployees(allocatedData);
-        setTodo(benchedData.length);
-        setBenchedEmployees(benchedData);
-        setTotalEmp(totalData.length);
-        setFilteredEmployees(allocatedData); // Set the filteredEmployees to the allocated data initially
-      } catch (error) {
-        console.error('Fetch error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEmployeeData();
-  }, []);
+  const handleEmployeeClick = () => {
+    navigate('/employees', { state: { filter: 'all' } });
+  };
+  
 
   // Handle sorting
   const handleSort = (column) => {
@@ -191,7 +172,7 @@ const DashboardBizOps = () => {
                 icon="fa-users"
                 header="Unallocated"
                 value={todo}
-                onClick={() => navigate('/unallocated')}
+                onClick={handleUnallocatedClick}
               />
             </div>
             <div className='cards'>
@@ -199,7 +180,7 @@ const DashboardBizOps = () => {
                 icon="fa-users"
                 header="Drafts"
                 value={draft}
-                onClick={() => navigate('/todo')}
+                onClick={handleDraftClick}
               />
             </div>
             <div className='cards'>
@@ -207,7 +188,7 @@ const DashboardBizOps = () => {
                 icon="fa-users"
                 header="Employees"
                 value={totalemp} // Changed from draft to totalemp
-                onClick={() => navigate('/employees')}
+                onClick={handleEmployeeClick}
               />
             </div>
             <div className='cards'>

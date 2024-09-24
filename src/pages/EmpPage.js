@@ -1,6 +1,6 @@
 // All Employees Page
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useLocation } from 'react-router-dom';
 import { Table, Input, Button } from 'semantic-ui-react';
 import './EmpPage.css';
 import * as XLSX from 'xlsx';
@@ -191,6 +191,12 @@ const EmpPage = () => {
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
+  const location = useLocation();
+  useEffect(() => {
+    if (location.state?.filter) {
+      setFilter(location.state.filter);
+    }
+  },[location.state]);
 
   return (
     <div className="main-layout">
