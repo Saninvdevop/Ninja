@@ -8,7 +8,7 @@ import { IoMdClose } from "react-icons/io"; // Import Discard Icon
 import { MdCheck } from "react-icons/md";
 import * as XLSX from 'xlsx'; // Import SheetJS
 import { saveAs } from 'file-saver'; // Import FileSaver
-import AllocationModal from '../components/AllocationModal/AllocationModal'; // Import AllocationModal
+import AllocationModalProjects from '../components/AllocationModal/AllocationModalProjects'; // Import AllocationModal
 
 const ClientDetails = ({ userRole }) => {
   const navigate = useNavigate();
@@ -507,7 +507,7 @@ const ClientDetails = ({ userRole }) => {
         </div>
 
         {/* Allocation Modal */}
-        <AllocationModal
+        <AllocationModalProjects
           open={open}
           onClose={() => setOpen(false)}
           onSave={() => {
