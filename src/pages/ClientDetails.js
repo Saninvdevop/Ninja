@@ -1,4 +1,5 @@
-// Client -> project -> employees and sync
+// src/components/ClientDetails/ClientDetails.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Table, Icon, Button, Modal, Form, Dropdown, Message, Loader } from 'semantic-ui-react';
@@ -7,6 +8,7 @@ import { IoMdClose } from "react-icons/io"; // Import Discard Icon
 import { MdCheck } from "react-icons/md";
 import * as XLSX from 'xlsx'; // Import SheetJS
 import { saveAs } from 'file-saver'; // Import FileSaver
+import AllocationModal from '../components/AllocationModal/AllocationModal'; // Import AllocationModal
 
 const ClientDetails = ({ userRole }) => {
   const navigate = useNavigate();
@@ -17,9 +19,8 @@ const ClientDetails = ({ userRole }) => {
   const [projectName, setProjectName] = useState('');
 
   const [open, setOpen] = useState(false);
+  const [allocationData, setAllocationData] = useState(null);
   const [showMessage, setShowMessage] = useState(false);
-  const [resourceName, setResourceName] = useState('');
-  const [allocationPercentage, setAllocationPercentage] = useState('');
   const [employeesData, setEmployeesData] = useState([]);
   const [filter, setFilter] = useState('active'); // Set default filter to 'active'
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
@@ -28,12 +29,8 @@ const ClientDetails = ({ userRole }) => {
 
   const [isDownloading, setIsDownloading] = useState(false); // New state for download process
 
-  // Placeholder employee options
-  const employeeOptions = [
-    { key: 1, text: 'Alice Johnson', value: 'Alice Johnson' },
-    { key: 2, text: 'Bob Williams', value: 'Bob Williams' },
-    // Add more placeholder options as needed
-  ];
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [allocationToDelete, setAllocationToDelete] = useState(null);
 
   // Fetch allocations from the backend API based on selected filter
   const fetchAllocations = async (currentFilter) => {
@@ -202,34 +199,50 @@ const ClientDetails = ({ userRole }) => {
     }
   };
 
-  // Handle Allocation Submission
-  const handleSubmit = () => {
-    // Simulate adding a new employee to the list
-    const newEmployee = { 
-      EmployeeName: resourceName, 
-      EmployeeRole: 'New Role', 
-      AllocationPercent: parseFloat(allocationPercentage),
-      AllocationStatus: 'Allocated',
-      AllocationBillingType: 'Type A',
-      AllocationBilledCheck: 'Yes',
-      AllocationBillingRate: 100,
-      AllocationTimeSheetApprover: 'Rajendra',
-      AllocationStartDate: '2024-10-01',
-      AllocationEndDate: '2024-12-31',
-      ModifiedBy: 'Admin',
-      ModifiedAt: new Date().toISOString()
-    };
-    setEmployeesData([...employeesData, newEmployee]);
-    setShowMessage(true);
-    setTimeout(() => setShowMessage(false), 3000);
-    setOpen(false);
-    setResourceName('');
-    setAllocationPercentage('');
-  };
-
   // Handle Back Click
   const handleBackClick = () => {
     navigate(-1);
+  };
+
+  // Handle Edit Allocation
+  const handleEditAllocation = (alloc) => {
+    setAllocationData(alloc);
+    setOpen(true);
+  };
+
+  // Handle Delete Allocation
+  const handleDeleteAllocation = (allocationId) => {
+    setAllocationToDelete(allocationId);
+    setConfirmDelete(true);
+  };
+
+  // Confirm Delete
+  const confirmDeleteAllocation = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/allocations/${allocationToDelete}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        setShowMessage(true);
+        setTimeout(() => setShowMessage(false), 3000);
+        fetchAllocations(filter);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status} ${response.statusText}`);
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      setError(err.message || 'Failed to delete allocation');
+    } finally {
+      setConfirmDelete(false);
+      setAllocationToDelete(null);
+    }
+  };
+
+  // Handle Add Allocation
+  const handleAddAllocation = () => {
+    setAllocationData(null);
+    setOpen(true);
   };
 
   return (
@@ -307,7 +320,7 @@ const ClientDetails = ({ userRole }) => {
               <Button 
                 positive 
                 icon="plus" 
-                onClick={() => setOpen(true)} 
+                onClick={handleAddAllocation} 
                 content="Allocate Resource" 
               />
             )}
@@ -338,7 +351,7 @@ const ClientDetails = ({ userRole }) => {
           <Message
             success
             header='Success'
-            content='Excel file is being downloaded.'
+            content='Action completed successfully.'
             onDismiss={() => setShowMessage(false)}
           />
         )}
@@ -435,6 +448,11 @@ const ClientDetails = ({ userRole }) => {
                   >
                     Modified At
                   </Table.HeaderCell>
+                  {userRole === 'bizops' && (
+                    <Table.HeaderCell>
+                      Actions
+                    </Table.HeaderCell>
+                  )}
                 </Table.Row>
               </Table.Header>
 
@@ -451,17 +469,34 @@ const ClientDetails = ({ userRole }) => {
                       <Table.Cell>{employee.AllocationStatus}</Table.Cell>
                       <Table.Cell>{employee.AllocationBillingType}</Table.Cell>
                       <Table.Cell>{employee.AllocationBilledCheck}</Table.Cell>
-                      <Table.Cell>${employee.AllocationBillingRate.toFixed(2)}</Table.Cell>
+                      <Table.Cell>${employee.AllocationBillingRate ? employee.AllocationBillingRate.toFixed(2) : 'N/A'}</Table.Cell>
                       <Table.Cell>{employee.AllocationTimeSheetApprover}</Table.Cell>
                       <Table.Cell>{new Date(employee.AllocationStartDate).toLocaleDateString()}</Table.Cell>
                       <Table.Cell>{employee.AllocationEndDate ? new Date(employee.AllocationEndDate).toLocaleDateString() : 'N/A'}</Table.Cell>
                       <Table.Cell>{employee.ModifiedBy}</Table.Cell>
                       <Table.Cell>{new Date(employee.ModifiedAt).toLocaleString()}</Table.Cell>
+                      {userRole === 'bizops' && (
+                        <Table.Cell>
+                          <Button 
+                            icon="edit" 
+                            onClick={() => handleEditAllocation(employee)} 
+                            title="Edit Allocation"
+                            size="small"
+                          />
+                          <Button 
+                            icon="trash" 
+                            color="red" 
+                            onClick={() => handleDeleteAllocation(employee.AllocationID)} 
+                            title="Delete Allocation"
+                            size="small"
+                          />
+                        </Table.Cell>
+                      )}
                     </Table.Row>
                   ))
                 ) : (
                   <Table.Row>
-                    <Table.Cell colSpan="12" textAlign="center">
+                    <Table.Cell colSpan={userRole === 'bizops' ? "13" : "12"} textAlign="center">
                       {error ? error : 'No allocations found.'}
                     </Table.Cell>
                   </Table.Row>
@@ -471,63 +506,35 @@ const ClientDetails = ({ userRole }) => {
           )}
         </div>
 
-        {/* Allocate Resource Modal */}
-        <Modal
+        {/* Allocation Modal */}
+        <AllocationModal
           open={open}
           onClose={() => setOpen(false)}
+          onSave={() => {
+            setShowMessage(true);
+            setTimeout(() => setShowMessage(false), 3000);
+            fetchAllocations(filter);
+          }}
+          allocationData={allocationData}
+          clientProjectData={!allocationData ? { clientId: Number(clientId), projectId: Number(projectId) } : undefined} // Pass only when adding
+          userRole={userRole}
+        />
+
+        {/* Confirm Delete Modal */}
+        <Modal
+          open={confirmDelete}
           size="small"
-          dimmer="blurring"
         >
-          <Modal.Header>
-            Allocate Resource
-            <Icon 
-              name="close" 
-              size="large"
-              style={{ float: 'right', cursor: 'pointer' }} 
-              onClick={() => setOpen(false)} 
-            />
-          </Modal.Header>
+          <Modal.Header>Confirm Delete</Modal.Header>
           <Modal.Content>
-            <Form>
-              <Form.Field required>
-                <label>Employee Name</label>
-                <Dropdown
-                  placeholder="Select Employee"
-                  fluid
-                  selection
-                  options={employeeOptions}
-                  value={resourceName}
-                  onChange={(e, { value }) => setResourceName(value)}
-                />
-              </Form.Field>
-              <Form.Field required>
-                <label>Allocation %</label>
-                <Form.Input
-                  type="number"
-                  placeholder="Enter allocation percentage"
-                  value={allocationPercentage}
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value);
-                    if (value >= 0 && value <= 100) {
-                      setAllocationPercentage(value);
-                    }
-                  }}
-                  min={0}
-                  max={100}
-                />
-              </Form.Field>
-            </Form>
+            <p>Are you sure you want to delete this allocation?</p>
           </Modal.Content>
           <Modal.Actions>
-            <Button negative onClick={() => setOpen(false)}>
-              <IoMdClose size={20} /> Cancel
+            <Button negative onClick={() => setConfirmDelete(false)}>
+              No
             </Button>
-            <Button 
-              positive 
-              onClick={handleSubmit}
-              disabled={!resourceName || allocationPercentage === ''}
-            >
-              <MdCheck size={20} /> Allocate
+            <Button positive onClick={confirmDeleteAllocation}>
+              Yes
             </Button>
           </Modal.Actions>
         </Modal>

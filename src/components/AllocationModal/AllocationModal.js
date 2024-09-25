@@ -10,8 +10,9 @@ const AllocationModal = ({
   open,
   onClose,
   onSave,
-  employeeData,
-  allocationData, // Renamed to camelCase
+  employeeData,          // Optional: For prefilled Employee details
+  clientProjectData,     // Optional: For prefilled Client and Project details
+  allocationData,        // Allocation details or null
   userRole,
 }) => {
   // Initialize state with either existing allocation data or default values
@@ -33,14 +34,10 @@ const AllocationModal = ({
   const [error, setError] = useState(null);
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [employees, setEmployees] = useState([]);
   const [timeSheetApprovers, setTimeSheetApprovers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [remainingAllocation, setRemainingAllocation] = useState(100);
-  const [existingAllocations, setExistingAllocations] = useState([]);
-
-  // New State Variables for Dynamic Remaining Allocation
   const [fetchedRemainingAllocation, setFetchedRemainingAllocation] = useState(100);
   const [originalAllocationPercent, setOriginalAllocationPercent] = useState(0);
 
@@ -65,17 +62,16 @@ const AllocationModal = ({
     { key: 'no', text: 'No', value: 'No' },
   ];
 
-  // Fetch clients, projects, employees, and timeSheetApprovers when the modal opens
+  // Fetch clients, projects, and timeSheetApprovers when the modal opens
   useEffect(() => {
     const fetchModalData = async () => {
       setLoading(true);
       setFetchError(null);
       try {
         const response = await axios.get('http://localhost:8080/modal/data');
-        const { clients, projects, employees, timeSheetApprovers } = response.data;
+        const { clients, projects, timeSheetApprovers } = response.data;
         setClients(clients);
         setProjects(projects);
-        setEmployees(employees);
         setTimeSheetApprovers(timeSheetApprovers);
       } catch (err) {
         console.error('Error fetching modal data:', err);
@@ -90,30 +86,13 @@ const AllocationModal = ({
     }
   }, [open]);
 
-  // Fetch existing allocations for overlap validation
-  useEffect(() => {
-    const fetchExistingAllocations = async () => {
-      try {
-        const response = await axios.get(`http://localhost:8080/employee-details/${employeeData.EmployeeId}/allocations`);
-        setExistingAllocations(response.data.allocations);
-      } catch (err) {
-        console.error('Error fetching existing allocations:', err);
-        setError('Failed to load existing allocations for validation.');
-      }
-    };
-
-    if (open && employeeData && employeeData.EmployeeId) {
-      fetchExistingAllocations();
-    }
-  }, [open, employeeData]);
-
-  // Fetch remaining allocation when employeeData changes
+  // Fetch remaining allocation when employeeData or allocationData changes
   useEffect(() => {
     const fetchRemainingAllocation = async () => {
-      if (!employeeData || !employeeData.EmployeeId) return;
+      if (!formData.employeeId) return;
 
       try {
-        const response = await axios.get(`http://localhost:8080/employee-allocations/${employeeData.EmployeeId}`);
+        const response = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}?startDate=${formData.startDate}&endDate=${formData.endDate}`);
         setFetchedRemainingAllocation(response.data.remainingAllocation);
       } catch (err) {
         console.error('Error fetching remaining allocation:', err);
@@ -121,24 +100,24 @@ const AllocationModal = ({
       }
     };
 
-    if (open) {
+    if (open && formData.employeeId && formData.startDate && formData.endDate) {
       fetchRemainingAllocation();
     }
-  }, [open, employeeData]);
+  }, [open, formData.employeeId, formData.startDate, formData.endDate]);
 
-  // Update formData when allocationData or employeeData changes
+  // Update formData when allocationData, employeeData, or clientProjectData changes
   useEffect(() => {
     if (allocationData) {
       setFormData({
-        employeeName: employeeData ? employeeData.EmployeeName : '',
-        employeeId: employeeData ? employeeData.EmployeeId : '',
+        employeeName: allocationData.EmployeeName || '',
+        employeeId: allocationData.EmployeeId || '',
         clientId: allocationData.ClientID || '',
         projectId: allocationData.ProjectID || '',
         status: allocationData.AllocationStatus || '',
-        allocationPercent: allocationData.AllocationPercent ? allocationData.AllocationPercent : '',
+        allocationPercent: allocationData.AllocationPercent ? allocationData.AllocationPercent.toString() : '',
         billingType: allocationData.AllocationBillingType || '',
         billedCheck: allocationData.AllocationBilledCheck || '',
-        billingRate: allocationData.AllocationBillingRate ? allocationData.AllocationBillingRate : '',
+        billingRate: allocationData.AllocationBillingRate ? allocationData.AllocationBillingRate.toString() : '',
         timeSheetApprover: allocationData.AllocationTimeSheetApprover || '',
         startDate: allocationData.AllocationStartDate ? allocationData.AllocationStartDate.substring(0, 10) : '',
         endDate: allocationData.AllocationEndDate ? allocationData.AllocationEndDate.substring(0, 10) : '',
@@ -149,8 +128,8 @@ const AllocationModal = ({
       setFormData({
         employeeName: employeeData ? employeeData.EmployeeName : '',
         employeeId: employeeData ? employeeData.EmployeeId : '',
-        clientId: '',
-        projectId: '',
+        clientId: clientProjectData ? clientProjectData.clientId : '',
+        projectId: clientProjectData ? clientProjectData.projectId : '',
         status: '',
         allocationPercent: '',
         billingType: '',
@@ -165,7 +144,7 @@ const AllocationModal = ({
 
     // Reset error when allocationData changes
     setError(null);
-  }, [allocationData, employeeData]);
+  }, [allocationData, employeeData, clientProjectData]);
 
   // Reset form when modal is closed
   useEffect(() => {
@@ -174,8 +153,8 @@ const AllocationModal = ({
       setFormData({
         employeeName: employeeData ? employeeData.EmployeeName : '',
         employeeId: employeeData ? employeeData.EmployeeId : '',
-        clientId: '',
-        projectId: '',
+        clientId: clientProjectData ? clientProjectData.clientId : '',
+        projectId: clientProjectData ? clientProjectData.projectId : '',
         status: '',
         allocationPercent: '',
         billingType: '',
@@ -191,7 +170,7 @@ const AllocationModal = ({
       setOriginalAllocationPercent(0);
       setRemainingAllocation(100);
     }
-  }, [open, employeeData, allocationData]);
+  }, [open, employeeData, clientProjectData, allocationData]);
 
   // Compute Remaining Allocation Dynamically
   useEffect(() => {
@@ -218,6 +197,52 @@ const AllocationModal = ({
 
     return startA <= endB && startB <= endA;
   };
+
+  // Auto-populate Employee Name when Employee ID is entered and vice versa
+  useEffect(() => {
+    const fetchEmployeeDetails = async () => {
+      if (formData.employeeId && !employeeData) {
+        try {
+          const response = await axios.get(`http://localhost:8080/employees/${formData.employeeId}`);
+          if (response.data) {
+            setFormData(prev => ({
+              ...prev,
+              employeeName: response.data.EmployeeName || '',
+            }));
+          }
+        } catch (err) {
+          console.error('Error fetching employee details:', err);
+          setError('Invalid Employee ID.');
+        }
+      }
+    };
+
+    const fetchEmployeeId = async () => {
+      if (formData.employeeName && !employeeData) {
+        try {
+          const response = await axios.get(`http://localhost:8080/employees?name=${formData.employeeName}`);
+          if (response.data && response.data.EmployeeId) {
+            setFormData(prev => ({
+              ...prev,
+              employeeId: response.data.EmployeeId || '',
+            }));
+          }
+        } catch (err) {
+          console.error('Error fetching employee ID:', err);
+          setError('Invalid Employee Name.');
+        }
+      }
+    };
+
+    if (formData.employeeId && !formData.employeeName) {
+      fetchEmployeeDetails();
+    }
+
+    if (formData.employeeName && !formData.employeeId) {
+      fetchEmployeeId();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.employeeId, formData.employeeName]);
 
   // Handle form field changes
   const handleChange = (e, { name, value }) => {
@@ -266,6 +291,9 @@ const AllocationModal = ({
         setFormData((prev) => ({ ...prev, status: '' }));
       }
     }
+
+    // Reset error when user modifies any field
+    setError(null);
   };
 
   // Validate form fields
@@ -284,15 +312,15 @@ const AllocationModal = ({
     } = formData;
 
     if (
-      !clientId ||
-      !projectId ||
+      (!clientProjectData && (!clientId || !projectId)) || // If not prefilled, client and project are required
       !status ||
       allocationPercent === '' ||
       !billingType ||
       !billedCheck ||
       (billedCheck === 'Yes' && !billingRate) ||
       !timeSheetApprover ||
-      !startDate
+      !startDate ||
+      !endDate // Ensure endDate is always required
     ) {
       return false;
     }
@@ -305,9 +333,12 @@ const AllocationModal = ({
       return false;
     }
 
-    if (status === 'Allocated' && !endDate) {
-      return false;
-    }
+    // Remove status-based end date requirement
+    // Previously:
+    // if (status === 'Allocated' && !endDate) {
+    //   setError('End Date is required when status is "Allocated".');
+    //   return false;
+    // }
 
     // Additional validation for AllocationEndDate
     if (endDate && startDate && new Date(endDate) < new Date(startDate)) {
@@ -361,7 +392,7 @@ const AllocationModal = ({
       // Check total allocation does not exceed 100%
       if (allocationData) {
         // If editing, subtract the current allocation percent from total allocation
-        const totalAllocationResponse = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`);
+        const totalAllocationResponse = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}?startDate=${formData.startDate}&endDate=${formData.endDate}`);
         const totalAllocation = 100 - totalAllocationResponse.data.remainingAllocation;
         const adjustedTotal = totalAllocation - originalAllocationPercent + parseInt(formData.allocationPercent, 10);
 
@@ -371,7 +402,7 @@ const AllocationModal = ({
         }
       } else {
         // If adding new allocation
-        const totalAllocationResponse = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`);
+        const totalAllocationResponse = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}?startDate=${formData.startDate}&endDate=${formData.endDate}`);
         const totalAllocation = 100 - totalAllocationResponse.data.remainingAllocation;
 
         if (totalAllocation + parseInt(formData.allocationPercent, 10) > 100) {
@@ -392,10 +423,9 @@ const AllocationModal = ({
         AllocationTimeSheetApprover: formData.timeSheetApprover,
         AllocationBillingType: formData.billingType,
         AllocationBilledCheck: formData.billedCheck,
-        AllocationBillingRate: formData.billedCheck === 'Yes' ? parseFloat(formData.billingRate) : null,
+        AllocationBillingRate: formData.billedCheck === 'Yes' ? parseFloat(formData.billingRate) : 0,
         ModifiedBy: 'Admin', // Adjust as needed or pass as a prop
       };
-
       if (allocationData && allocationData.AllocationID) {
         // Editing existing allocation
         await axios.put(`http://localhost:8080/allocations/${allocationData.AllocationID}`, payload);
@@ -481,57 +511,112 @@ const AllocationModal = ({
           </Message>
         ) : (
           <Form>
+            {/* Date Selection Fields at the Top */}
             <Form.Group widths="equal">
-              <Form.Input
-                label="Employee Name"
-                placeholder="Employee Name"
-                name="employeeName"
-                value={formData.employeeName}
-                readOnly
-              />
-              <Form.Input
-                label="Employee ID"
-                placeholder="Employee ID"
-                name="employeeId"
-                value={formData.employeeId}
-                readOnly
-              />
+              <Form.Field required>
+                <label>Start Date</label>
+                <Input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  required
+                  min="2020-01-01" // Restrict start dates to 2020 and beyond
+                />
+              </Form.Field>
+
+              {/* Always display End Date */}
+              <Form.Field required>
+                <label>End Date</label>
+                <Input
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleChange}
+                  required // Make End Date always required
+                  min={formData.startDate || '2020-01-01'} // Ensure end date is not before start date
+                />
+              </Form.Field>
             </Form.Group>
 
-            <Form.Field required>
-              <label>Client</label>
-              <Dropdown
-                placeholder="Select Client"
-                fluid
-                selection
-                options={clients.map(client => ({
-                  key: client.ClientID,
-                  text: client.ClientName,
-                  value: client.ClientID,
-                }))}
-                name="clientId"
-                value={formData.clientId}
-                onChange={handleChange}
-                selection
-                clearable
-              />
-            </Form.Field>
+            {/* Employee Information */}
+            <Form.Group widths="equal">
+              {/* Employee Name and ID (Optional Prefilled) */}
+              {employeeData ? (
+                <>
+                  <Form.Input
+                    label="Employee Name"
+                    placeholder="Employee Name"
+                    name="employeeName"
+                    value={formData.employeeName}
+                    readOnly
+                  />
+                  <Form.Input
+                    label="Employee ID"
+                    placeholder="Employee ID"
+                    name="employeeId"
+                    value={formData.employeeId}
+                    readOnly
+                  />
+                </>
+              ) : (
+                <>
+                  <Form.Input
+                    label="Employee Name"
+                    placeholder="Employee Name"
+                    name="employeeName"
+                    value={formData.employeeName}
+                    onChange={handleChange}
+                  />
+                  <Form.Input
+                    label="Employee ID"
+                    placeholder="Employee ID"
+                    name="employeeId"
+                    value={formData.employeeId}
+                    onChange={handleChange}
+                  />
+                </>
+              )}
+            </Form.Group>
 
-            <Form.Field required>
-              <label>Project</label>
-              <Dropdown
-                placeholder="Select Project"
-                fluid
-                selection
-                options={getFilteredProjectOptions()}
-                name="projectId"
-                value={formData.projectId}
-                onChange={handleChange}
-                disabled={!formData.clientId}
-                selection
-                clearable
-              />
-            </Form.Field>
+            {/* Client and Project Information */}
+            <Form.Group widths="equal">
+              <Form.Field required>
+                <label>Client</label>
+                <Dropdown
+                  placeholder="Select Client"
+                  fluid
+                  selection
+                  options={clients.map(client => ({
+                    key: client.ClientID,
+                    text: client.ClientName,
+                    value: client.ClientID,
+                  }))}
+                  name="clientId"
+                  value={formData.clientId}
+                  onChange={handleChange}
+                  selection
+                  clearable={!clientProjectData} // Disable clearing if prefilled
+                  disabled={!!clientProjectData}   // Disable if prefilled
+                />
+              </Form.Field>
+
+              <Form.Field required>
+                <label>Project</label>
+                <Dropdown
+                  placeholder="Select Project"
+                  fluid
+                  selection
+                  options={getFilteredProjectOptions()}
+                  name="projectId"
+                  value={formData.projectId}
+                  onChange={handleChange}
+                  disabled={!formData.clientId || !!clientProjectData} // Disable if prefilled
+                  selection
+                  clearable={!clientProjectData} // Disable clearing if prefilled
+                />
+              </Form.Field>
+            </Form.Group>
 
             <Form.Field required>
               <label>Status</label>
@@ -619,21 +704,22 @@ const AllocationModal = ({
                   onChange={handleChange}
                   type="number"
                   min={0}
-                  max={9999}
+                  max={0.99} // Ensure it's less than 1 to start with 0
                   step="0.01"
-                  maxLength={5} // Allows up to 4 digits plus decimal
+                  maxLength={4} // e.g., 0.99
                   icon={{ name: 'dollar', color: 'grey' }}
                   iconPosition="left"
-                  // Prevent entering more than 4 digits
+                  // Prevent entering more than 2 decimal places
                   onKeyDown={(e) => {
                     const currentLength = e.target.value.length;
-                    if (currentLength >= 5 && e.key !== 'Backspace' && e.key !== 'Delete') {
+                    if (currentLength >= 4 && e.key !== 'Backspace' && e.key !== 'Delete') {
                       e.preventDefault();
                     }
                   }}
                 />
               </Form.Field>
             )}
+
 
             <Form.Field required>
               <label>Time Sheet Approver</label>
@@ -649,34 +735,6 @@ const AllocationModal = ({
                 clearable
               />
             </Form.Field>
-
-            <Form.Group widths="equal">
-              <Form.Field required>
-                <label>Start Date</label>
-                <Input
-                  type="date"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleChange}
-                  required
-                  min="2020-01-01" // Restrict start dates to 2020 and beyond
-                />
-              </Form.Field>
-
-              {formData.status === 'Allocated' && (
-                <Form.Field required>
-                  <label>End Date</label>
-                  <Input
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleChange}
-                    required={formData.status === 'Allocated'}
-                    min={formData.startDate || '2020-01-01'} // Ensure end date is not before start date
-                  />
-                </Form.Field>
-              )}
-            </Form.Group>
           </Form>
         )}
         {error && (
@@ -708,9 +766,15 @@ AllocationModal.propTypes = {
   employeeData: PropTypes.shape({
     EmployeeName: PropTypes.string,
     EmployeeId: PropTypes.string,
-  }), // Object containing EmployeeName and EmployeeID
+  }), // Optional: Object containing EmployeeName and EmployeeID
+  clientProjectData: PropTypes.shape({
+    clientId: PropTypes.number,
+    projectId: PropTypes.number,
+  }), // Optional: Object containing ClientID and ProjectID
   allocationData: PropTypes.shape({
     AllocationID: PropTypes.number,
+    EmployeeName: PropTypes.string,
+    EmployeeId: PropTypes.string,
     ClientID: PropTypes.number,
     ProjectID: PropTypes.number,
     AllocationStatus: PropTypes.string,
@@ -721,6 +785,8 @@ AllocationModal.propTypes = {
     AllocationTimeSheetApprover: PropTypes.string,
     AllocationBillingType: PropTypes.string,
     AllocationBilledCheck: PropTypes.string,
+    ModifiedBy: PropTypes.string,
+    ModifiedAt: PropTypes.string,
   }), // Allocation details or null
   userRole: PropTypes.string.isRequired,
 };
