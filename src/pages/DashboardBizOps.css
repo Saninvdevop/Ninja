@@ -36,6 +36,7 @@ h2 {
   font-weight: 700; /* Bold text */
 }
 
+
 .instruction-message {
   margin-top: 10px;
   color: #6b7280; /* Subtle text color */
@@ -85,39 +86,53 @@ h2 {
   flex: 0 0 auto; /* Prevent the button from stretching */
 }
 
-.table {
-  width: 100%; /* Take full width */
-  table-layout: auto; /* Allow columns to size based on their content */
-  border-collapse: collapse; /* Collapse borders for a cleaner look */
+ /* Scrollable table container */
+ .table-container {
+  overflow-x: auto;
 }
 
-.table th, .table td { /* Corrected from .td to .table td */
-  padding: 12px 15px; /* Add padding for better spacing */
-  text-align: left; /* Left-align text */
-  white-space: nowrap; /* Prevent wrapping in smaller columns */
-  overflow: hidden; /* Prevent overflow of content */
-  text-overflow: ellipsis; /* Add ellipsis if the content overflows */
+.table-container .ui.table {
+  min-width: 3500px; /* Adjust based on the number of columns */
 }
 
-.table th {
-  background-color: #f5f8fa; /* Light background for the header */
-  font-weight: bold;
-  font-size: 1em; /* Adjust font size */
+/* Style the table headers to indicate they are sortable */
+.ui.table th {
+  cursor: pointer;
 }
-
-.table td {
-  background-color: #fff; /* White background for table rows */
-  font-size: 0.95em; /* Adjust font size slightly smaller */
-  color: #333; /* Darker text color for contrast */
-}
-
-.table tr:nth-child(even) {
-  background-color: #f9f9f9; /* Light grey background for alternating rows */
-}
-
-.table tr:hover {
-  background-color: #e9ecef; /* Highlight row on hover */
-}
+  .table {
+    width: 100%; /* Take full width */
+    table-layout: fixed; /* Fixed layout for better control */
+    border-collapse: collapse; /* Collapse borders for a cleaner look */
+  }
+  
+  .table th, .table td {
+    padding: 8px 10px; /* Reduced padding */
+    text-align: left; /* Left-align text */
+    white-space: normal; /* Allow text to wrap */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ellipsis if the content overflows */
+    font-size: 0.9em; /* Slightly smaller font size */
+  }
+  
+  .table th {
+    background-color: #f5f8fa; /* Light background for the header */
+    font-weight: bold;
+  }
+  
+  .table td {
+    background-color: #fff; /* White background for table rows */
+    color: #333; /* Darker text color for contrast */
+  }
+  
+  .table tr:nth-child(even) {
+    background-color: #f9f9f9; /* Light grey background for alternating rows */
+  }
+  
+  .table tr:hover {
+    background-color: #e9ecef; /* Highlight row on hover */
+  }
+  
+  
 
 .loader {
   text-align: center;

@@ -578,7 +578,7 @@ const AllocationModal = ({
                           }
                         }}
                         min="2020-01-01"
-                        max="9999-12-31"
+                        max="2030-12-31"
                       />
                     </Form.Field>
                     <Form.Field required>
