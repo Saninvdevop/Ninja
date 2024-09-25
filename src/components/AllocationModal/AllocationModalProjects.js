@@ -796,7 +796,7 @@ const AllocationModalProjects = ({
                           onChange={handleChange}
                           type="number"
                           min={0}
-                          max={1000}
+                          max={999}
                           step="0.01"
                           iconPosition="left"
                           // Prevent entering more than 2 decimal places

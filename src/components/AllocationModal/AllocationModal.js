@@ -814,7 +814,7 @@ const AllocationModal = ({
                           onChange={handleChange}
                           type="number"
                           min={0}
-                          max={1000}
+                          max={999}
                           iconPosition="left"
                           // Prevent entering more than 2 decimal places
                           onKeyDown={(e) => {
