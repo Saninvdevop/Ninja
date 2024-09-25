@@ -1,18 +1,32 @@
 // src/components/AllocationModal/AllocationModal.jsx
 
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Dropdown, Icon, Loader, Message, Input } from 'semantic-ui-react';
+import { 
+  Modal, 
+  Button, 
+  Form, 
+  Dropdown, 
+  Icon, 
+  Loader, 
+  Message, 
+  Input, 
+  Grid, 
+  Segment, 
+  Header 
+} from 'semantic-ui-react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
 
 const AllocationModal = ({
   open,
   onClose,
   onSave,
-  employeeData,          // Optional: For prefilled Employee details
-  clientProjectData,     // Optional: For prefilled Client and Project details
-  allocationData,        // Allocation details or null
+  employeeData,          
+  clientProjectData,     
+  allocationData,        
   userRole,
 }) => {
   // Initialize state with either existing allocation data or default values
@@ -40,27 +54,8 @@ const AllocationModal = ({
   const [remainingAllocation, setRemainingAllocation] = useState(100);
   const [fetchedRemainingAllocation, setFetchedRemainingAllocation] = useState(100);
   const [originalAllocationPercent, setOriginalAllocationPercent] = useState(0);
-
-  // Allocation Percent Options
-  const allocationOptions = [
-    { key: 0, text: '0%', value: 0 },
-    { key: 25, text: '25%', value: 25 },
-    { key: 50, text: '50%', value: 50 },
-    { key: 75, text: '75%', value: 75 },
-    { key: 100, text: '100%', value: 100 },
-  ];
-
-  // Billing Type Options
-  const billingTypeOptions = [
-    { key: 'tm', text: 'T&M', value: 'T&M' },
-    { key: 'fix', text: 'Fix Price', value: 'Fix Price' },
-  ];
-
-  // Billed Check Options
-  const billedCheckOptions = [
-    { key: 'yes', text: 'Yes', value: 'Yes' },
-    { key: 'no', text: 'No', value: 'No' },
-  ];
+  const [billingEnabled, setBillingEnabled] = useState('no');
+  const [allocation, setAllocation] = useState(0); // For circular progress
 
   // Fetch clients, projects, and timeSheetApprovers when the modal opens
   useEffect(() => {
@@ -123,6 +118,7 @@ const AllocationModal = ({
         endDate: allocationData.AllocationEndDate ? allocationData.AllocationEndDate.substring(0, 10) : '',
       });
       setOriginalAllocationPercent(allocationData.AllocationPercent || 0);
+      setAllocation(allocationData.AllocationPercent || 0);
     } else {
       // Reset form for adding new allocation
       setFormData({
@@ -140,6 +136,7 @@ const AllocationModal = ({
         endDate: '',
       });
       setOriginalAllocationPercent(0);
+      setAllocation(0);
     }
 
     // Reset error when allocationData changes
@@ -169,6 +166,8 @@ const AllocationModal = ({
       setFetchedRemainingAllocation(100);
       setOriginalAllocationPercent(0);
       setRemainingAllocation(100);
+      setBillingEnabled('no');
+      setAllocation(0);
     }
   }, [open, employeeData, clientProjectData, allocationData]);
 
@@ -333,13 +332,6 @@ const AllocationModal = ({
       return false;
     }
 
-    // Remove status-based end date requirement
-    // Previously:
-    // if (status === 'Allocated' && !endDate) {
-    //   setError('End Date is required when status is "Allocated".');
-    //   return false;
-    // }
-
     // Additional validation for AllocationEndDate
     if (endDate && startDate && new Date(endDate) < new Date(startDate)) {
       setError('End Date cannot be before Start Date.');
@@ -490,18 +482,23 @@ const AllocationModal = ({
     return uniqueOptions;
   };
 
+  // Handle Billing Radio Change
+  const handleBillingChange = (e, { value }) => {
+    setBillingEnabled(value);
+    if (value !== 'Yes') {
+      setFormData(prev => ({
+        ...prev,
+        billingRate: '',
+      }));
+    }
+  };
+
   return (
-    <Modal open={open} onClose={onClose} size="large" dimmer="blurring">
+    <Modal open={open} onClose={onClose} size="large" closeIcon>
       <Modal.Header>
         {allocationData ? 'Edit Allocation' : 'Add New Allocation'}
-        <Icon
-          name="close"
-          size="large"
-          style={{ float: 'right', cursor: 'pointer' }}
-          onClick={onClose}
-        />
       </Modal.Header>
-      <Modal.Content>
+      <Modal.Content scrolling>
         {loading ? (
           <Loader active inline="centered" />
         ) : fetchError ? (
@@ -510,245 +507,271 @@ const AllocationModal = ({
             <p>{fetchError}</p>
           </Message>
         ) : (
-          <Form>
-            {/* Date Selection Fields at the Top */}
-            <Form.Group widths="equal">
-              <Form.Field required>
-                <label>Start Date</label>
-                <Input
-                  type="date"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleChange}
-                  required
-                  min="2020-01-01" // Restrict start dates to 2020 and beyond
-                />
-              </Form.Field>
+          <Grid stackable divided>
+            <Grid.Row>
+              <Grid.Column width={10}>
+                <Form>
+                  <Form.Group widths="equal">
+                    <Form.Field required>
+                      <label>Start Date</label>
+                      <Input
+                        type="date"
+                        name="startDate"
+                        value={formData.startDate}
+                        onChange={handleChange}
+                        min="2020-01-01"
+                      />
+                    </Form.Field>
+                    <Form.Field required>
+                      <label>End Date</label>
+                      <Input
+                        type="date"
+                        name="endDate"
+                        value={formData.endDate}
+                        onChange={handleChange}
+                        min={formData.startDate || '2020-01-01'}
+                      />
+                    </Form.Field>
+                  </Form.Group>
 
-              {/* Always display End Date */}
-              <Form.Field required>
-                <label>End Date</label>
-                <Input
-                  type="date"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleChange}
-                  required // Make End Date always required
-                  min={formData.startDate || '2020-01-01'} // Ensure end date is not before start date
-                />
-              </Form.Field>
-            </Form.Group>
+                  <Form.Group widths="equal">
+                    {employeeData ? (
+                      <>
+                        <Form.Input
+                          label="Employee Name"
+                          placeholder="Employee Name"
+                          name="employeeName"
+                          value={formData.employeeName}
+                          readOnly
+                        />
+                        <Form.Input
+                          label="Employee ID"
+                          placeholder="Employee ID"
+                          name="employeeId"
+                          value={formData.employeeId}
+                          readOnly
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <Form.Input
+                          label="Employee Name"
+                          placeholder="Enter Employee Name"
+                          name="employeeName"
+                          value={formData.employeeName}
+                          onChange={handleChange}
+                        />
+                        <Form.Input
+                          label="Employee ID"
+                          placeholder="Enter Employee ID"
+                          name="employeeId"
+                          value={formData.employeeId}
+                          onChange={handleChange}
+                        />
+                      </>
+                    )}
+                  </Form.Group>
+                  <Form.Field required>
+                    <label>Time Sheet Approver</label>
+                    <Dropdown
+                      placeholder="Select Approver"
+                      fluid
+                      selection
+                      options={getTimeSheetApproverOptions()}
+                      name="timeSheetApprover"
+                      value={formData.timeSheetApprover}
+                      onChange={handleChange}
+                      clearable
+                    />
+                  </Form.Field>
+                </Form>
+                {error && (
+                  <Message negative>
+                    <Message.Header>Error</Message.Header>
+                    <p>{error}</p>
+                  </Message>
+                )}
+              </Grid.Column>
+              <Grid.Column width={6}>
+                <Segment>
+                  <Header as='h4' dividing>
+                    Allocation %
+                  </Header>
+                  <div style={{ width: 150, height: 150, margin: '0 auto' }}>
+                    <CircularProgressbar 
+                      value={parseInt(formData.allocationPercent, 10) || 0} 
+                      text={`${parseInt(formData.allocationPercent, 10) || 0}%`} 
+                      styles={buildStyles({
+                        textSize: '16px',
+                        pathColor: '#3b82f6',
+                        textColor: '#333',
+                        trailColor: '#e2e8f0',
+                      })}
+                    />
+                  </div>
+                </Segment>
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row>
+              <Grid.Column width={16}>
+              <Form>
+                <Form.Group widths="equal">
+                  <Form.Field required>
+                      <label>Client Name</label>
+                      <Dropdown
+                        placeholder="Select Client"
+                        fluid
+                        selection
+                        options={clients.map(client => ({
+                          key: client.ClientID,
+                          text: client.ClientName,
+                          value: client.ClientID,
+                        }))}
+                        name="clientId"
+                        value={formData.clientId}
+                        onChange={handleChange}
+                        clearable={!clientProjectData}
+                        disabled={!!clientProjectData}
+                        upward={true}
+                      />
+                    </Form.Field>
+                    <Form.Field required>
+                      <label>Project Name</label>
+                      <Dropdown
+                        placeholder="Select Project"
+                        fluid
+                        selection
+                        options={getFilteredProjectOptions()}
+                        name="projectId"
+                        value={formData.projectId}
+                        onChange={handleChange}
+                        disabled={!formData.clientId || !!clientProjectData}
+                        clearable={!clientProjectData}
+                        upward={true}
+                      />
+                    </Form.Field>
+                    <Form.Field required>
+                    <label>Status</label>
+                    <Dropdown
+                      placeholder="Set Status"
+                      fluid
+                      selection
+                      options={[
+                        { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
+                        { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
+                        { key: 'allocated', text: 'Allocated', value: 'Allocated' },
+                        { key: 'closed', text: 'Closed', value: 'Closed' },
+                      ]}
+                      name="status"
+                      value={formData.status}
+                      onChange={handleChange}
+                      clearable
+                      upward={true}
+                    />
+                  </Form.Field>
+                  <Form.Field required>
+                    <label>Allocation %</label>
+                    <Dropdown
+                      placeholder="Select Allocation Percentage"
+                      fluid
+                      selection
+                      options={[
+                        { key: 0, text: '0%', value: 0 },
+                        { key: 25, text: '25%', value: 25 },
+                        { key: 50, text: '50%', value: 50 },
+                        { key: 75, text: '75%', value: 75 },
+                        { key: 100, text: '100%', value: 100 },
+                      ].filter(option => option.value <= remainingAllocation)}
+                      name="allocationPercent"
+                      value={formData.allocationPercent}
+                      onChange={handleChange}
+                      upward={true}
+                      clearable
+                    />
+                    <div style={{ marginTop: '5px', color: 'gray', fontSize: '12px' }}>
+                      Remaining Allocation: {remainingAllocation}%
+                    </div>
+                  </Form.Field>
+                </Form.Group>
+                <Form.Group widths="equal">
+                  
+                  <Form.Field required>
+                      <label>Billing Type</label>
+                      <Dropdown
+                        placeholder="Select Billing Type"
+                        fluid
+                        selection
+                        options={[
+                          { key: 'tm', text: 'T&M', value: 'T&M' },
+                          { key: 'fix', text: 'Fix Price', value: 'Fix Price' },
+                        ]}
+                        name="billingType"
+                        value={formData.billingType}
+                        onChange={handleChange}
+                        upward={true}
+                        clearable
+                      />
+                    </Form.Field>
 
-            {/* Employee Information */}
-            <Form.Group widths="equal">
-              {/* Employee Name and ID (Optional Prefilled) */}
-              {employeeData ? (
-                <>
-                  <Form.Input
-                    label="Employee Name"
-                    placeholder="Employee Name"
-                    name="employeeName"
-                    value={formData.employeeName}
-                    readOnly
-                  />
-                  <Form.Input
-                    label="Employee ID"
-                    placeholder="Employee ID"
-                    name="employeeId"
-                    value={formData.employeeId}
-                    readOnly
-                  />
-                </>
-              ) : (
-                <>
-                  <Form.Input
-                    label="Employee Name"
-                    placeholder="Employee Name"
-                    name="employeeName"
-                    value={formData.employeeName}
-                    onChange={handleChange}
-                  />
-                  <Form.Input
-                    label="Employee ID"
-                    placeholder="Employee ID"
-                    name="employeeId"
-                    value={formData.employeeId}
-                    onChange={handleChange}
-                  />
-                </>
-              )}
-            </Form.Group>
-
-            {/* Client and Project Information */}
-            <Form.Group widths="equal">
-              <Form.Field required>
-                <label>Client</label>
-                <Dropdown
-                  placeholder="Select Client"
-                  fluid
-                  selection
-                  options={clients.map(client => ({
-                    key: client.ClientID,
-                    text: client.ClientName,
-                    value: client.ClientID,
-                  }))}
-                  name="clientId"
-                  value={formData.clientId}
-                  onChange={handleChange}
-                  selection
-                  clearable={!clientProjectData} // Disable clearing if prefilled
-                  disabled={!!clientProjectData}   // Disable if prefilled
-                />
-              </Form.Field>
-
-              <Form.Field required>
-                <label>Project</label>
-                <Dropdown
-                  placeholder="Select Project"
-                  fluid
-                  selection
-                  options={getFilteredProjectOptions()}
-                  name="projectId"
-                  value={formData.projectId}
-                  onChange={handleChange}
-                  disabled={!formData.clientId || !!clientProjectData} // Disable if prefilled
-                  selection
-                  clearable={!clientProjectData} // Disable clearing if prefilled
-                />
-              </Form.Field>
-            </Form.Group>
-
-            <Form.Field required>
-              <label>Status</label>
-              <Dropdown
-                placeholder="Select Status"
-                fluid
-                selection
-                options={[
-                  { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
-                  { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
-                  { key: 'allocated', text: 'Allocated', value: 'Allocated' },
-                  { key: 'closed', text: 'Closed', value: 'Closed' },
-                ]}
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                selection
-                clearable
-              />
-            </Form.Field>
-
-            <Form.Field required>
-              <label>Allocation %</label>
-              <Dropdown
-                placeholder="Select Allocation Percentage"
-                fluid
-                selection
-                options={allocationOptions.filter(option => option.value <= remainingAllocation)}
-                name="allocationPercent"
-                value={formData.allocationPercent}
-                onChange={handleChange}
-                selection
-                clearable
-              />
-              <p style={{ color: 'gray', fontSize: '12px', marginTop: '5px' }}>
-                Remaining Allocation: {remainingAllocation}%
-              </p>
-            </Form.Field>
-
-            <Form.Field required>
-              <label>Billing Type</label>
-              <Dropdown
-                placeholder="Select Billing Type"
-                fluid
-                selection
-                options={billingTypeOptions}
-                name="billingType"
-                value={formData.billingType}
-                onChange={handleChange}
-                selection
-                clearable
-              />
-            </Form.Field>
-
-            <Form.Field required>
-              <label>Billed Check</label>
-              <Dropdown
-                placeholder="Select Billed Check"
-                fluid
-                selection
-                options={billedCheckOptions}
-                name="billedCheck"
-                value={formData.billedCheck}
-                onChange={(e, { name, value }) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    [name]: value,
-                    billingRate: value === 'No' ? '' : prev.billingRate,  // Clear billingRate if 'No'
-                  }));
-                }}
-                selection
-                clearable
-              />
-            </Form.Field>
-
-            {formData.billedCheck === 'Yes' && (
-              <Form.Field required>
-                <label>Billing Rate (USD)</label>
-                <Input
-                  label={{ basic: true, content: '$' }}
-                  labelPosition="left"
-                  placeholder="Enter billing rate"
-                  name="billingRate"
-                  value={formData.billingRate}
-                  onChange={handleChange}
-                  type="number"
-                  min={0}
-                  max={0.99} // Ensure it's less than 1 to start with 0
-                  step="0.01"
-                  maxLength={4} // e.g., 0.99
-                  icon={{ name: 'dollar', color: 'grey' }}
-                  iconPosition="left"
-                  // Prevent entering more than 2 decimal places
-                  onKeyDown={(e) => {
-                    const currentLength = e.target.value.length;
-                    if (currentLength >= 4 && e.key !== 'Backspace' && e.key !== 'Delete') {
-                      e.preventDefault();
-                    }
-                  }}
-                />
-              </Form.Field>
-            )}
-
-
-            <Form.Field required>
-              <label>Time Sheet Approver</label>
-              <Dropdown
-                placeholder="Select Approver"
-                fluid
-                selection
-                options={getTimeSheetApproverOptions()}
-                name="timeSheetApprover"
-                value={formData.timeSheetApprover}
-                onChange={handleChange}
-                selection
-                clearable
-              />
-            </Form.Field>
-          </Form>
-        )}
-        {error && (
-          <Message negative>
-            <Message.Header>Error</Message.Header>
-            <p>{error}</p>
-          </Message>
+                    <Form.Field required>
+                      <label>Billed?</label>
+                      <Dropdown
+                        placeholder="Select Billed Check"
+                        fluid
+                        selection
+                        options={[
+                          { key: 'yes', text: 'Yes', value: 'Yes' },
+                          { key: 'no', text: 'No', value: 'No' },
+                        ]}
+                        name="billedCheck"
+                        value={formData.billedCheck}
+                        onChange={(e, { value }) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            billedCheck: value,
+                            billingRate: value === 'Yes' ? prev.billingRate : '0', // Set to '0' when 'No' is selected
+                          }));
+                        }}
+                        clearable
+                        upward={true}
+                      />
+                    </Form.Field>
+                    {formData.billedCheck === 'Yes' && (
+                      <Form.Field required>
+                        <label>Billing Rate (USD)</label>
+                        <Input
+                          label={{ basic: true, content: '$' }}
+                          labelPosition="left"
+                          placeholder="Enter billing rate"
+                          name="billingRate"
+                          value={formData.billingRate}
+                          onChange={handleChange}
+                          type="number"
+                          min={0}
+                          max={1000}
+                          iconPosition="left"
+                          // Prevent entering more than 2 decimal places
+                          onKeyDown={(e) => {
+                            const currentLength = e.target.value.length;
+                            if (currentLength >= 4 && e.key !== 'Backspace' && e.key !== 'Delete') {
+                              e.preventDefault();
+                            }
+                          }}
+                        />
+                      </Form.Field>
+                    )}
+                </Form.Group>
+              </Form>
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
         )}
       </Modal.Content>
       <Modal.Actions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button
-          color="blue"
-          onClick={handleSubmit}
+        <Button 
+          color="blue" 
+          onClick={handleSubmit} 
           disabled={!isFormValid() || loading}
         >
           {allocationData ? 'Update' : 'Save'}
