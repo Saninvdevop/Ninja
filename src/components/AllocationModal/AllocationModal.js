@@ -57,6 +57,10 @@ const AllocationModal = ({
   const [billingEnabled, setBillingEnabled] = useState('no');
   const [allocation, setAllocation] = useState(0); // For circular progress
 
+  // New States for Date Constraints
+  const [isEndDateDisabled, setIsEndDateDisabled] = useState(true);
+  const [minEndDate, setMinEndDate] = useState('');
+
   // Fetch clients, projects, and timeSheetApprovers when the modal opens
   useEffect(() => {
     const fetchModalData = async () => {
@@ -84,11 +88,17 @@ const AllocationModal = ({
   // Fetch remaining allocation when employeeData or allocationData changes
   useEffect(() => {
     const fetchRemainingAllocation = async () => {
-      if (!formData.employeeId) return;
+      if (!formData.employeeId || !formData.startDate || !formData.endDate) return;
 
       try {
-        const response = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}?startDate=${formData.startDate}&endDate=${formData.endDate}`);
+        const response = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`, {
+          params: {
+            startDate: formData.startDate,
+            endDate: formData.endDate
+          }
+        });
         setFetchedRemainingAllocation(response.data.remainingAllocation);
+        setAllocation(100 - response.data.remainingAllocation); // Update allocation for the donut chart
       } catch (err) {
         console.error('Error fetching remaining allocation:', err);
         setError('Failed to compute remaining allocation.');
@@ -119,6 +129,12 @@ const AllocationModal = ({
       });
       setOriginalAllocationPercent(allocationData.AllocationPercent || 0);
       setAllocation(allocationData.AllocationPercent || 0);
+
+      // Enable End Date field if Start Date is present
+      if (allocationData.AllocationStartDate) {
+        setIsEndDateDisabled(false);
+        setMinEndDate(allocationData.AllocationStartDate.substring(0, 10));
+      }
     } else {
       // Reset form for adding new allocation
       setFormData({
@@ -137,6 +153,8 @@ const AllocationModal = ({
       });
       setOriginalAllocationPercent(0);
       setAllocation(0);
+      setIsEndDateDisabled(true);
+      setMinEndDate('');
     }
 
     // Reset error when allocationData changes
@@ -168,6 +186,8 @@ const AllocationModal = ({
       setRemainingAllocation(100);
       setBillingEnabled('no');
       setAllocation(0);
+      setIsEndDateDisabled(true);
+      setMinEndDate('');
     }
   }, [open, employeeData, clientProjectData, allocationData]);
 
@@ -258,14 +278,29 @@ const AllocationModal = ({
       }));
     }
 
-    // If project is changed, update the Time Sheet Approver options
+    // If project is changed, update the Time Sheet Approver and Client ID
     if (name === 'projectId') {
       const selectedProject = projects.find(project => project.ProjectID === value);
-      if (selectedProject && selectedProject.ProjectManager) {
+      if (selectedProject) {
+        // Set Time Sheet Approver based on Project Manager
+        if (selectedProject.ProjectManager) {
+          setFormData((prev) => ({
+            ...prev,
+            timeSheetApprover: selectedProject.ProjectManager,
+          }));
+        }
+
+        // Set Client ID automatically based on selected Project
         setFormData((prev) => ({
           ...prev,
-          timeSheetApprover: selectedProject.ProjectManager,
+          clientId: selectedProject.ClientID,
         }));
+
+        // Disable Client Name dropdown when Project is selected
+        setIsEndDateDisabled(prev => prev);
+      } else {
+        // If no project is selected, allow manual selection of Client
+        setIsEndDateDisabled(true);
       }
     }
 
@@ -384,7 +419,12 @@ const AllocationModal = ({
       // Check total allocation does not exceed 100%
       if (allocationData) {
         // If editing, subtract the current allocation percent from total allocation
-        const totalAllocationResponse = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}?startDate=${formData.startDate}&endDate=${formData.endDate}`);
+        const totalAllocationResponse = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`, {
+          params: {
+            startDate: formData.startDate,
+            endDate: formData.endDate
+          }
+        });
         const totalAllocation = 100 - totalAllocationResponse.data.remainingAllocation;
         const adjustedTotal = totalAllocation - originalAllocationPercent + parseInt(formData.allocationPercent, 10);
 
@@ -394,7 +434,12 @@ const AllocationModal = ({
         }
       } else {
         // If adding new allocation
-        const totalAllocationResponse = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}?startDate=${formData.startDate}&endDate=${formData.endDate}`);
+        const totalAllocationResponse = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`, {
+          params: {
+            startDate: formData.startDate,
+            endDate: formData.endDate
+          }
+        });
         const totalAllocation = 100 - totalAllocationResponse.data.remainingAllocation;
 
         if (totalAllocation + parseInt(formData.allocationPercent, 10) > 100) {
@@ -486,7 +531,7 @@ const AllocationModal = ({
   const handleBillingChange = (e, { value }) => {
     setBillingEnabled(value);
     if (value !== 'Yes') {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         billingRate: '',
       }));
@@ -518,8 +563,22 @@ const AllocationModal = ({
                         type="date"
                         name="startDate"
                         value={formData.startDate}
-                        onChange={handleChange}
+                        onChange={(e, { name, value }) => {
+                          handleChange(e, { name, value });
+                          if (value) {
+                            setIsEndDateDisabled(false);
+                            setMinEndDate(value);
+                            setFormData(prev => ({
+                              ...prev,
+                              endDate: '', // Reset End Date when Start Date changes
+                            }));
+                          } else {
+                            setIsEndDateDisabled(true);
+                            setMinEndDate('');
+                          }
+                        }}
                         min="2020-01-01"
+                        max="9999-12-31"
                       />
                     </Form.Field>
                     <Form.Field required>
@@ -529,7 +588,9 @@ const AllocationModal = ({
                         name="endDate"
                         value={formData.endDate}
                         onChange={handleChange}
-                        min={formData.startDate || '2020-01-01'}
+                        min={minEndDate}
+                        disabled={isEndDateDisabled}
+                        readOnly={false} // Users can select from calendar
                       />
                     </Form.Field>
                   </Form.Group>
@@ -582,6 +643,7 @@ const AllocationModal = ({
                       value={formData.timeSheetApprover}
                       onChange={handleChange}
                       clearable
+                      upward={true}
                     />
                   </Form.Field>
                 </Form>
@@ -599,8 +661,8 @@ const AllocationModal = ({
                   </Header>
                   <div style={{ width: 150, height: 150, margin: '0 auto' }}>
                     <CircularProgressbar 
-                      value={parseInt(formData.allocationPercent, 10) || 0} 
-                      text={`${parseInt(formData.allocationPercent, 10) || 0}%`} 
+                      value={allocation} 
+                      text={`${allocation}%`} 
                       styles={buildStyles({
                         textSize: '16px',
                         pathColor: '#3b82f6',
@@ -616,41 +678,45 @@ const AllocationModal = ({
               <Grid.Column width={16}>
               <Form>
                 <Form.Group widths="equal">
+                  {/* **Project Name Dropdown Comes Before Client Name** */}
                   <Form.Field required>
-                      <label>Client Name</label>
-                      <Dropdown
-                        placeholder="Select Client"
-                        fluid
-                        selection
-                        options={clients.map(client => ({
-                          key: client.ClientID,
-                          text: client.ClientName,
-                          value: client.ClientID,
-                        }))}
-                        name="clientId"
-                        value={formData.clientId}
-                        onChange={handleChange}
-                        clearable={!clientProjectData}
-                        disabled={!!clientProjectData}
-                        upward={true}
-                      />
-                    </Form.Field>
-                    <Form.Field required>
-                      <label>Project Name</label>
-                      <Dropdown
-                        placeholder="Select Project"
-                        fluid
-                        selection
-                        options={getFilteredProjectOptions()}
-                        name="projectId"
-                        value={formData.projectId}
-                        onChange={handleChange}
-                        disabled={!formData.clientId || !!clientProjectData}
-                        clearable={!clientProjectData}
-                        upward={true}
-                      />
-                    </Form.Field>
-                    <Form.Field required>
+                    <label>Project Name</label>
+                    <Dropdown
+                      placeholder="Select Project"
+                      fluid
+                      selection
+                      options={projects.map(project => ({
+                        key: project.ProjectID,
+                        text: project.ProjectName,
+                        value: project.ProjectID,
+                      }))}
+                      name="projectId"
+                      value={formData.projectId}
+                      onChange={handleChange}
+                      clearable={!clientProjectData}
+                      upward={true}
+                    />
+                  </Form.Field>
+                  <Form.Field required>
+                    <label>Client Name</label>
+                    <Dropdown
+                      placeholder="Select Client"
+                      fluid
+                      selection
+                      options={clients.map(client => ({
+                        key: client.ClientID,
+                        text: client.ClientName,
+                        value: client.ClientID,
+                      }))}
+                      name="clientId"
+                      value={formData.clientId}
+                      onChange={handleChange}
+                      clearable={!clientProjectData && !formData.projectId} // Allow clearing only if projectId is not set
+                      disabled={!!formData.projectId || !!clientProjectData} // Disable if projectId is set or clientProjectData is provided
+                      upward={true}
+                    />
+                  </Form.Field>
+                  <Form.Field required>
                     <label>Status</label>
                     <Dropdown
                       placeholder="Set Status"
