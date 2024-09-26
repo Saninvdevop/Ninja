@@ -1,3 +1,5 @@
+// src/components/AllocationModal/AllocationModalProjects.jsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Modal, 
@@ -61,14 +63,16 @@ const AllocationModalProjects = ({
   const [minEndDate, setMinEndDate] = useState('');
 
   // Employee Options State
-  const [employeeOptions, setEmployeeOptions] = useState([]);
+  const [employeeNameOptions, setEmployeeNameOptions] = useState([]);
+  const [employeeIdOptions, setEmployeeIdOptions] = useState([]);
   const [employeeSearchLoading, setEmployeeSearchLoading] = useState(false);
   const [employeeSearchError, setEmployeeSearchError] = useState(null);
 
   // Debounced function to fetch employees based on search query
   const fetchEmployees = useCallback(debounce(async (query) => {
     if (!query) {
-      setEmployeeOptions([]);
+      setEmployeeNameOptions([]);
+      setEmployeeIdOptions([]);
       return;
     }
     setEmployeeSearchLoading(true);
@@ -78,12 +82,18 @@ const AllocationModalProjects = ({
         params: { query },
       });
       const employees = response.data.employees; // Assume the API returns { employees: [...] }
-      const options = employees.map(emp => ({
-        key: emp.EmployeeId,
-        text: `${emp.EmployeeName} (${emp.EmployeeId})`,
-        value: emp.EmployeeId,
+      const optionsName = employees.map(emp => ({
+        key: emp.EmployeeID, // Corrected to EmployeeID
+        text: emp.EmployeeName,
+        value: emp.EmployeeID, // Use EmployeeID as value
       }));
-      setEmployeeOptions(options);
+      const optionsId = employees.map(emp => ({
+        key: emp.EmployeeID,
+        text: emp.EmployeeID,
+        value: emp.EmployeeID,
+      }));
+      setEmployeeNameOptions(optionsName);
+      setEmployeeIdOptions(optionsId);
     } catch (err) {
       console.error('Error fetching employees:', err);
       setEmployeeSearchError('Failed to load employees.');
@@ -92,20 +102,33 @@ const AllocationModalProjects = ({
     }
   }, 500), []); // 500ms debounce
 
-  // Handle employee search input changes
-  const handleEmployeeSearchChange = (e, { searchQuery }) => {
-    fetchEmployees(searchQuery);
-  };
-
-  // Handle employee selection
-  const handleEmployeeSelect = (e, { value, options }) => {
-    const selectedOption = options.find(option => option.value === value);
-    if (selectedOption) {
-      const [name, id] = selectedOption.text.split(' (');
+  // Handle employee name selection
+  const handleEmployeeNameSelect = (e, { value }) => {
+    const selectedEmployee = employeeNameOptions.find(option => option.value === value);
+    if (selectedEmployee) {
       setFormData(prev => ({
         ...prev,
-        employeeName: name.trim(),
-        employeeId: id.replace(')', ''),
+        employeeName: selectedEmployee.text,
+        employeeId: selectedEmployee.value,
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        employeeName: '',
+        employeeId: '',
+      }));
+    }
+  };
+
+  // Handle employee ID selection
+  const handleEmployeeIdSelect = (e, { value }) => {
+    const selectedEmployee = employeeIdOptions.find(option => option.value === value);
+    if (selectedEmployee) {
+      const employeeNameOption = employeeNameOptions.find(opt => opt.value === value);
+      setFormData(prev => ({
+        ...prev,
+        employeeName: employeeNameOption ? employeeNameOption.text : '',
+        employeeId: selectedEmployee.value,
       }));
     } else {
       setFormData(prev => ({
@@ -181,7 +204,7 @@ const AllocationModalProjects = ({
     if (allocationData) {
       setFormData({
         employeeName: allocationData.EmployeeName || '',
-        employeeId: allocationData.EmployeeId || '',
+        employeeId: allocationData.EmployeeID || '', // Corrected case
         clientId: allocationData.ClientID || '',
         projectId: allocationData.ProjectID || '',
         status: allocationData.AllocationStatus || '',
@@ -205,7 +228,7 @@ const AllocationModalProjects = ({
       // Reset form for adding new allocation
       setFormData({
         employeeName: employeeData ? employeeData.EmployeeName : '',
-        employeeId: employeeData ? employeeData.EmployeeId : '',
+        employeeId: employeeData ? employeeData.EmployeeID : '', // Corrected case
         clientId: clientProjectData ? clientProjectData.clientId : '',
         projectId: clientProjectData ? clientProjectData.projectId : '',
         status: '',
@@ -233,7 +256,7 @@ const AllocationModalProjects = ({
       // Reset form when modal is closed
       setFormData({
         employeeName: employeeData ? employeeData.EmployeeName : '',
-        employeeId: employeeData ? employeeData.EmployeeId : '',
+        employeeId: employeeData ? employeeData.EmployeeID : '', // Corrected case
         clientId: clientProjectData ? clientProjectData.clientId : '',
         projectId: clientProjectData ? clientProjectData.projectId : '',
         status: '',
@@ -254,7 +277,8 @@ const AllocationModalProjects = ({
       setAllocation(0);
       setIsEndDateDisabled(true);
       setMinEndDate('');
-      setEmployeeOptions([]);
+      setEmployeeNameOptions([]);
+      setEmployeeIdOptions([]);
       setEmployeeSearchError(null);
     }
   }, [open, employeeData, clientProjectData, allocationData]);
@@ -291,14 +315,6 @@ const AllocationModalProjects = ({
       ...prev,
       [name]: value,
     }));
-
-    // If billedCheck is changed to 'No', clear billingRate
-    if (name === 'billedCheck' && value !== 'Yes') {
-      setFormData((prev) => ({
-        ...prev,
-        billingRate: '',
-      }));
-    }
 
     // If project is changed, update the Time Sheet Approver and Client ID
     if (name === 'projectId') {
@@ -373,7 +389,7 @@ const AllocationModalProjects = ({
       allocationPercent === '' ||
       !billingType ||
       !billedCheck ||
-      (billedCheck === 'Yes' && !billingRate) ||
+      !billingRate || // Billing Rate is always required
       !timeSheetApprover ||
       !startDate ||
       !endDate // Ensure endDate is always required
@@ -486,7 +502,7 @@ const AllocationModalProjects = ({
         AllocationTimeSheetApprover: formData.timeSheetApprover,
         AllocationBillingType: formData.billingType,
         AllocationBilledCheck: formData.billedCheck,
-        AllocationBillingRate: formData.billedCheck === 'Yes' ? parseFloat(formData.billingRate) : 0,
+        AllocationBillingRate: parseFloat(formData.billingRate), // Always include billing rate
         ModifiedBy: 'Admin', // Adjust as needed or pass as a prop
       };
       if (allocationData && allocationData.AllocationID) {
@@ -551,17 +567,6 @@ const AllocationModalProjects = ({
     const uniqueOptions = Array.from(new Map(combinedOptions.map(item => [item.key, item])).values());
 
     return uniqueOptions;
-  };
-
-  // Handle Billing Radio Change
-  const handleBillingChange = (e, { value }) => {
-    setBillingEnabled(value);
-    if (value !== 'Yes') {
-      setFormData((prev) => ({
-        ...prev,
-        billingRate: '',
-      }));
-    }
   };
 
   return (
@@ -700,24 +705,68 @@ const AllocationModalProjects = ({
               <Grid.Column width={10}>
                 <Form>
                   <Form.Group widths="equal">
-                    {/* Replace Employee Name and Employee ID with Searchable Dropdowns */}
-                    <Form.Field required>
-                      <label>Employee Name / ID</label>
-                      <Dropdown
-                        placeholder="Search Employee by Name or ID"
-                        fluid
-                        search
-                        selection
-                        loading={employeeSearchLoading}
-                        options={employeeOptions}
-                        onSearchChange={handleEmployeeSearchChange}
-                        onChange={handleEmployeeSelect}
-                        value={formData.employeeId}
-                        noResultsMessage={employeeSearchError || 'No employees found.'}
-                        clearable
-                        upward={true}
-                      />
-                    </Form.Field>
+                    {/* Employee Fields */}
+                    {allocationData ? (
+                      <>
+                        <Form.Field required>
+                          <label>Employee Name</label>
+                          <Input
+                            readOnly
+                            value={formData.employeeName}
+                            placeholder="Employee Name"
+                          />
+                        </Form.Field>
+                        <Form.Field required>
+                          <label>Employee ID</label>
+                          <Input
+                            readOnly
+                            value={formData.employeeId}
+                            placeholder="Employee ID"
+                          />
+                        </Form.Field>
+                      </>
+                    ) : (
+                      <>
+                        {/* Separate Employee Name Dropdown */}
+                        <Form.Field required>
+                          <label>Employee Name</label>
+                          <Dropdown
+                            placeholder="Search Employee by Name"
+                            fluid
+                            search
+                            selection
+                            loading={employeeSearchLoading}
+                            options={employeeNameOptions}
+                            onSearchChange={(e, data) => fetchEmployees(data.searchQuery)}
+                            onChange={handleEmployeeNameSelect}
+                            value={formData.employeeId ? formData.employeeId : ''} // EmployeeID is the value
+                            noResultsMessage={employeeSearchError || 'No employees found.'}
+                            clearable
+                            upward={true}
+                          />
+                        </Form.Field>
+
+                        {/* Separate Employee ID Dropdown */}
+                        <Form.Field required>
+                          <label>Employee ID</label>
+                          <Dropdown
+                            placeholder="Search Employee by ID"
+                            fluid
+                            search
+                            selection
+                            loading={employeeSearchLoading}
+                            options={employeeIdOptions}
+                            onSearchChange={(e, data) => fetchEmployees(data.searchQuery)}
+                            onChange={handleEmployeeIdSelect}
+                            value={formData.employeeId}
+                            noResultsMessage={employeeSearchError || 'No employees found.'}
+                            clearable
+                            upward={true}
+                          />
+                        </Form.Field>
+                      </>
+                    )}
+
                     <Form.Field required>
                       <label>Allocation %</label>
                       <Dropdown
@@ -743,7 +792,6 @@ const AllocationModalProjects = ({
                     </Form.Field>
                   </Form.Group>
                   <Form.Group widths="equal">
-                    
                     <Form.Field required>
                       <label>Billing Type</label>
                       <Dropdown
@@ -777,38 +825,36 @@ const AllocationModalProjects = ({
                           setFormData((prev) => ({
                             ...prev,
                             billedCheck: value,
-                            billingRate: value === 'Yes' ? prev.billingRate : '0', // Set to '0' when 'No' is selected
                           }));
                         }}
                         clearable
                         upward={true}
                       />
                     </Form.Field>
-                    {formData.billedCheck === 'Yes' && (
-                      <Form.Field required>
-                        <label>Billing Rate (USD)</label>
-                        <Input
-                          label={{ basic: true, content: '$' }}
-                          labelPosition="left"
-                          placeholder="Enter billing rate"
-                          name="billingRate"
-                          value={formData.billingRate}
-                          onChange={handleChange}
-                          type="number"
-                          min={0}
-                          max={999}
-                          step="0.01"
-                          iconPosition="left"
-                          // Prevent entering more than 2 decimal places
-                          onKeyDown={(e) => {
-                            const currentLength = e.target.value.length;
-                            if (currentLength >= 10 && e.key !== 'Backspace' && e.key !== 'Delete') {
-                              e.preventDefault();
-                            }
-                          }}
-                        />
-                      </Form.Field>
-                    )}
+                    {/* Always show Billing Rate */}
+                    <Form.Field required>
+                      <label>Billing Rate (USD)</label>
+                      <Input
+                        label={{ basic: true, content: '$' }}
+                        labelPosition="left"
+                        placeholder="Enter billing rate"
+                        name="billingRate"
+                        value={formData.billingRate}
+                        onChange={handleChange}
+                        type="number"
+                        min={0}
+                        max={999}
+                        step="0.01"
+                        iconPosition="left"
+                        // Prevent entering more than 2 decimal places
+                        onKeyDown={(e) => {
+                          const currentLength = e.target.value.length;
+                          if (currentLength >= 10 && e.key !== 'Backspace' && e.key !== 'Delete') {
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                    </Form.Field>
                   </Form.Group>           
                 </Form>
                 {error && (
@@ -862,7 +908,7 @@ AllocationModalProjects.propTypes = {
   onSave: PropTypes.func.isRequired,
   employeeData: PropTypes.shape({
     EmployeeName: PropTypes.string,
-    EmployeeId: PropTypes.string,
+    EmployeeID: PropTypes.string,
   }), // Optional: Object containing EmployeeName and EmployeeID
   clientProjectData: PropTypes.shape({
     clientId: PropTypes.number,
@@ -871,7 +917,7 @@ AllocationModalProjects.propTypes = {
   allocationData: PropTypes.shape({
     AllocationID: PropTypes.number,
     EmployeeName: PropTypes.string,
-    EmployeeId: PropTypes.string,
+    EmployeeID: PropTypes.string,
     ClientID: PropTypes.number,
     ProjectID: PropTypes.number,
     AllocationStatus: PropTypes.string,

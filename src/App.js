@@ -65,6 +65,7 @@ const App = () => {
                 </>
               )}
               {/* Common Routes for both roles */}
+              <Route path="/employees" element={<EmpPage />} />
               <Route path="/employee/:id" element={<EmployeeDetails userRole={userRole} />} />
               <Route path="/client/:clientId/projects" element={<ClientProjects />} />
               <Route path="/client/:clientId/project/:projectId" element={<ClientDetails userRole={userRole} />} /> {/* Pass userRole to ClientDetails */}

@@ -86,88 +86,50 @@ h2 {
   flex: 0 0 auto; /* Prevent the button from stretching */
 }
 
- /* Scrollable table container */
- .table-container {
-  overflow-x: auto;
-}
-
-.table-container .ui.table {
-  min-width: 3500px; /* Adjust based on the number of columns */
-}
-
-/* Style the table headers to indicate they are sortable */
-.ui.table th {
-  cursor: pointer;
-}
-  .table {
-    width: 100%; /* Take full width */
-    table-layout: fixed; /* Fixed layout for better control */
-    border-collapse: collapse; /* Collapse borders for a cleaner look */
+  /* Scrollable table container */
+  .table-container {
+    overflow-x: auto;
   }
   
-  .table th, .table td {
-    padding: 8px 10px; /* Reduced padding */
-    text-align: left; /* Left-align text */
-    white-space: normal; /* Allow text to wrap */
-    overflow: hidden; /* Hide overflow */
-    text-overflow: ellipsis; /* Add ellipsis if the content overflows */
-    font-size: 0.9em; /* Slightly smaller font size */
+  .table-container .ui.table {
+    width: 3000px; /* Adjust based on the number of columns */
   }
   
-  .table th {
-    background-color: #f5f8fa; /* Light background for the header */
-    font-weight: bold;
+  /* Style the table headers to indicate they are sortable */
+  .ui.table th {
+    cursor: pointer;
   }
-  
-  .table td {
-    background-color: #fff; /* White background for table rows */
-    color: #333; /* Darker text color for contrast */
-  }
-  
-  .table tr:nth-child(even) {
-    background-color: #f9f9f9; /* Light grey background for alternating rows */
-  }
-  
-  .table tr:hover {
-    background-color: #e9ecef; /* Highlight row on hover */
-  }
-  
-  
-
-.loader {
-  text-align: center;
-  padding: 50px 0;
-  font-size: 1.5em;
-  color: #555;
-}
-
-.error-message {
-  color: red;
-  text-align: center;
-  margin: 20px 0;
-  font-size: 1.2em;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .left-controls,
-  .right-controls {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .right-controls {
-    justify-content: flex-start; /* Align search and download to the start on small screens */
-  }
-
-  .right-controls .ui.input {
-    flex: 1;
-    min-width: unset; /* Remove minimum width on small screens */
-  }
-}
+    .table {
+      width: 100%; /* Take full width */
+      table-layout: fixed; /* Fixed layout for better control */
+      border-collapse: collapse; /* Collapse borders for a cleaner look */
+    }
+    
+    .table th, .table td {
+      padding: 8px 10px; /* Reduced padding */
+      text-align: left; /* Left-align text */
+      white-space: normal; /* Allow text to wrap */
+      overflow: hidden; /* Hide overflow */
+      text-overflow: ellipsis; /* Add ellipsis if the content overflows */
+      font-size: 0.9em; /* Slightly smaller font size */
+    }
+    
+    .table th {
+      background-color: #f5f8fa; /* Light background for the header */
+      font-weight: bold;
+    }
+    
+    .table td {
+      background-color: #fff; /* White background for table rows */
+      color: #333; /* Darker text color for contrast */
+    }
+    
+    .table tr:nth-child(even) {
+      background-color: #f9f9f9; /* Light grey background for alternating rows */
+    }
+    
+    .table tr:hover {
+      background-color: #e9ecef; /* Highlight row on hover */
+    }
+    
+    

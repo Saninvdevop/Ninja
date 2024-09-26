@@ -35,7 +35,16 @@ const Navbar = ({ userRole, setUserRole }) => {
               to="/dashboard"
               className="item"
             >
-              Dashboard
+              Overview
+            </Menu.Item>
+            <Menu.Item
+              name="employees"
+              active={activeItem === '/employees'}
+              as={Link}
+              to="/employees"
+              className="item"
+            >
+              Employees
             </Menu.Item>
             <Menu.Item
               name="projects"

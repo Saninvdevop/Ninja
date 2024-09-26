@@ -114,8 +114,9 @@ const AllocationModal = ({
   useEffect(() => {
     if (allocationData) {
       setFormData({
-        employeeName: allocationData.EmployeeName || '',
-        employeeId: allocationData.EmployeeId || '',
+        // Use employeeData for Employee Name and ID
+        employeeName: employeeData ? employeeData.EmployeeName : '',
+        employeeId: employeeData ? employeeData.EmployeeId : '',
         clientId: allocationData.ClientID || '',
         projectId: allocationData.ProjectID || '',
         status: allocationData.AllocationStatus || '',
@@ -270,14 +271,6 @@ const AllocationModal = ({
       [name]: value,
     }));
 
-    // If billedCheck is changed to 'No', clear billingRate
-    if (name === 'billedCheck' && value !== 'Yes') {
-      setFormData((prev) => ({
-        ...prev,
-        billingRate: '',
-      }));
-    }
-
     // If project is changed, update the Time Sheet Approver and Client ID
     if (name === 'projectId') {
       const selectedProject = projects.find(project => project.ProjectID === value);
@@ -338,7 +331,7 @@ const AllocationModal = ({
       status,
       allocationPercent,
       billingType,
-      billedCheck,
+      billedCheck, // Although we're removing billed check logic, keeping it for form validation if necessary
       billingRate,
       timeSheetApprover,
       startDate,
@@ -350,8 +343,8 @@ const AllocationModal = ({
       !status ||
       allocationPercent === '' ||
       !billingType ||
-      !billedCheck ||
-      (billedCheck === 'Yes' && !billingRate) ||
+      !billedCheck || // Keeping billedCheck as required since it's still part of the form
+      !billingRate || // Billing Rate is always required now
       !timeSheetApprover ||
       !startDate ||
       !endDate // Ensure endDate is always required
@@ -460,7 +453,7 @@ const AllocationModal = ({
         AllocationTimeSheetApprover: formData.timeSheetApprover,
         AllocationBillingType: formData.billingType,
         AllocationBilledCheck: formData.billedCheck,
-        AllocationBillingRate: formData.billedCheck === 'Yes' ? parseFloat(formData.billingRate) : 0,
+        AllocationBillingRate: parseFloat(formData.billingRate), // Always include billingRate
         ModifiedBy: 'Admin', // Adjust as needed or pass as a prop
       };
       if (allocationData && allocationData.AllocationID) {
@@ -530,12 +523,7 @@ const AllocationModal = ({
   // Handle Billing Radio Change
   const handleBillingChange = (e, { value }) => {
     setBillingEnabled(value);
-    if (value !== 'Yes') {
-      setFormData((prev) => ({
-        ...prev,
-        billingRate: '',
-      }));
-    }
+    // Removed logic to clear billingRate when 'No' is selected
   };
 
   return (
@@ -596,41 +584,23 @@ const AllocationModal = ({
                   </Form.Group>
 
                   <Form.Group widths="equal">
-                    {employeeData ? (
-                      <>
-                        <Form.Input
-                          label="Employee Name"
-                          placeholder="Employee Name"
-                          name="employeeName"
-                          value={formData.employeeName}
-                          readOnly
-                        />
-                        <Form.Input
-                          label="Employee ID"
-                          placeholder="Employee ID"
-                          name="employeeId"
-                          value={formData.employeeId}
-                          readOnly
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <Form.Input
-                          label="Employee Name"
-                          placeholder="Enter Employee Name"
-                          name="employeeName"
-                          value={formData.employeeName}
-                          onChange={handleChange}
-                        />
-                        <Form.Input
-                          label="Employee ID"
-                          placeholder="Enter Employee ID"
-                          name="employeeId"
-                          value={formData.employeeId}
-                          onChange={handleChange}
-                        />
-                      </>
-                    )}
+                    {/* Always display Employee Name and ID as read-only */}
+                    <Form.Input
+                      label="Employee Name"
+                      placeholder="Employee Name"
+                      name="employeeName"
+                      value={formData.employeeName}
+                      readOnly
+                      required
+                    />
+                    <Form.Input
+                      label="Employee ID"
+                      placeholder="Employee ID"
+                      name="employeeId"
+                      value={formData.employeeId}
+                      readOnly
+                      required
+                    />
                   </Form.Group>
                   <Form.Field required>
                     <label>Time Sheet Approver</label>
@@ -717,28 +687,9 @@ const AllocationModal = ({
                     />
                   </Form.Field>
                   <Form.Field required>
-                    <label>Status</label>
-                    <Dropdown
-                      placeholder="Set Status"
-                      fluid
-                      selection
-                      options={[
-                        { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
-                        { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
-                        { key: 'allocated', text: 'Allocated', value: 'Allocated' },
-                        { key: 'closed', text: 'Closed', value: 'Closed' },
-                      ]}
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      clearable
-                      upward={true}
-                    />
-                  </Form.Field>
-                  <Form.Field required>
                     <label>Allocation %</label>
                     <Dropdown
-                      placeholder="Select Allocation Percentage"
+                      placeholder="0%"
                       fluid
                       selection
                       options={[
@@ -758,6 +709,26 @@ const AllocationModal = ({
                       Remaining Allocation: {remainingAllocation}%
                     </div>
                   </Form.Field>
+                  <Form.Field required>
+                    <label>Status</label>
+                    <Dropdown
+                      placeholder="Set Status"
+                      fluid
+                      selection
+                      options={[
+                        { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
+                        { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
+                        { key: 'allocated', text: 'Allocated', value: 'Allocated' },
+                        { key: 'closed', text: 'Closed', value: 'Closed' },
+                      ]}
+                      name="status"
+                      value={formData.status}
+                      onChange={handleChange}
+                      clearable
+                      upward={true}
+                    />
+                  </Form.Field>
+                  
                 </Form.Group>
                 <Form.Group widths="equal">
                   
@@ -791,41 +762,35 @@ const AllocationModal = ({
                         ]}
                         name="billedCheck"
                         value={formData.billedCheck}
-                        onChange={(e, { value }) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            billedCheck: value,
-                            billingRate: value === 'Yes' ? prev.billingRate : '0', // Set to '0' when 'No' is selected
-                          }));
-                        }}
+                        onChange={handleChange}
                         clearable
                         upward={true}
                       />
                     </Form.Field>
-                    {formData.billedCheck === 'Yes' && (
-                      <Form.Field required>
-                        <label>Billing Rate (USD)</label>
-                        <Input
-                          label={{ basic: true, content: '$' }}
-                          labelPosition="left"
-                          placeholder="Enter billing rate"
-                          name="billingRate"
-                          value={formData.billingRate}
-                          onChange={handleChange}
-                          type="number"
-                          min={0}
-                          max={999}
-                          iconPosition="left"
-                          // Prevent entering more than 2 decimal places
-                          onKeyDown={(e) => {
-                            const currentLength = e.target.value.length;
-                            if (currentLength >= 4 && e.key !== 'Backspace' && e.key !== 'Delete') {
-                              e.preventDefault();
-                            }
-                          }}
-                        />
-                      </Form.Field>
-                    )}
+                    {/* Always show Billing Rate field */}
+                    <Form.Field required>
+                      <label>Billing Rate (USD)</label>
+                      <Input
+                        label={{ basic: true, content: '$' }}
+                        labelPosition="left"
+                        placeholder="Enter billing rate"
+                        name="billingRate"
+                        value={formData.billingRate}
+                        onChange={handleChange}
+                        type="number"
+                        min={0}
+                        max={999}
+                        step="0.01"
+                        iconPosition="left"
+                        // Prevent entering more than 2 decimal places
+                        onKeyDown={(e) => {
+                          const currentLength = e.target.value.length;
+                          if (currentLength >= 10 && e.key !== 'Backspace' && e.key !== 'Delete') {
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                    </Form.Field>
                 </Form.Group>
               </Form>
               </Grid.Column>
@@ -862,8 +827,6 @@ AllocationModal.propTypes = {
   }), // Optional: Object containing ClientID and ProjectID
   allocationData: PropTypes.shape({
     AllocationID: PropTypes.number,
-    EmployeeName: PropTypes.string,
-    EmployeeId: PropTypes.string,
     ClientID: PropTypes.number,
     ProjectID: PropTypes.number,
     AllocationStatus: PropTypes.string,

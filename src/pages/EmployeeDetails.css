@@ -194,7 +194,7 @@
 }
 
 .table-container .ui.table {
-  min-width: 1800px; /* Adjust based on the number of columns */
+  width: 1800px; /* Adjust based on the number of columns */
 }
 
 /* Style the table headers to indicate they are sortable */
