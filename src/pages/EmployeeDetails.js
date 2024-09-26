@@ -19,6 +19,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
   const { id } = useParams(); 
   const [error, setError] = useState(null);
   const navigate = useNavigate(); // Initialize useNavigate for navigation
+  const[filter, setFilter] = useState('active');
   
   const [employeeData, setEmployeeData] = useState(null); // State for employee details
   const [allocations, setAllocations] = useState([]); // Allocations data
@@ -65,6 +66,16 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
     fetchAllocations('active'); // Default filter is 'active'
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Fetch employee data on component mount and when 'id' changes
+  useEffect(() => {
+    fetchEmployeeData();
+  }, [id]);
+
+  // Fetch allocations whenever 'filter' or 'id' changes
+  useEffect(() => {
+    fetchAllocations(filter);
+  }, [filter, id]);
 
   // Handle opening the modal for adding a new allocation
   const handleOpenModal = () => {
@@ -414,20 +425,20 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
               {/* Filter Tabs */}
               <div className="filter-tabs">
                 <button
-                  className={`tab active`}
-                  onClick={() => fetchAllocations('active')}
+                  className={`tab ${filter === "active" ? 'active' : ''}`}
+                  onClick={() => setFilter('active')}
                 >
                   Active
                 </button>
                 <button
-                  className={`tab`}
-                  onClick={() => fetchAllocations('closed')}
+                  className={`tab ${filter === "closed" ? 'active' : ''}`}
+                  onClick={() => setFilter('closed')}
                 >
                   Closed
                 </button>
                 <button
-                  className={`tab`}
-                  onClick={() => fetchAllocations('all')}
+                  className={`tab ${filter === "all" ? 'active' : ''}`}
+                  onClick={() => setFilter('all')}
                 >
                   All
                 </button>
