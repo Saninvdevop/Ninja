@@ -19,7 +19,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import debounce from 'lodash.debounce'; // Install lodash.debounce
+import _ from 'lodash'; // Import lodash for debouncing
 
 const AllocationModalProjects = ({
   open,
@@ -38,6 +38,7 @@ const AllocationModalProjects = ({
     projectId: '',
     status: '',
     allocationPercent: '',
+    allocationPercentDropdown: '',
     billingType: '',
     billedCheck: '',
     billingRate: '',
@@ -46,13 +47,16 @@ const AllocationModalProjects = ({
     endDate: '',
   });
 
+  const [employeeOptions, setEmployeeOptions] = useState([]);
+  const [employeeNameLoading, setEmployeeNameLoading] = useState(false);
+  const [employeeIdLoading, setEmployeeIdLoading] = useState(false);
+
   const [error, setError] = useState(null);
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
   const [timeSheetApprovers, setTimeSheetApprovers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
-  const [remainingAllocation, setRemainingAllocation] = useState(100);
   const [fetchedRemainingAllocation, setFetchedRemainingAllocation] = useState(100);
   const [originalAllocationPercent, setOriginalAllocationPercent] = useState(0);
   const [billingEnabled, setBillingEnabled] = useState('no');
@@ -62,82 +66,61 @@ const AllocationModalProjects = ({
   const [isEndDateDisabled, setIsEndDateDisabled] = useState(true);
   const [minEndDate, setMinEndDate] = useState('');
 
-  // Employee Options State
-  const [employeeNameOptions, setEmployeeNameOptions] = useState([]);
-  const [employeeIdOptions, setEmployeeIdOptions] = useState([]);
-  const [employeeSearchLoading, setEmployeeSearchLoading] = useState(false);
-  const [employeeSearchError, setEmployeeSearchError] = useState(null);
+  const [totalAllocation, setTotalAllocation] = useState(0);
+  const [remainingAllocation, setRemainingAllocation] = useState(100);
+  const [currentAllocation, setCurrentAllocation] = useState(0);
 
-  // Debounced function to fetch employees based on search query
-  const fetchEmployees = useCallback(debounce(async (query) => {
-    if (!query) {
-      setEmployeeNameOptions([]);
-      setEmployeeIdOptions([]);
-      return;
+  useEffect(() => {
+    const fetchEmployeesInitial = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/employees/search?query=');
+        setEmployeeOptions(response.data.employees.map(emp => ({
+          key: emp.EmployeeId,
+          text: `${emp.EmployeeName} (${emp.EmployeeId})`,
+          value: emp.EmployeeId,
+          name: emp.EmployeeName,
+        })));
+      } catch (err) {
+        console.error('Error fetching employees:', err);
+      }
+    };
+    if (open) {
+      fetchEmployeesInitial();
     }
-    setEmployeeSearchLoading(true);
-    setEmployeeSearchError(null);
-    try {
-      const response = await axios.get('http://localhost:8080/employees/search', {
-        params: { query },
-      });
-      const employees = response.data.employees; // Assume the API returns { employees: [...] }
-      const optionsName = employees.map(emp => ({
-        key: emp.EmployeeID, // Corrected to EmployeeID
-        text: emp.EmployeeName,
-        value: emp.EmployeeID, // Use EmployeeID as value
-      }));
-      const optionsId = employees.map(emp => ({
-        key: emp.EmployeeID,
-        text: emp.EmployeeID,
-        value: emp.EmployeeID,
-      }));
-      setEmployeeNameOptions(optionsName);
-      setEmployeeIdOptions(optionsId);
-    } catch (err) {
-      console.error('Error fetching employees:', err);
-      setEmployeeSearchError('Failed to load employees.');
-    } finally {
-      setEmployeeSearchLoading(false);
-    }
-  }, 500), []); // 500ms debounce
+  }, [open]);
 
-  // Handle employee name selection
-  const handleEmployeeNameSelect = (e, { value }) => {
-    const selectedEmployee = employeeNameOptions.find(option => option.value === value);
-    if (selectedEmployee) {
-      setFormData(prev => ({
-        ...prev,
-        employeeName: selectedEmployee.text,
-        employeeId: selectedEmployee.value,
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        employeeName: '',
-        employeeId: '',
-      }));
-    }
-  };
+  useEffect(() => {
+    const fetchTotalAllocation = async () => {
+      if (!formData.employeeId || !formData.startDate || !formData.endDate) return;
+      try {
+        const response = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`, {
+          params: {
+            startDate: formData.startDate,
+            endDate: formData.endDate
+          }
+        });
+        const newTotalAllocation = 100 - response.data.remainingAllocation;
+        setTotalAllocation(newTotalAllocation);
+        setRemainingAllocation(response.data.remainingAllocation);
 
-  // Handle employee ID selection
-  const handleEmployeeIdSelect = (e, { value }) => {
-    const selectedEmployee = employeeIdOptions.find(option => option.value === value);
-    if (selectedEmployee) {
-      const employeeNameOption = employeeNameOptions.find(opt => opt.value === value);
-      setFormData(prev => ({
-        ...prev,
-        employeeName: employeeNameOption ? employeeNameOption.text : '',
-        employeeId: selectedEmployee.value,
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        employeeName: '',
-        employeeId: '',
-      }));
+        // If editing an existing allocation, set the current allocation
+        if (allocationData) {
+          const existingAllocation = allocationData.AllocationPercent || 0;
+          setCurrentAllocation(existingAllocation);
+          setFormData(prev => ({
+            ...prev,
+            allocationPercent: existingAllocation.toString(),
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching total allocation:', err);
+        setError('Failed to compute total allocation.');
+      }
+    };
+    if (open) {
+      fetchTotalAllocation();
     }
-  };
+  }, [open, formData.employeeId, formData.startDate, formData.endDate, allocationData]);
 
   // Fetch clients, projects, and timeSheetApprovers when the modal opens
   useEffect(() => {
@@ -163,51 +146,42 @@ const AllocationModalProjects = ({
     }
   }, [open]);
 
-  // Fetch remaining allocation from the new API endpoint when employeeId changes along with dates
+  // Fetch remaining allocation when employeeData or allocationData changes
   useEffect(() => {
-    const fetchFormData = async () => {
-      const { employeeId, startDate, endDate } = formData;
-
-      if (!employeeId || !startDate || !endDate) {
-        setFetchedRemainingAllocation(100);
-        setAllocation(0);
-        return;
-      }
+    const fetchRemainingAllocation = async () => {
+      if (!formData.employeeId || !formData.startDate || !formData.endDate) return;
 
       try {
-        const response = await axios.get('http://localhost:8080/project-allocate/form/data', {
+        const response = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`, {
           params: {
-            employeeId,
-            startDate,
-            endDate,
-          },
+            startDate: formData.startDate,
+            endDate: formData.endDate
+          }
         });
-
-        const { allocationData } = response.data;
-
-        setFetchedRemainingAllocation(allocationData.unallocated);
-        setAllocation(allocationData.allocated);
+        setFetchedRemainingAllocation(response.data.remainingAllocation);
+        setAllocation(100 - response.data.remainingAllocation); // Update allocation for the donut chart
       } catch (err) {
-        console.error('Error fetching form data:', err);
-        setError(err.response?.data?.message || 'Failed to fetch allocation data.');
-        setFetchedRemainingAllocation(100);
-        setAllocation(0);
+        console.error('Error fetching remaining allocation:', err);
+        setError('Failed to compute remaining allocation.');
       }
     };
 
-    fetchFormData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.employeeId, formData.startDate, formData.endDate]);
+    if (open && formData.employeeId && formData.startDate && formData.endDate) {
+      fetchRemainingAllocation();
+    }
+  }, [open, formData.employeeId, formData.startDate, formData.endDate]);
 
   // Update formData when allocationData, employeeData, or clientProjectData changes
   useEffect(() => {
     if (allocationData) {
       setFormData({
-        employeeName: allocationData.EmployeeName || '',
-        employeeId: allocationData.EmployeeID || '', // Corrected case
+        // Use employeeData for Employee Name and ID
+        employeeName: employeeData ? employeeData.EmployeeName : '',
+        employeeId: employeeData ? employeeData.EmployeeId : '',
         clientId: allocationData.ClientID || '',
         projectId: allocationData.ProjectID || '',
         status: allocationData.AllocationStatus || '',
+        allocationPercentDropdown: allocationData.allocationPercentDropdown ? allocationData.allocationPercentDropdown.toString() : '',
         allocationPercent: allocationData.AllocationPercent ? allocationData.AllocationPercent.toString() : '',
         billingType: allocationData.AllocationBillingType || '',
         billedCheck: allocationData.AllocationBilledCheck || '',
@@ -228,10 +202,11 @@ const AllocationModalProjects = ({
       // Reset form for adding new allocation
       setFormData({
         employeeName: employeeData ? employeeData.EmployeeName : '',
-        employeeId: employeeData ? employeeData.EmployeeID : '', // Corrected case
+        employeeId: employeeData ? employeeData.EmployeeId : '',
         clientId: clientProjectData ? clientProjectData.clientId : '',
         projectId: clientProjectData ? clientProjectData.projectId : '',
         status: '',
+        allocationPercentDropdown: '',
         allocationPercent: '',
         billingType: '',
         billedCheck: '',
@@ -256,7 +231,7 @@ const AllocationModalProjects = ({
       // Reset form when modal is closed
       setFormData({
         employeeName: employeeData ? employeeData.EmployeeName : '',
-        employeeId: employeeData ? employeeData.EmployeeID : '', // Corrected case
+        employeeId: employeeData ? employeeData.EmployeeId : '',
         clientId: clientProjectData ? clientProjectData.clientId : '',
         projectId: clientProjectData ? clientProjectData.projectId : '',
         status: '',
@@ -277,9 +252,7 @@ const AllocationModalProjects = ({
       setAllocation(0);
       setIsEndDateDisabled(true);
       setMinEndDate('');
-      setEmployeeNameOptions([]);
-      setEmployeeIdOptions([]);
-      setEmployeeSearchError(null);
+      setEmployeeOptions([]);
     }
   }, [open, employeeData, clientProjectData, allocationData]);
 
@@ -289,10 +262,10 @@ const AllocationModalProjects = ({
     const currentAllocationPercent = parseInt(formData.allocationPercent, 10) || 0;
 
     if (allocationData) {
-      // If editing, subtract the current allocation percent from total allocation
+      // Editing existing allocation
       newRemaining = fetchedRemainingAllocation + (originalAllocationPercent || 0) - currentAllocationPercent;
     } else {
-      // If adding new allocation
+      // Adding new allocation
       newRemaining = fetchedRemainingAllocation - currentAllocationPercent;
     }
 
@@ -309,12 +282,148 @@ const AllocationModalProjects = ({
     return startA <= endB && startB <= endA;
   };
 
+
+
+  // Auto-populate Employee Name when Employee ID is entered and vice versa
+  useEffect(() => {
+    const fetchEmployeeDetails = async () => {
+      try {
+        let response;
+        if (formData.employeeId && !formData.employeeName) {
+          response = await axios.get(`http://localhost:8080/employees/${formData.employeeId}`);
+          setFormData(prev => ({
+            ...prev,
+            employeeName: response.data.employeeName || '',
+          }));
+        } else if (formData.employeeName && !formData.employeeId) {
+          response = await axios.get(`http://localhost:8080/employees/search?query=${formData.employeeName}`);
+          setFormData(prev => ({
+            ...prev,
+            employeeId: response.data.employeeId || '',
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching employee details:', err);
+        setError('Invalid Employee ID or Name.');
+      }
+    };
+
+    if (formData.employeeId || formData.employeeName) {
+      fetchEmployeeDetails();
+    }
+  }, [formData.employeeId, formData.employeeName]);
+
+  // Debounced function to fetch employees based on search query
+  const fetchEmployees = useCallback(_.debounce(async (query, type) => {
+    if (!query) {
+      if (type === 'name') {
+        setEmployeeOptions([]);
+      }
+      return;
+    }
+
+    try {
+      const response = await axios.get('http://localhost:8080/employees/search', {
+        params: { query }
+      });
+      const options = response.data.employees.map(emp => ({
+        key: emp.EmployeeId,
+        text: `${emp.EmployeeName} (${emp.EmployeeId})`,
+        value: emp.EmployeeId,
+        name: emp.EmployeeName,
+      }));
+      if (type === 'name') {
+        setEmployeeOptions(options);
+        setEmployeeNameLoading(false);
+      } else if (type === 'id') {
+        setEmployeeOptions(options);
+        setEmployeeIdLoading(false);
+      }
+    } catch (err) {
+      console.error('Error fetching employees:', err);
+      if (type === 'name') {
+        setEmployeeNameLoading(false);
+      } else if (type === 'id') {
+        setEmployeeIdLoading(false);
+      }
+    }
+  }, 500), []); // 500ms debounce
+
+  // Handle search change for Employee Name Dropdown
+  const handleEmployeeNameSearchChange = (e, { searchQuery }) => {
+    setEmployeeNameLoading(true);
+    fetchEmployees(searchQuery, 'name');
+  };
+
+  // Handle search change for Employee ID Dropdown
+  const handleEmployeeIdSearchChange = (e, { searchQuery }) => {
+    setEmployeeIdLoading(true);
+    fetchEmployees(searchQuery, 'id');
+  };
+
+  // Handle selection of Employee Name
+  const handleEmployeeNameChange = (e, { value, options }) => {
+    const selectedEmployee = options.find(option => option.value === value);
+    if (selectedEmployee) {
+      setFormData(prev => ({
+        ...prev,
+        employeeName: selectedEmployee.name,
+        employeeId: selectedEmployee.value,
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        employeeName: '',
+        employeeId: '',
+      }));
+    }
+    setError(null);
+  };
+
+  // Handle selection of Employee ID
+  const handleEmployeeIdChange = (e, { value, options }) => {
+    const selectedEmployee = options.find(option => option.value === value);
+    if (selectedEmployee) {
+      setFormData(prev => ({
+        ...prev,
+        employeeId: selectedEmployee.value,
+        employeeName: selectedEmployee.name,
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        employeeId: '',
+        employeeName: '',
+      }));
+    }
+    setError(null);
+  };
+
+
   // Handle form field changes
   const handleChange = (e, { name, value }) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    if (name === 'allocationPercent') {
+      const newAllocationPercent = parseInt(value, 10) || 0;
+      setCurrentAllocation(newAllocationPercent);
+    }
+
+    // If allocationPercentDropdown changes, update allocationPercent as well
+    if (name === 'allocationPercentDropdown') {
+      setFormData((prev) => ({
+        ...prev,
+        allocationPercent: value,
+      }));
+      setAllocation(parseInt(value, 10) || 0);
+    }
+
+    if (name === 'billedCheck') {
+      handleBillingChange(e, { value });
+    }
 
     // If project is changed, update the Time Sheet Approver and Client ID
     if (name === 'projectId') {
@@ -376,7 +485,7 @@ const AllocationModalProjects = ({
       status,
       allocationPercent,
       billingType,
-      billedCheck,
+      billedCheck, // Although we're removing billed check logic, keeping it for form validation if necessary
       billingRate,
       timeSheetApprover,
       startDate,
@@ -388,8 +497,8 @@ const AllocationModalProjects = ({
       !status ||
       allocationPercent === '' ||
       !billingType ||
-      !billedCheck ||
-      !billingRate || // Billing Rate is always required
+      !billedCheck || // Keeping billedCheck as required since it's still part of the form
+      !billingRate || // Billing Rate is always required now
       !timeSheetApprover ||
       !startDate ||
       !endDate // Ensure endDate is always required
@@ -423,14 +532,21 @@ const AllocationModalProjects = ({
       }
       return;
     }
+    if (!formData.employeeId || !formData.employeeName) {
+      setError('Employee Name and Employee ID are required.');
+      return;
+    }
+
+    // Validate Billing Rate only if Billed? is Yes
+    if (formData.billedCheck === 'Yes' && (!formData.billingRate || isNaN(formData.billingRate) || formData.billingRate <= 0)) {
+      setError('Billing rate must be a positive number when billed.');
+      return;
+    }
+
 
     try {
       // Check for overlapping allocations
-      const overlapResponse = await axios.get(`http://localhost:8080/employee-details/${formData.employeeId}/allocations`, {
-        params: {
-          filter: 'active', // Assuming 'active' filter to get current allocations
-        }
-      });
+      const overlapResponse = await axios.get(`http://localhost:8080/employee-details/${formData.employeeId}/allocations`);
       const allocationsList = overlapResponse.data.allocations;
 
       const hasOverlap = allocationsList.some(alloc => {
@@ -496,15 +612,17 @@ const AllocationModalProjects = ({
         ClientID: formData.clientId,
         ProjectID: formData.projectId,
         AllocationStatus: formData.status,
+        AllocationPercentDropdown: parseInt(formData.allocationPercentDropdown, 10),
         AllocationPercent: parseInt(formData.allocationPercent, 10),
         AllocationStartDate: formData.startDate,
         AllocationEndDate: formData.endDate || null,
         AllocationTimeSheetApprover: formData.timeSheetApprover,
         AllocationBillingType: formData.billingType,
         AllocationBilledCheck: formData.billedCheck,
-        AllocationBillingRate: parseFloat(formData.billingRate), // Always include billing rate
-        ModifiedBy: 'Admin', // Adjust as needed or pass as a prop
+        AllocationBillingRate: formData.billedCheck === 'Yes' ? parseFloat(formData.billingRate) : 0.00, // Ensure it's 0.00 if No
+        ModifiedBy: 'Admin',
       };
+      
       if (allocationData && allocationData.AllocationID) {
         // Editing existing allocation
         await axios.put(`http://localhost:8080/allocations/${allocationData.AllocationID}`, payload);
@@ -538,6 +656,13 @@ const AllocationModalProjects = ({
       }));
   };
 
+  const AllocationPercentOptions = [
+    { key: 0, text: '0%', value: '0' },
+    { key: 25, text: '25%', value: '25' },
+    { key: 50, text: '50%', value: '50' },
+    { key: 75, text: '75%', value: '75' },
+    { key: 100, text: '100%', value: '100' },
+  ];
   // Helper function to get Time Sheet Approver options
   const getTimeSheetApproverOptions = () => {
     const staticOptions = [
@@ -569,6 +694,17 @@ const AllocationModalProjects = ({
     return uniqueOptions;
   };
 
+  // Handle Billing Radio Change
+const handleBillingChange = (e, { value }) => {
+  setFormData((prev) => ({
+    ...prev,
+    billedCheck: value,
+    billingRate: value === 'Yes' ? prev.billingRate || '0.00' : '0.00', // Default to 0.00 if No is selected
+  }));
+};
+
+
+
   return (
     <Modal open={open} onClose={onClose} size="large" closeIcon>
       <Modal.Header>
@@ -582,50 +718,14 @@ const AllocationModalProjects = ({
             <Message.Header>Error</Message.Header>
             <p>{fetchError}</p>
           </Message>
+          
         ) : (
-          <Grid stackable divided>
+          <>
+            <Grid stackable divided>
             <Grid.Row>
-              <Grid.Column width={16}>
+              <Grid.Column width={10}>
                 <Form>
                   <Form.Group widths="equal">
-                    {/* **Project Name Dropdown Comes Before Client Name** */}
-                    <Form.Field required>
-                      <label>Project Name</label>
-                      <Dropdown
-                        placeholder="Select Project"
-                        fluid
-                        selection
-                        options={projects.map(project => ({
-                          key: project.ProjectID,
-                          text: project.ProjectName,
-                          value: project.ProjectID,
-                        }))}
-                        name="projectId"
-                        value={formData.projectId}
-                        onChange={handleChange}
-                        clearable={!clientProjectData}
-                        upward={false}
-                      />
-                    </Form.Field>
-                    <Form.Field required>
-                      <label>Client Name</label>
-                      <Dropdown
-                        placeholder="Select Client"
-                        fluid
-                        selection
-                        options={clients.map(client => ({
-                          key: client.ClientID,
-                          text: client.ClientName,
-                          value: client.ClientID,
-                        }))}
-                        name="clientId"
-                        value={formData.clientId}
-                        onChange={handleChange}
-                        clearable={!clientProjectData && !formData.projectId} // Allow clearing only if projectId is not set
-                        disabled={!!formData.projectId || !!clientProjectData} // Disable if projectId is set or clientProjectData is provided
-                        upward={false}
-                      />
-                    </Form.Field>
                     <Form.Field required>
                       <label>Start Date</label>
                       <Input
@@ -647,7 +747,7 @@ const AllocationModalProjects = ({
                           }
                         }}
                         min="2020-01-01"
-                        max="9999-12-31"
+                        max="2030-12-31"
                       />
                     </Form.Field>
                     <Form.Field required>
@@ -663,136 +763,179 @@ const AllocationModalProjects = ({
                       />
                     </Form.Field>
                   </Form.Group>
+
                   <Form.Group widths="equal">
+                    {/* Employee Name Dropdown */}
                     <Form.Field required>
-                      <label>Status</label>
-                      <Dropdown
-                        placeholder="Set Status"
-                        fluid
-                        selection
-                        options={[
-                          { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
-                          { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
-                          { key: 'allocated', text: 'Allocated', value: 'Allocated' },
-                          { key: 'closed', text: 'Closed', value: 'Closed' },
-                        ]}
-                        name="status"
-                        value={formData.status}
-                        onChange={handleChange}
-                        clearable
-                        upward={false}
-                      />
-                    </Form.Field>
-                    <Form.Field required>
-                      <label>Time Sheet Approver</label>
-                      <Dropdown
-                        placeholder="Select Approver"
-                        fluid
-                        selection
-                        options={getTimeSheetApproverOptions()}
-                        name="timeSheetApprover"
-                        value={formData.timeSheetApprover}
-                        onChange={handleChange}
-                        clearable
-                        upward={false}
-                      />
-                    </Form.Field>                
+                        <label>Employee Name</label>
+                        <Dropdown
+                          placeholder="Select Employee Name"
+                          fluid
+                          search
+                          selection
+                          options={employeeOptions}
+                          onSearchChange={handleEmployeeNameSearchChange}
+                          onChange={handleEmployeeNameChange}
+                          loading={employeeNameLoading}
+                          value={formData.employeeId}
+                          selectOnBlur={false}
+                          noResultsMessage="No employees found."
+                          allowAdditions={false}
+                        />
+                      </Form.Field>
+
+                      {/* Employee ID Dropdown */}
+                      <Form.Field required>
+                        <label>Employee ID</label>
+                        <Dropdown
+                          placeholder="Select Employee ID"
+                          fluid
+                          search
+                          selection
+                          options={employeeOptions.map(option => ({
+                            key: option.value,
+                            text: option.value,
+                            value: option.value,
+                            name: option.name,
+                          }))}
+                          onSearchChange={handleEmployeeIdSearchChange}
+                          onChange={handleEmployeeIdChange}
+                          loading={employeeIdLoading}
+                          value={formData.employeeId}
+                          selectOnBlur={false}
+                          noResultsMessage="No employees found."
+                          allowAdditions={false}
+                        />
+                      </Form.Field>
+
                   </Form.Group>
+                  <Form.Field required>
+                    <label>Time Sheet Approver</label>
+                    <Dropdown
+                      placeholder="Select Approver"
+                      fluid
+                      selection
+                      options={getTimeSheetApproverOptions()}
+                      name="timeSheetApprover"
+                      value={formData.timeSheetApprover}
+                      onChange={handleChange}
+                      clearable
+                      upward={true}
+                    />
+                  </Form.Field>
                 </Form>
+                {error && (
+                  <Message negative>
+                    <Message.Header>Error</Message.Header>
+                    <p>{error}</p>
+                  </Message>
+                )}
+              </Grid.Column>
+              <Grid.Column width={6}>
+                <Segment>
+                  <Header as='h4' dividing>
+                    Allocation %
+                  </Header>
+                  <div style={{ width: 150, height: 150, margin: '0 auto' }}>
+                  <CircularProgressbar 
+                    value={totalAllocation} 
+                    text={`${totalAllocation}%`} 
+                    styles={buildStyles({
+                      textSize: '16px',
+                      pathColor: '#3b82f6',
+                      textColor: '#333',
+                      trailColor: '#e2e8f0',
+                    })}
+                  />
+                  </div>
+                </Segment>
               </Grid.Column>
             </Grid.Row>
             <Grid.Row>
-              <Grid.Column width={10}>
-                <Form>
-                  <Form.Group widths="equal">
-                    {/* Employee Fields */}
-                    {allocationData ? (
-                      <>
-                        <Form.Field required>
-                          <label>Employee Name</label>
-                          <Input
-                            readOnly
-                            value={formData.employeeName}
-                            placeholder="Employee Name"
-                          />
-                        </Form.Field>
-                        <Form.Field required>
-                          <label>Employee ID</label>
-                          <Input
-                            readOnly
-                            value={formData.employeeId}
-                            placeholder="Employee ID"
-                          />
-                        </Form.Field>
-                      </>
-                    ) : (
-                      <>
-                        {/* Separate Employee Name Dropdown */}
-                        <Form.Field required>
-                          <label>Employee Name</label>
-                          <Dropdown
-                            placeholder="Search Employee by Name"
-                            fluid
-                            search
-                            selection
-                            loading={employeeSearchLoading}
-                            options={employeeNameOptions}
-                            onSearchChange={(e, data) => fetchEmployees(data.searchQuery)}
-                            onChange={handleEmployeeNameSelect}
-                            value={formData.employeeId ? formData.employeeId : ''} // EmployeeID is the value
-                            noResultsMessage={employeeSearchError || 'No employees found.'}
-                            clearable
-                            upward={true}
-                          />
-                        </Form.Field>
-
-                        {/* Separate Employee ID Dropdown */}
-                        <Form.Field required>
-                          <label>Employee ID</label>
-                          <Dropdown
-                            placeholder="Search Employee by ID"
-                            fluid
-                            search
-                            selection
-                            loading={employeeSearchLoading}
-                            options={employeeIdOptions}
-                            onSearchChange={(e, data) => fetchEmployees(data.searchQuery)}
-                            onChange={handleEmployeeIdSelect}
-                            value={formData.employeeId}
-                            noResultsMessage={employeeSearchError || 'No employees found.'}
-                            clearable
-                            upward={true}
-                          />
-                        </Form.Field>
-                      </>
-                    )}
-
-                    <Form.Field required>
-                      <label>Allocation %</label>
-                      <Dropdown
-                        placeholder="Select Allocation Percentage"
-                        fluid
-                        selection
-                        options={[
-                          { key: 0, text: '0%', value: 0 },
-                          { key: 25, text: '25%', value: 25 },
-                          { key: 50, text: '50%', value: 50 },
-                          { key: 75, text: '75%', value: 75 },
-                          { key: 100, text: '100%', value: 100 },
-                        ].filter(option => option.value <= remainingAllocation)}
-                        name="allocationPercent"
-                        value={formData.allocationPercent}
-                        onChange={handleChange}
-                        upward={true}
-                        clearable
-                      />
-                      <div style={{ marginTop: '5px', color: 'gray', fontSize: '12px' }}>
-                        Remaining Allocation: {remainingAllocation}%
-                      </div>
-                    </Form.Field>
-                  </Form.Group>
-                  <Form.Group widths="equal">
-                    <Form.Field required>
+              <Grid.Column width={16}>
+              <Form>
+                <Form.Group widths="equal">
+                  {/* **Project Name Dropdown Comes Before Client Name** */}
+                  <Form.Field required>
+                    <label>Project Name</label>
+                    <Dropdown
+                      placeholder="Select Project"
+                      fluid
+                      selection
+                      options={projects.map(project => ({
+                        key: project.ProjectID,
+                        text: project.ProjectName,
+                        value: project.ProjectID,
+                      }))}
+                      name="projectId"
+                      value={formData.projectId}
+                      onChange={handleChange}
+                      clearable={!clientProjectData}
+                      upward={true}
+                    />
+                  </Form.Field>
+                  <Form.Field required>
+                    <label>Client Name</label>
+                    <Dropdown
+                      placeholder="Select Client"
+                      fluid
+                      selection
+                      options={clients.map(client => ({
+                        key: client.ClientID,
+                        text: client.ClientName,
+                        value: client.ClientID,
+                      }))}
+                      name="clientId"
+                      value={formData.clientId}
+                      onChange={handleChange}
+                      clearable={!clientProjectData && !formData.projectId} // Allow clearing only if projectId is not set
+                      disabled={!!formData.projectId || !!clientProjectData} // Disable if projectId is set or clientProjectData is provided
+                      upward={true}
+                    />
+                  </Form.Field>
+                  <Form.Field required>
+                    <label>Allocation %</label>
+                    <Dropdown
+                      placeholder="Select Allocation %"
+                      fluid
+                      selection
+                      options={AllocationPercentOptions.filter(option => 
+                        parseInt(option.value, 10) <= (remainingAllocation + currentAllocation)
+                      )}
+                      name="allocationPercent"
+                      value={formData.allocationPercent}
+                      onChange={handleChange}
+                      upward={true}
+                      clearable
+                    />
+                    <div style={{ marginTop: '5px', color: 'gray', fontSize: '12px' }}>
+                      Remaining Allocation: {remainingAllocation + currentAllocation}%
+                    </div>
+                  </Form.Field>
+                  <Form.Field required>
+                    <label>Status</label>
+                    <Dropdown
+                      placeholder="Set Status"
+                      fluid
+                      selection
+                      options={[
+                        { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
+                        { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
+                        { key: 'allocated', text: 'Allocated', value: 'Allocated' },
+                        { key: 'closed', text: 'Closed', value: 'Closed' },
+                      ]}
+                      name="status"
+                      value={formData.status}
+                      onChange={handleChange}
+                      clearable
+                      upward={true}
+                    />
+                  </Form.Field>
+                  
+                </Form.Group>
+                <Form.Group widths="equal">
+                  
+                  <Form.Field required>
                       <label>Billing Type</label>
                       <Dropdown
                         placeholder="Select Billing Type"
@@ -809,6 +952,7 @@ const AllocationModalProjects = ({
                         clearable
                       />
                     </Form.Field>
+
                     <Form.Field required>
                       <label>Billed?</label>
                       <Dropdown
@@ -821,17 +965,12 @@ const AllocationModalProjects = ({
                         ]}
                         name="billedCheck"
                         value={formData.billedCheck}
-                        onChange={(e, { value }) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            billedCheck: value,
-                          }));
-                        }}
+                        onChange={handleChange}
                         clearable
                         upward={true}
                       />
                     </Form.Field>
-                    {/* Always show Billing Rate */}
+                    {/* Always show Billing Rate field */}
                     <Form.Field required>
                       <label>Billing Rate (USD)</label>
                       <Input
@@ -846,7 +985,7 @@ const AllocationModalProjects = ({
                         max={999}
                         step="0.01"
                         iconPosition="left"
-                        // Prevent entering more than 2 decimal places
+                        disabled={formData.billedCheck === 'No'} // Disable if Billed? is No
                         onKeyDown={(e) => {
                           const currentLength = e.target.value.length;
                           if (currentLength >= 10 && e.key !== 'Backspace' && e.key !== 'Delete') {
@@ -855,36 +994,12 @@ const AllocationModalProjects = ({
                         }}
                       />
                     </Form.Field>
-                  </Form.Group>           
-                </Form>
-                {error && (
-                  <Message negative>
-                    <Message.Header>Error</Message.Header>
-                    <p>{error}</p>
-                  </Message>
-                )}
-              </Grid.Column>
-              <Grid.Column width={6}>
-                <Segment>
-                  <Header as='h4' dividing>
-                    Allocation %
-                  </Header>
-                  <div style={{ width: 100, height: 100, margin: '0 auto' }}>
-                    <CircularProgressbar 
-                      value={allocation} 
-                      text={`${allocation}%`} 
-                      styles={buildStyles({
-                        textSize: '16px',
-                        pathColor: '#3b82f6',
-                        textColor: '#333',
-                        trailColor: '#e2e8f0',
-                      })}
-                    />
-                  </div>
-                </Segment>
+                </Form.Group>
+              </Form>
               </Grid.Column>
             </Grid.Row>
           </Grid>
+          </>
         )}
       </Modal.Content>
       <Modal.Actions>
@@ -908,7 +1023,7 @@ AllocationModalProjects.propTypes = {
   onSave: PropTypes.func.isRequired,
   employeeData: PropTypes.shape({
     EmployeeName: PropTypes.string,
-    EmployeeID: PropTypes.string,
+    EmployeeId: PropTypes.string,
   }), // Optional: Object containing EmployeeName and EmployeeID
   clientProjectData: PropTypes.shape({
     clientId: PropTypes.number,
@@ -916,11 +1031,10 @@ AllocationModalProjects.propTypes = {
   }), // Optional: Object containing ClientID and ProjectID
   allocationData: PropTypes.shape({
     AllocationID: PropTypes.number,
-    EmployeeName: PropTypes.string,
-    EmployeeID: PropTypes.string,
     ClientID: PropTypes.number,
     ProjectID: PropTypes.number,
     AllocationStatus: PropTypes.string,
+    allocationPercentDropdown: PropTypes.number,
     AllocationPercent: PropTypes.number,
     AllocationStartDate: PropTypes.string,
     AllocationEndDate: PropTypes.string,
