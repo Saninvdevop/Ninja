@@ -52,7 +52,6 @@ const AllocationModal = ({
   const [timeSheetApprovers, setTimeSheetApprovers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
-  const [remainingAllocation, setRemainingAllocation] = useState(100);
   const [fetchedRemainingAllocation, setFetchedRemainingAllocation] = useState(100);
   const [originalAllocationPercent, setOriginalAllocationPercent] = useState(0);
   const [billingEnabled, setBillingEnabled] = useState('no');
@@ -62,6 +61,44 @@ const AllocationModal = ({
   const [isEndDateDisabled, setIsEndDateDisabled] = useState(true);
   const [minEndDate, setMinEndDate] = useState('');
 
+  const [totalAllocation, setTotalAllocation] = useState(0);
+  const [remainingAllocation, setRemainingAllocation] = useState(100);
+  const [currentAllocation, setCurrentAllocation] = useState(0);
+
+  useEffect(() => {
+    const fetchTotalAllocation = async () => {
+      if (!formData.employeeId || !formData.startDate || !formData.endDate) return;
+
+      try {
+        const response = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`, {
+          params: {
+            startDate: formData.startDate,
+            endDate: formData.endDate
+          }
+        });
+        const newTotalAllocation = 100 - response.data.remainingAllocation;
+        setTotalAllocation(newTotalAllocation);
+        setRemainingAllocation(response.data.remainingAllocation);
+
+        // If editing an existing allocation, set the current allocation
+        if (allocationData) {
+          const existingAllocation = allocationData.AllocationPercent || 0;
+          setCurrentAllocation(existingAllocation);
+          setFormData(prev => ({
+            ...prev,
+            allocationPercent: existingAllocation.toString(),
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching total allocation:', err);
+        setError('Failed to compute total allocation.');
+      }
+    };
+
+    if (open) {
+      fetchTotalAllocation();
+    }
+  }, [open, formData.employeeId, formData.startDate, formData.endDate, allocationData]);
 
   // Fetch clients, projects, and timeSheetApprovers when the modal opens
   useEffect(() => {
@@ -275,7 +312,10 @@ const AllocationModal = ({
       [name]: value,
     }));
 
-
+    if (name === 'allocationPercent') {
+      const newAllocationPercent = parseInt(value, 10) || 0;
+      setCurrentAllocation(newAllocationPercent);
+    }
 
     // If allocationPercentDropdown changes, update allocationPercent as well
     if (name === 'allocationPercentDropdown') {
@@ -518,12 +558,12 @@ const AllocationModal = ({
   };
 
   const AllocationPercentOptions = [
-    { key: 0, text: '0%', value: 0 },
-    { key: 25, text: '25%', value: 25 },
-    { key: 50, text: '50%', value: 50 },
-    { key: 75, text: '75%', value: 75 },
-    { key: 100, text: '100%', value: 100 },
-  ]
+    { key: 0, text: '0%', value: '0' },
+    { key: 25, text: '25%', value: '25' },
+    { key: 50, text: '50%', value: '50' },
+    { key: 75, text: '75%', value: '75' },
+    { key: 100, text: '100%', value: '100' },
+  ];
   // Helper function to get Time Sheet Approver options
   const getTimeSheetApproverOptions = () => {
     const staticOptions = [
@@ -672,16 +712,16 @@ const handleBillingChange = (e, { value }) => {
                     Allocation %
                   </Header>
                   <div style={{ width: 150, height: 150, margin: '0 auto' }}>
-                    <CircularProgressbar 
-                      value={allocation} 
-                      text={`${allocation}%`} 
-                      styles={buildStyles({
-                        textSize: '16px',
-                        pathColor: '#3b82f6',
-                        textColor: '#333',
-                        trailColor: '#e2e8f0',
-                      })}
-                    />
+                  <CircularProgressbar 
+                    value={totalAllocation} 
+                    text={`${totalAllocation}%`} 
+                    styles={buildStyles({
+                      textSize: '16px',
+                      pathColor: '#3b82f6',
+                      textColor: '#333',
+                      trailColor: '#e2e8f0',
+                    })}
+                  />
                   </div>
                 </Segment>
               </Grid.Column>
@@ -731,18 +771,20 @@ const handleBillingChange = (e, { value }) => {
                   <Form.Field required>
                     <label>Allocation %</label>
                     <Dropdown
-                      placeholder="0%"
+                      placeholder="Select Allocation %"
                       fluid
                       selection
-                      options={AllocationPercentOptions.filter(option => parseInt(option.value, 10) <= remainingAllocation)}
-                      name="allocationPercentDropdown"
-                      value={formData.allocationPercentDropdown}
+                      options={AllocationPercentOptions.filter(option => 
+                        parseInt(option.value, 10) <= (remainingAllocation + currentAllocation)
+                      )}
+                      name="allocationPercent"
+                      value={formData.allocationPercent}
                       onChange={handleChange}
                       upward={true}
                       clearable
                     />
                     <div style={{ marginTop: '5px', color: 'gray', fontSize: '12px' }}>
-                      Remaining Allocation: {remainingAllocation}%
+                      Remaining Allocation: {remainingAllocation + currentAllocation}%
                     </div>
                   </Form.Field>
                   <Form.Field required>
