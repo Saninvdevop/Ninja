@@ -37,6 +37,7 @@ const AllocationModal = ({
     projectId: '',
     status: '',
     allocationPercent: '',
+    allocationPercentDropdown: '',
     billingType: '',
     billedCheck: '',
     billingRate: '',
@@ -60,6 +61,7 @@ const AllocationModal = ({
   // New States for Date Constraints
   const [isEndDateDisabled, setIsEndDateDisabled] = useState(true);
   const [minEndDate, setMinEndDate] = useState('');
+
 
   // Fetch clients, projects, and timeSheetApprovers when the modal opens
   useEffect(() => {
@@ -120,6 +122,7 @@ const AllocationModal = ({
         clientId: allocationData.ClientID || '',
         projectId: allocationData.ProjectID || '',
         status: allocationData.AllocationStatus || '',
+        allocationPercentDropdown: allocationData.allocationPercentDropdown ? allocationData.allocationPercentDropdown.toString() : '',
         allocationPercent: allocationData.AllocationPercent ? allocationData.AllocationPercent.toString() : '',
         billingType: allocationData.AllocationBillingType || '',
         billedCheck: allocationData.AllocationBilledCheck || '',
@@ -144,6 +147,7 @@ const AllocationModal = ({
         clientId: clientProjectData ? clientProjectData.clientId : '',
         projectId: clientProjectData ? clientProjectData.projectId : '',
         status: '',
+        allocationPercentDropdown: '',
         allocationPercent: '',
         billingType: '',
         billedCheck: '',
@@ -271,6 +275,21 @@ const AllocationModal = ({
       [name]: value,
     }));
 
+
+
+    // If allocationPercentDropdown changes, update allocationPercent as well
+    if (name === 'allocationPercentDropdown') {
+      setFormData((prev) => ({
+        ...prev,
+        allocationPercent: value,
+      }));
+      setAllocation(parseInt(value, 10) || 0);
+    }
+
+    if (name === 'billedCheck') {
+      handleBillingChange(e, { value });
+    }
+
     // If project is changed, update the Time Sheet Approver and Client ID
     if (name === 'projectId') {
       const selectedProject = projects.find(project => project.ProjectID === value);
@@ -379,6 +398,13 @@ const AllocationModal = ({
       return;
     }
 
+    // Validate Billing Rate only if Billed? is Yes
+    if (formData.billedCheck === 'Yes' && (!formData.billingRate || isNaN(formData.billingRate) || formData.billingRate <= 0)) {
+      setError('Billing rate must be a positive number when billed.');
+      return;
+    }
+
+
     try {
       // Check for overlapping allocations
       const overlapResponse = await axios.get(`http://localhost:8080/employee-details/${formData.employeeId}/allocations`);
@@ -447,15 +473,17 @@ const AllocationModal = ({
         ClientID: formData.clientId,
         ProjectID: formData.projectId,
         AllocationStatus: formData.status,
+        AllocationPercentDropdown: parseInt(formData.allocationPercentDropdown, 10),
         AllocationPercent: parseInt(formData.allocationPercent, 10),
         AllocationStartDate: formData.startDate,
         AllocationEndDate: formData.endDate || null,
         AllocationTimeSheetApprover: formData.timeSheetApprover,
         AllocationBillingType: formData.billingType,
         AllocationBilledCheck: formData.billedCheck,
-        AllocationBillingRate: parseFloat(formData.billingRate), // Always include billingRate
-        ModifiedBy: 'Admin', // Adjust as needed or pass as a prop
+        AllocationBillingRate: formData.billedCheck === 'Yes' ? parseFloat(formData.billingRate) : 0.00, // Ensure it's 0.00 if No
+        ModifiedBy: 'Admin',
       };
+      
       if (allocationData && allocationData.AllocationID) {
         // Editing existing allocation
         await axios.put(`http://localhost:8080/allocations/${allocationData.AllocationID}`, payload);
@@ -489,6 +517,13 @@ const AllocationModal = ({
       }));
   };
 
+  const AllocationPercentOptions = [
+    { key: 0, text: '0%', value: 0 },
+    { key: 25, text: '25%', value: 25 },
+    { key: 50, text: '50%', value: 50 },
+    { key: 75, text: '75%', value: 75 },
+    { key: 100, text: '100%', value: 100 },
+  ]
   // Helper function to get Time Sheet Approver options
   const getTimeSheetApproverOptions = () => {
     const staticOptions = [
@@ -521,10 +556,15 @@ const AllocationModal = ({
   };
 
   // Handle Billing Radio Change
-  const handleBillingChange = (e, { value }) => {
-    setBillingEnabled(value);
-    // Removed logic to clear billingRate when 'No' is selected
-  };
+const handleBillingChange = (e, { value }) => {
+  setFormData((prev) => ({
+    ...prev,
+    billedCheck: value,
+    billingRate: value === 'Yes' ? prev.billingRate || '0.00' : '0.00', // Default to 0.00 if No is selected
+  }));
+};
+
+
 
   return (
     <Modal open={open} onClose={onClose} size="large" closeIcon>
@@ -539,8 +579,10 @@ const AllocationModal = ({
             <Message.Header>Error</Message.Header>
             <p>{fetchError}</p>
           </Message>
+          
         ) : (
-          <Grid stackable divided>
+          <>
+            <Grid stackable divided>
             <Grid.Row>
               <Grid.Column width={10}>
                 <Form>
@@ -692,15 +734,9 @@ const AllocationModal = ({
                       placeholder="0%"
                       fluid
                       selection
-                      options={[
-                        { key: 0, text: '0%', value: 0 },
-                        { key: 25, text: '25%', value: 25 },
-                        { key: 50, text: '50%', value: 50 },
-                        { key: 75, text: '75%', value: 75 },
-                        { key: 100, text: '100%', value: 100 },
-                      ].filter(option => option.value <= remainingAllocation)}
-                      name="allocationPercent"
-                      value={formData.allocationPercent}
+                      options={AllocationPercentOptions.filter(option => parseInt(option.value, 10) <= remainingAllocation)}
+                      name="allocationPercentDropdown"
+                      value={formData.allocationPercentDropdown}
                       onChange={handleChange}
                       upward={true}
                       clearable
@@ -782,7 +818,7 @@ const AllocationModal = ({
                         max={999}
                         step="0.01"
                         iconPosition="left"
-                        // Prevent entering more than 2 decimal places
+                        disabled={formData.billedCheck === 'No'} // Disable if Billed? is No
                         onKeyDown={(e) => {
                           const currentLength = e.target.value.length;
                           if (currentLength >= 10 && e.key !== 'Backspace' && e.key !== 'Delete') {
@@ -796,6 +832,7 @@ const AllocationModal = ({
               </Grid.Column>
             </Grid.Row>
           </Grid>
+          </>
         )}
       </Modal.Content>
       <Modal.Actions>
@@ -830,6 +867,7 @@ AllocationModal.propTypes = {
     ClientID: PropTypes.number,
     ProjectID: PropTypes.number,
     AllocationStatus: PropTypes.string,
+    allocationPercentDropdown: PropTypes.number,
     AllocationPercent: PropTypes.number,
     AllocationStartDate: PropTypes.string,
     AllocationEndDate: PropTypes.string,
