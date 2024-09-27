@@ -1,12 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Icon, Input, Button, Message } from 'semantic-ui-react';
+import { Table, Icon, Input, Button, Message, Dropdown } from 'semantic-ui-react';
 import ViewCard from '../components/ViewCards/Viewcard';
 import { useNavigate } from 'react-router-dom';
 import './DashboardBizOps.css';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
 
+// New component for column selection
+const ColumnToggle = ({ columns, visibleColumns, onToggle }) => {
+  return (
+    <Dropdown
+      text='Toggle Columns'
+      icon='columns'
+      floating
+      labeled
+      button
+      className='icon'
+    >
+      <Dropdown.Menu>
+        {columns.map(column => (
+          <Dropdown.Item
+            key={column}
+            onClick={() => onToggle(column)}
+            active={visibleColumns.includes(column)}
+          >
+            {visibleColumns.includes(column) ? '✓ ' : '  '}
+            {column}
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
+  );
+};
+
 const DashboardBizOps = () => {
+  
   const navigate = useNavigate();
 
   // State variables for counts
@@ -29,6 +57,33 @@ const DashboardBizOps = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(10);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
+
+  // New state for visible columns
+  const [visibleColumns, setVisibleColumns] = useState([
+    'AllocationID', 'EmployeeID', 'EmployeeName', 'EmployeeLocation',
+    'ClientName', 'ProjectName', 'AllocationStatus', 'AllocationPercent'
+  ]);
+
+  // All available columns
+  const allColumns = [
+    'AllocationID', 'EmployeeID', 'EmployeeName', 'EmployeeLocation',
+    'EmployeeContractType', 'EmployeeJoiningDate', 'EmployeeEndingDate',
+    'EmployeeStudio', 'EmployeeSubStudio', 'EmployeeRole', 'EmployeeTYOE',
+    'EmployeeKekaStatus', 'ClientID', 'ClientName', 'ClientPartner',
+    'ProjectID', 'ProjectName', 'ProjectManager', 'AllocationStatus',
+    'AllocationPercent', 'AllocationBillingType', 'AllocationBilledCheck',
+    'AllocationBillingRate', 'AllocationTimeSheetApprover', 'AllocationStartDate',
+    'AllocationEndDate', 'ModifiedBy', 'ModifiedAt'
+  ];
+
+  // Function to toggle column visibility
+  const toggleColumn = (column) => {
+    setVisibleColumns(prev =>
+      prev.includes(column)
+        ? prev.filter(col => col !== column)
+        : [...prev, column]
+    );
+  };
 
   // Fetch Counts from Backend
   const fetchCounts = async () => {
@@ -425,6 +480,11 @@ const DashboardBizOps = () => {
               />
             </div>
             <div className='search-download-container'>
+              <ColumnToggle
+                columns={allColumns}
+                visibleColumns={visibleColumns}
+                onToggle={toggleColumn}
+              />
               {/* Search Input */}
               <Input
                 icon="search"
@@ -463,7 +523,7 @@ const DashboardBizOps = () => {
               <>
                 <Table celled striped sortable>
                   <Table.Header>
-                    <Table.Row>
+                    {/* <Table.Row>
                       <Table.HeaderCell onClick={() => handleSort('AllocationID')}>
                         Allocation ID {renderSortIcon('AllocationID')}
                       </Table.HeaderCell>
@@ -548,10 +608,16 @@ const DashboardBizOps = () => {
                       <Table.HeaderCell onClick={() => handleSort('ModifiedAt')}>
                         Modified At {renderSortIcon('ModifiedAt')}
                       </Table.HeaderCell>
-                    </Table.Row>
+                    </Table.Row> */}
+                    <Table.Row>
+                    {visibleColumns.map(column => (
+                      <Table.HeaderCell key={column} onClick={() => handleSort(column)}>
+                        {column} {renderSortIcon(column)}
+                      </Table.HeaderCell>
+                    ))}
+                  </Table.Row>
                   </Table.Header>
-
-                  <Table.Body>
+                  {/* <Table.Body>
                     {currentEmployees.length > 0 ? (
                       currentEmployees.map((employee) => (
                         <Table.Row key={employee.AllocationID}>
@@ -592,7 +658,31 @@ const DashboardBizOps = () => {
                         </Table.Cell>
                       </Table.Row>
                     )}
-                  </Table.Body>
+                  </Table.Body> */}
+                  <Table.Body>
+                  {currentEmployees.length > 0 ? (
+                    currentEmployees.map((employee) => (
+                      <Table.Row key={employee.AllocationID}>
+                        {visibleColumns.map(column => (
+                          <Table.Cell key={column}>
+                            {column === 'AllocationBilledCheck'
+                              ? (employee[column] ? 'Yes' : 'No')
+                              : column === 'ModifiedAt'
+                                ? new Date(employee[column]).toLocaleString()
+                                : employee[column]}
+                          </Table.Cell>
+                        ))}
+                      </Table.Row>
+                    ))
+                  ) : (
+                    <Table.Row>
+                      <Table.Cell colSpan={visibleColumns.length} textAlign="center">
+                        No allocations found matching the criteria.
+                      </Table.Cell>
+                    </Table.Row>
+                  )}
+                </Table.Body>
+
                 </Table>
 
                 {/* Custom Pagination Controls */}
