@@ -30,6 +30,28 @@ const DashboardBizOps = () => {
   const [rowsPerPage] = useState(10);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
 
+  // Fetch Counts from Backend
+  const fetchCounts = async () => {
+    setCountsLoading(true);
+    setCountsError(null);
+
+    try {
+      const response = await axios.get('http://localhost:8080/bizops/card');
+      const data = response.data;
+
+      setTotalEmp(data.totalEmployees);
+      setTodo(data.unallocatedEmployees);
+      setDraft(data.draftEmployees);
+      setActiveProjects(data.activeProjects);
+      setCountsLoading(false);
+    } catch (err) {
+      console.error('Error fetching counts:', err);
+      setCountsError('Failed to fetch counts. Please try again later.');
+      setCountsLoading(false);
+    }
+  };
+
+
   // New state variables for date filters
   const [formData, setFormData] = useState({
     startDate: '',
@@ -47,7 +69,7 @@ const DashboardBizOps = () => {
       ...prev,
       [name]: value
     }));
-
+  
     if (name === 'startDate') {
       if (value) {
         setIsEndDateDisabled(false);
@@ -69,25 +91,42 @@ const DashboardBizOps = () => {
         setFilteredEmployees([]);
       }
     }
-
+  
     if (name === 'endDate' && value) {
-      fetchAllocations(value);
+      // Optional: Validate that endDate is not before startDate
+      if (formData.startDate && value < formData.startDate) {
+        setError('End Date cannot be before Start Date.');
+        return;
+      } else {
+        setError(null);
+        fetchAllocations(value, formData.startDate);
+      }
     }
   };
+  
 
-  // Fetch Allocations from Backend
+  useEffect(() => {
+    const { startDate, endDate } = formData;
+    if (startDate && endDate) {
+      fetchAllocations(endDate, startDate);
+    }
+  }, [formData.startDate, formData.endDate]);
+  
+  
+
+  // Modify the function signature to accept both dates
   const fetchAllocations = async (endDateValue, startDateValue) => {
     setLoading(true);
     setError(null);
-  
+
     try {
       const params = {};
-      if (startDateValue) params.startDate = startDateValue; // Use the provided startDate
-      if (endDateValue) params.endDate = endDateValue; // Use the provided endDate
-  
+      if (startDateValue) params.startDate = startDateValue;
+      if (endDateValue) params.endDate = endDateValue;
+
       const response = await axios.get('http://localhost:8080/master-allocations', { params });
       const data = response.data.masterAllocations;
-  
+
       setAllocatedEmployees(data);
       setFilteredEmployees(data);
       setLoading(false);
@@ -97,27 +136,41 @@ const DashboardBizOps = () => {
       setLoading(false);
     }
   };
+
   
 
   // Fetch Counts from Backend
-  const fetchCounts = async () => {
-    setCountsLoading(true);
-    setCountsError(null);
-    try {
-      const response = await axios.get('http://localhost:8080/bizops/card');
-      const data = response.data;
-
-      setTotalEmp(data.totalEmployees);
-      setTodo(data.unallocatedEmployees);
-      setDraft(data.draftEmployees);
-      setActiveProjects(data.activeProjects);
-      setCountsLoading(false);
-    } catch (err) {
-      console.error('Error fetching counts:', err);
-      setCountsError('Failed to fetch counts. Please try again later.');
-      setCountsLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchCounts();
+  
+    // Set current date
+    const today = new Date();
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    const formattedDate = today.toLocaleDateString('en-US', options);
+    setCurrentDate(formattedDate);
+  
+    // Calculate first day of the current month
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const formattedFirstDay = firstDay.toISOString().split('T')[0]; // YYYY-MM-DD
+  
+    // Format today's date as YYYY-MM-DD
+    const formattedToday = today.toISOString().split('T')[0];
+  
+    // Set formData with default date range
+    setFormData({
+      startDate: formattedFirstDay,
+      endDate: formattedToday
+    });
+  
+    // Enable End Date input
+    setIsEndDateDisabled(false);
+    setMinEndDate(formattedFirstDay);
+  
+    // Fetch allocations for the default date range
+    fetchAllocations(formattedToday, formattedFirstDay);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
 
   // Navigation Handlers
   const handleUnallocatedClick = () => {
@@ -221,6 +274,8 @@ const DashboardBizOps = () => {
     if (pageNumber < 1 || pageNumber > totalPages) return;
     setCurrentPage(pageNumber);
   };
+
+
 
   // Generate pagination numbers
   const totalPages = Math.ceil(filteredEmployees.length / rowsPerPage);
