@@ -284,17 +284,12 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
           
           {/* Save and Discard Buttons (Right Aligned) */}
           <div className='breadcrumb-actions'>
-            <Popup
-              content="Discard Changes"
-              trigger={
-                <Button 
-                  icon={<IoMdClose size={24} />} // Discard Icon
-                  onClick={confirmDiscardChanges} 
-                />
-              }
+            <Button 
+              icon={<IoMdClose size={24} />} // Discard Icon
+              onClick={confirmDiscardChanges} 
             />
             {/* Conditionally render the Save/Submit button based on allocation percentage */}
-            <Popup
+            {/* <Popup
               content="Refresh Allocations"
               trigger={
                 <Button
@@ -303,7 +298,7 @@ const EmployeeDetails = ({ userRole }) => {  // Accept userRole as a prop
                   onClick={() => fetchAllocations('active')}
                 />
               }
-            />
+            /> */}
           </div>
         </div>
         
