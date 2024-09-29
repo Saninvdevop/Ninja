@@ -90,6 +90,35 @@ const AllocationModalProjects = ({
   }, [open]);
 
   useEffect(() => {
+    if (formData.clientId) {
+      const associatedProjects = projects.filter(
+        project => project.ClientID === formData.clientId
+      );
+  
+      if (associatedProjects.length > 0) {
+        const defaultApprover = associatedProjects[0].ProjectManager;
+        setFormData(prev => ({
+          ...prev,
+          timeSheetApprover: defaultApprover || '', // Set to ProjectManager or empty string if undefined
+        }));
+      } else {
+        // If no projects are associated, clear the Time Sheet Approver
+        setFormData(prev => ({
+          ...prev,
+          timeSheetApprover: '',
+        }));
+      }
+    } else {
+      // If no client is selected, clear the Time Sheet Approver
+      setFormData(prev => ({
+        ...prev,
+        timeSheetApprover: '',
+      }));
+    }
+  }, [formData.clientId, projects]);
+  
+
+  useEffect(() => {
     const fetchTotalAllocation = async () => {
       if (!formData.employeeId || !formData.startDate || !formData.endDate) return;
       try {
@@ -765,8 +794,47 @@ const handleBillingChange = (e, { value }) => {
                   </Form.Group>
 
                   <Form.Group widths="equal">
-                    {/* Employee Name Dropdown */}
                     <Form.Field required>
+                      <label>Project Name</label>
+                      <Dropdown
+                        placeholder="Select Project"
+                        fluid
+                        selection
+                        options={projects.map(project => ({
+                          key: project.ProjectID,
+                          text: project.ProjectName,
+                          value: project.ProjectID,
+                        }))}
+                        name="projectId"
+                        value={formData.projectId}
+                        onChange={handleChange}
+                        clearable={!clientProjectData}
+                        upward={true}
+                      />
+                    </Form.Field>
+                    <Form.Field required>
+                      <label>Client Name</label>
+                      <Dropdown
+                        placeholder="Select Client"
+                        fluid
+                        selection
+                        options={clients.map(client => ({
+                          key: client.ClientID,
+                          text: client.ClientName,
+                          value: client.ClientID,
+                        }))}
+                        name="clientId"
+                        value={formData.clientId}
+                        onChange={handleChange}
+                        clearable={!clientProjectData && !formData.projectId} // Allow clearing only if projectId is not set
+                        disabled={!!formData.projectId || !!clientProjectData} // Disable if projectId is set or clientProjectData is provided
+                        upward={true}
+                      />
+                    </Form.Field>
+                  </Form.Group>
+                  <Form.Group widths="equal">
+                                        {/* Employee Name Dropdown */}
+                                        <Form.Field required>
                         <label>Employee Name</label>
                         <Dropdown
                           placeholder="Select Employee Name"
@@ -807,22 +875,7 @@ const handleBillingChange = (e, { value }) => {
                           allowAdditions={false}
                         />
                       </Form.Field>
-
                   </Form.Group>
-                  <Form.Field required>
-                    <label>Time Sheet Approver</label>
-                    <Dropdown
-                      placeholder="Select Approver"
-                      fluid
-                      selection
-                      options={getTimeSheetApproverOptions()}
-                      name="timeSheetApprover"
-                      value={formData.timeSheetApprover}
-                      onChange={handleChange}
-                      clearable
-                      upward={true}
-                    />
-                  </Form.Field>
                 </Form>
                 {error && (
                   <Message negative>
@@ -855,41 +908,17 @@ const handleBillingChange = (e, { value }) => {
               <Grid.Column width={16}>
               <Form>
                 <Form.Group widths="equal">
-                  {/* **Project Name Dropdown Comes Before Client Name** */}
-                  <Form.Field required>
-                    <label>Project Name</label>
+                <Form.Field required>
+                    <label>Time Sheet Approver</label>
                     <Dropdown
-                      placeholder="Select Project"
+                      placeholder="Select Approver"
                       fluid
                       selection
-                      options={projects.map(project => ({
-                        key: project.ProjectID,
-                        text: project.ProjectName,
-                        value: project.ProjectID,
-                      }))}
-                      name="projectId"
-                      value={formData.projectId}
+                      options={getTimeSheetApproverOptions()}
+                      name="timeSheetApprover"
+                      value={formData.timeSheetApprover}
                       onChange={handleChange}
-                      clearable={!clientProjectData}
-                      upward={true}
-                    />
-                  </Form.Field>
-                  <Form.Field required>
-                    <label>Client Name</label>
-                    <Dropdown
-                      placeholder="Select Client"
-                      fluid
-                      selection
-                      options={clients.map(client => ({
-                        key: client.ClientID,
-                        text: client.ClientName,
-                        value: client.ClientID,
-                      }))}
-                      name="clientId"
-                      value={formData.clientId}
-                      onChange={handleChange}
-                      clearable={!clientProjectData && !formData.projectId} // Allow clearing only if projectId is not set
-                      disabled={!!formData.projectId || !!clientProjectData} // Disable if projectId is set or clientProjectData is provided
+                      clearable
                       upward={true}
                     />
                   </Form.Field>
