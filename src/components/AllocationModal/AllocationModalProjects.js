@@ -1,18 +1,18 @@
 // src/components/AllocationModal/AllocationModalProjects.jsx
-
+ 
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Modal, 
-  Button, 
-  Form, 
-  Dropdown, 
-  Icon, 
-  Loader, 
-  Message, 
-  Input, 
-  Grid, 
-  Segment, 
-  Header 
+import {
+  Modal,
+  Button,
+  Form,
+  Dropdown,
+  Icon,
+  Loader,
+  Message,
+  Input,
+  Grid,
+  Segment,
+  Header
 } from 'semantic-ui-react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
@@ -20,14 +20,14 @@ import { toast } from 'react-toastify';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import _ from 'lodash'; // Import lodash for debouncing
-
+ 
 const AllocationModalProjects = ({
   open,
   onClose,
   onSave,
-  employeeData,          
-  clientProjectData,     
-  allocationData,        
+  employeeData,
+  clientProjectData,
+  allocationData,
   userRole,
 }) => {
   // Initialize state with either existing allocation data or default values
@@ -46,11 +46,11 @@ const AllocationModalProjects = ({
     startDate: '',
     endDate: '',
   });
-
+ 
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [employeeNameLoading, setEmployeeNameLoading] = useState(false);
   const [employeeIdLoading, setEmployeeIdLoading] = useState(false);
-
+ 
   const [error, setError] = useState(null);
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -61,15 +61,15 @@ const AllocationModalProjects = ({
   const [originalAllocationPercent, setOriginalAllocationPercent] = useState(0);
   const [billingEnabled, setBillingEnabled] = useState('no');
   const [allocation, setAllocation] = useState(0); // For circular progress
-
+ 
   // New States for Date Constraints
   const [isEndDateDisabled, setIsEndDateDisabled] = useState(true);
   const [minEndDate, setMinEndDate] = useState('');
-
+ 
   const [totalAllocation, setTotalAllocation] = useState(0);
   const [remainingAllocation, setRemainingAllocation] = useState(100);
   const [currentAllocation, setCurrentAllocation] = useState(0);
-
+ 
   useEffect(() => {
     const fetchEmployeesInitial = async () => {
       try {
@@ -88,13 +88,13 @@ const AllocationModalProjects = ({
       fetchEmployeesInitial();
     }
   }, [open]);
-
+ 
   useEffect(() => {
     if (formData.clientId) {
       const associatedProjects = projects.filter(
         project => project.ClientID === formData.clientId
       );
-  
+ 
       if (associatedProjects.length > 0) {
         const defaultApprover = associatedProjects[0].ProjectManager;
         setFormData(prev => ({
@@ -116,8 +116,8 @@ const AllocationModalProjects = ({
       }));
     }
   }, [formData.clientId, projects]);
-  
-
+ 
+ 
   useEffect(() => {
     const fetchTotalAllocation = async () => {
       if (!formData.employeeId || !formData.startDate || !formData.endDate) return;
@@ -131,7 +131,7 @@ const AllocationModalProjects = ({
         const newTotalAllocation = 100 - response.data.remainingAllocation;
         setTotalAllocation(newTotalAllocation);
         setRemainingAllocation(response.data.remainingAllocation);
-
+ 
         // If editing an existing allocation, set the current allocation
         if (allocationData) {
           const existingAllocation = allocationData.AllocationPercent || 0;
@@ -150,7 +150,7 @@ const AllocationModalProjects = ({
       fetchTotalAllocation();
     }
   }, [open, formData.employeeId, formData.startDate, formData.endDate, allocationData]);
-
+ 
   // Fetch clients, projects, and timeSheetApprovers when the modal opens
   useEffect(() => {
     const fetchModalData = async () => {
@@ -169,17 +169,17 @@ const AllocationModalProjects = ({
         setLoading(false);
       }
     };
-
+ 
     if (open) {
       fetchModalData();
     }
   }, [open]);
-
+ 
   // Fetch remaining allocation when employeeData or allocationData changes
   useEffect(() => {
     const fetchRemainingAllocation = async () => {
       if (!formData.employeeId || !formData.startDate || !formData.endDate) return;
-
+ 
       try {
         const response = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`, {
           params: {
@@ -194,19 +194,37 @@ const AllocationModalProjects = ({
         setError('Failed to compute remaining allocation.');
       }
     };
-
+ 
     if (open && formData.employeeId && formData.startDate && formData.endDate) {
       fetchRemainingAllocation();
     }
   }, [open, formData.employeeId, formData.startDate, formData.endDate]);
-
+ 
+  // Fetch Employee Details
+  const fetchEmployeeDetails = async (employeeId) => {
+    try {
+      const response = await axios.get(`http://localhost:8080/employees/${employeeId}`);
+      if (response.data) {
+        setFormData(prev => ({
+          ...prev,
+          employeeName: response.data.employeeName || '',
+          employeeId: employeeId,
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching employee details:', err);
+      console.error('Error details:', err.response ? err.response.data : err.message);
+      setError('Failed to fetch employee details.');
+    }
+  };
+ 
   // Update formData when allocationData, employeeData, or clientProjectData changes
   useEffect(() => {
     if (allocationData) {
       setFormData({
         // Use employeeData for Employee Name and ID
-        employeeName: employeeData ? employeeData.EmployeeName : '',
-        employeeId: employeeData ? employeeData.EmployeeId : '',
+        employeeName: employeeData ? employeeData.EmployeeName : (allocationData.EmployeeName || ''),
+        employeeId: employeeData ? employeeData.EmployeeId : (allocationData.EmployeeID || ''),
         clientId: allocationData.ClientID || '',
         projectId: allocationData.ProjectID || '',
         status: allocationData.AllocationStatus || '',
@@ -221,11 +239,16 @@ const AllocationModalProjects = ({
       });
       setOriginalAllocationPercent(allocationData.AllocationPercent || 0);
       setAllocation(allocationData.AllocationPercent || 0);
-
+ 
       // Enable End Date field if Start Date is present
       if (allocationData.AllocationStartDate) {
         setIsEndDateDisabled(false);
         setMinEndDate(allocationData.AllocationStartDate.substring(0, 10));
+      }
+ 
+      // Fetch employee details if not provided in employeeData
+      if (employeeData && allocationData.EmployeeID) {
+        fetchEmployeeDetails(allocationData.EmployeeID);
       }
     } else {
       // Reset form for adding new allocation
@@ -249,11 +272,11 @@ const AllocationModalProjects = ({
       setIsEndDateDisabled(true);
       setMinEndDate('');
     }
-
+ 
     // Reset error when allocationData changes
     setError(null);
   }, [allocationData, employeeData, clientProjectData]);
-
+ 
   // Reset form when modal is closed
   useEffect(() => {
     if (!open) {
@@ -284,12 +307,12 @@ const AllocationModalProjects = ({
       setEmployeeOptions([]);
     }
   }, [open, employeeData, clientProjectData, allocationData]);
-
+ 
   // Compute Remaining Allocation Dynamically
   useEffect(() => {
     let newRemaining = 0;
     const currentAllocationPercent = parseInt(formData.allocationPercent, 10) || 0;
-
+ 
     if (allocationData) {
       // Editing existing allocation
       newRemaining = fetchedRemainingAllocation + (originalAllocationPercent || 0) - currentAllocationPercent;
@@ -297,22 +320,22 @@ const AllocationModalProjects = ({
       // Adding new allocation
       newRemaining = fetchedRemainingAllocation - currentAllocationPercent;
     }
-
+ 
     setRemainingAllocation(newRemaining >= 0 ? newRemaining : 0);
   }, [fetchedRemainingAllocation, originalAllocationPercent, formData.allocationPercent, allocationData]);
-
+ 
   // Helper function to check date overlap
   const isOverlapping = (newStart, newEnd, existingStart, existingEnd) => {
     const startA = new Date(newStart);
     const endA = newEnd ? new Date(newEnd) : new Date('9999-12-31');
     const startB = new Date(existingStart);
     const endB = existingEnd ? new Date(existingEnd) : new Date('9999-12-31');
-
+ 
     return startA <= endB && startB <= endA;
   };
-
-
-
+ 
+ 
+ 
   // Auto-populate Employee Name when Employee ID is entered and vice versa
   useEffect(() => {
     const fetchEmployeeDetails = async () => {
@@ -336,12 +359,12 @@ const AllocationModalProjects = ({
         setError('Invalid Employee ID or Name.');
       }
     };
-
+ 
     if (formData.employeeId || formData.employeeName) {
       fetchEmployeeDetails();
     }
   }, [formData.employeeId, formData.employeeName]);
-
+ 
   // Debounced function to fetch employees based on search query
   const fetchEmployees = useCallback(_.debounce(async (query, type) => {
     if (!query) {
@@ -350,7 +373,7 @@ const AllocationModalProjects = ({
       }
       return;
     }
-
+ 
     try {
       const response = await axios.get('http://localhost:8080/employees/search', {
         params: { query }
@@ -377,19 +400,19 @@ const AllocationModalProjects = ({
       }
     }
   }, 500), []); // 500ms debounce
-
+ 
   // Handle search change for Employee Name Dropdown
   const handleEmployeeNameSearchChange = (e, { searchQuery }) => {
     setEmployeeNameLoading(true);
     fetchEmployees(searchQuery, 'name');
   };
-
+ 
   // Handle search change for Employee ID Dropdown
   const handleEmployeeIdSearchChange = (e, { searchQuery }) => {
     setEmployeeIdLoading(true);
     fetchEmployees(searchQuery, 'id');
   };
-
+ 
   // Handle selection of Employee Name
   const handleEmployeeNameChange = (e, { value, options }) => {
     const selectedEmployee = options.find(option => option.value === value);
@@ -408,7 +431,7 @@ const AllocationModalProjects = ({
     }
     setError(null);
   };
-
+ 
   // Handle selection of Employee ID
   const handleEmployeeIdChange = (e, { value, options }) => {
     const selectedEmployee = options.find(option => option.value === value);
@@ -427,20 +450,20 @@ const AllocationModalProjects = ({
     }
     setError(null);
   };
-
-
+ 
+ 
   // Handle form field changes
   const handleChange = (e, { name, value }) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-
+ 
     if (name === 'allocationPercent') {
       const newAllocationPercent = parseInt(value, 10) || 0;
       setCurrentAllocation(newAllocationPercent);
     }
-
+ 
     // If allocationPercentDropdown changes, update allocationPercent as well
     if (name === 'allocationPercentDropdown') {
       setFormData((prev) => ({
@@ -449,11 +472,11 @@ const AllocationModalProjects = ({
       }));
       setAllocation(parseInt(value, 10) || 0);
     }
-
+ 
     if (name === 'billedCheck') {
       handleBillingChange(e, { value });
     }
-
+ 
     // If project is changed, update the Time Sheet Approver and Client ID
     if (name === 'projectId') {
       const selectedProject = projects.find(project => project.ProjectID === value);
@@ -465,13 +488,13 @@ const AllocationModalProjects = ({
             timeSheetApprover: selectedProject.ProjectManager,
           }));
         }
-
+ 
         // Set Client ID automatically based on selected Project
         setFormData((prev) => ({
           ...prev,
           clientId: selectedProject.ClientID,
         }));
-
+ 
         // Disable Client Name dropdown when Project is selected
         setIsEndDateDisabled(prev => prev);
       } else {
@@ -479,7 +502,7 @@ const AllocationModalProjects = ({
         setIsEndDateDisabled(true);
       }
     }
-
+ 
     // Dynamically update status based on allocation percentage and selected fields
     if (name === 'allocationPercent') {
       const allocationValue = parseInt(value, 10);
@@ -501,11 +524,11 @@ const AllocationModalProjects = ({
         setFormData((prev) => ({ ...prev, status: '' }));
       }
     }
-
+ 
     // Reset error when user modifies any field
     setError(null);
   };
-
+ 
   // Validate form fields
   const isFormValid = () => {
     const {
@@ -520,7 +543,7 @@ const AllocationModalProjects = ({
       startDate,
       endDate,
     } = formData;
-
+ 
     if (
       (!clientProjectData && (!clientId || !projectId)) || // If not prefilled, client and project are required
       !status ||
@@ -534,7 +557,7 @@ const AllocationModalProjects = ({
     ) {
       return false;
     }
-
+ 
     // Check if start date is before 2020
     const start = new Date(startDate);
     const minStartDate = new Date('2020-01-01');
@@ -542,16 +565,16 @@ const AllocationModalProjects = ({
       setError('Start Date cannot be before January 1, 2020.');
       return false;
     }
-
+ 
     // Additional validation for AllocationEndDate
     if (endDate && startDate && new Date(endDate) < new Date(startDate)) {
       setError('End Date cannot be before Start Date.');
       return false;
     }
-
+ 
     return true;
   };
-
+ 
   // Handle form submission
   const handleSubmit = async () => {
     // Basic validation
@@ -565,30 +588,30 @@ const AllocationModalProjects = ({
       setError('Employee Name and Employee ID are required.');
       return;
     }
-
+ 
     // Validate Billing Rate only if Billed? is Yes
     if (formData.billedCheck === 'Yes' && (!formData.billingRate || isNaN(formData.billingRate) || formData.billingRate <= 0)) {
       setError('Billing rate must be a positive number when billed.');
       return;
     }
-
-
+ 
+ 
     try {
       // Check for overlapping allocations
       const overlapResponse = await axios.get(`http://localhost:8080/employee-details/${formData.employeeId}/allocations`);
       const allocationsList = overlapResponse.data.allocations;
-
+ 
       const hasOverlap = allocationsList.some(alloc => {
         // If editing, exclude the current allocation
         if (allocationData && alloc.AllocationID === allocationData.AllocationID) {
           return false;
         }
-
+ 
         // Check if the project is the same
         if (alloc.ProjectID !== formData.projectId) {
           return false;
         }
-
+ 
         // Check for date overlap
         return isOverlapping(
           formData.startDate,
@@ -597,12 +620,12 @@ const AllocationModalProjects = ({
           alloc.AllocationEndDate
         );
       });
-
+ 
       if (hasOverlap) {
         setError('Allocation overlaps with an existing allocation for the same project.');
         return;
       }
-
+ 
       // Check total allocation does not exceed 100%
       if (allocationData) {
         // If editing, subtract the current allocation percent from total allocation
@@ -614,7 +637,7 @@ const AllocationModalProjects = ({
         });
         const totalAllocation = 100 - totalAllocationResponse.data.remainingAllocation;
         const adjustedTotal = totalAllocation - originalAllocationPercent + parseInt(formData.allocationPercent, 10);
-
+ 
         if (adjustedTotal > 100) {
           setError('Total allocation percentage cannot exceed 100%.');
           return;
@@ -628,13 +651,13 @@ const AllocationModalProjects = ({
           }
         });
         const totalAllocation = 100 - totalAllocationResponse.data.remainingAllocation;
-
+ 
         if (totalAllocation + parseInt(formData.allocationPercent, 10) > 100) {
           setError('Total allocation percentage cannot exceed 100%.');
           return;
         }
       }
-
+ 
       // Prepare the payload
       const payload = {
         EmployeeID: formData.employeeId,
@@ -651,7 +674,7 @@ const AllocationModalProjects = ({
         AllocationBillingRate: formData.billedCheck === 'Yes' ? parseFloat(formData.billingRate) : 0.00, // Ensure it's 0.00 if No
         ModifiedBy: 'Admin',
       };
-      
+ 
       if (allocationData && allocationData.AllocationID) {
         // Editing existing allocation
         await axios.put(`http://localhost:8080/allocations/${allocationData.AllocationID}`, payload);
@@ -661,7 +684,7 @@ const AllocationModalProjects = ({
         await axios.post('http://localhost:8080/api/allocate', payload);
         toast.success('Allocation added successfully!');
       }
-
+ 
       onSave(); // Refresh allocations in parent component
       onClose(); // Close the modal
     } catch (err) {
@@ -669,13 +692,13 @@ const AllocationModalProjects = ({
       setError(err.response?.data?.message || 'Failed to add/update allocation.');
     }
   };
-
+ 
   // Helper function to generate project options based on selected client
   const getFilteredProjectOptions = () => {
     if (formData.clientId === '') {
       return [];
     }
-
+ 
     return projects
       .filter(project => project.ClientID === formData.clientId)
       .map(project => ({
@@ -684,7 +707,7 @@ const AllocationModalProjects = ({
         value: project.ProjectID,
       }));
   };
-
+ 
   const AllocationPercentOptions = [
     { key: 0, text: '0%', value: '0' },
     { key: 25, text: '25%', value: '25' },
@@ -699,13 +722,13 @@ const AllocationModalProjects = ({
       { key: 'rajendra', text: 'Rajendra', value: 'Rajendra' },
       { key: 'kiran', text: 'Kiran', value: 'Kiran' },
     ];
-
+ 
     // Include Project Manager as an option
     const projectManager = projects.find(project => project.ProjectID === formData.projectId)?.ProjectManager;
     const dynamicOptions = projectManager
       ? [{ key: `pm-${projectManager}`, text: projectManager, value: projectManager }]
       : [];
-
+ 
     // Combine static and dynamic options, ensuring uniqueness
     const combinedOptions = [
       ...staticOptions,
@@ -716,24 +739,24 @@ const AllocationModalProjects = ({
       })),
       ...dynamicOptions,
     ];
-
+ 
     // Remove duplicates
     const uniqueOptions = Array.from(new Map(combinedOptions.map(item => [item.key, item])).values());
-
+ 
     return uniqueOptions;
   };
-
+ 
   // Handle Billing Radio Change
-const handleBillingChange = (e, { value }) => {
-  setFormData((prev) => ({
-    ...prev,
-    billedCheck: value,
-    billingRate: value === 'Yes' ? prev.billingRate || '0.00' : '0.00', // Default to 0.00 if No is selected
-  }));
-};
-
-
-
+  const handleBillingChange = (e, { value }) => {
+    setFormData((prev) => ({
+      ...prev,
+      billedCheck: value,
+      billingRate: value === 'Yes' ? prev.billingRate || '0.00' : '0.00', // Default to 0.00 if No is selected
+    }));
+  };
+ 
+ 
+ 
   return (
     <Modal open={open} onClose={onClose} size="large" closeIcon>
       <Modal.Header>
@@ -747,295 +770,288 @@ const handleBillingChange = (e, { value }) => {
             <Message.Header>Error</Message.Header>
             <p>{fetchError}</p>
           </Message>
-          
+ 
         ) : (
           <>
             <Grid stackable divided>
-            <Grid.Row>
-              <Grid.Column width={10}>
-                <Form>
-                  <Form.Group widths="equal">
-                    <Form.Field required>
-                      <label>Start Date</label>
-                      <Input
-                        type="date"
-                        name="startDate"
-                        value={formData.startDate}
-                        onChange={(e, { name, value }) => {
-                          handleChange(e, { name, value });
-                          if (value) {
-                            setIsEndDateDisabled(false);
-                            setMinEndDate(value);
-                            setFormData(prev => ({
-                              ...prev,
-                              endDate: '', // Reset End Date when Start Date changes
-                            }));
-                          } else {
-                            setIsEndDateDisabled(true);
-                            setMinEndDate('');
-                          }
-                        }}
-                        min="2020-01-01"
-                        max="2030-12-31"
-                      />
-                    </Form.Field>
-                    <Form.Field required>
-                      <label>End Date</label>
-                      <Input
-                        type="date"
-                        name="endDate"
-                        value={formData.endDate}
-                        onChange={handleChange}
-                        min={minEndDate}
-                        disabled={isEndDateDisabled}
-                        readOnly={false} // Users can select from calendar
-                      />
-                    </Form.Field>
-                  </Form.Group>
-
-                  <Form.Group widths="equal">
-                    <Form.Field required>
-                      <label>Project Name</label>
-                      <Dropdown
-                        placeholder="Select Project"
-                        fluid
-                        selection
-                        options={projects.map(project => ({
-                          key: project.ProjectID,
-                          text: project.ProjectName,
-                          value: project.ProjectID,
-                        }))}
-                        name="projectId"
-                        value={formData.projectId}
-                        onChange={handleChange}
-                        clearable={!clientProjectData}
-                        upward={true}
-                      />
-                    </Form.Field>
-                    <Form.Field required>
-                      <label>Client Name</label>
-                      <Dropdown
-                        placeholder="Select Client"
-                        fluid
-                        selection
-                        options={clients.map(client => ({
-                          key: client.ClientID,
-                          text: client.ClientName,
-                          value: client.ClientID,
-                        }))}
-                        name="clientId"
-                        value={formData.clientId}
-                        onChange={handleChange}
-                        clearable={!clientProjectData && !formData.projectId} // Allow clearing only if projectId is not set
-                        disabled={!!formData.projectId || !!clientProjectData} // Disable if projectId is set or clientProjectData is provided
-                        upward={true}
-                      />
-                    </Form.Field>
-                  </Form.Group>
-                  <Form.Group widths="equal">
-                                        {/* Employee Name Dropdown */}
-                                        <Form.Field required>
-                        <label>Employee Name</label>
-                        <Dropdown
-                          placeholder="Select Employee Name"
-                          fluid
-                          search
-                          selection
-                          options={employeeOptions}
-                          onSearchChange={handleEmployeeNameSearchChange}
-                          onChange={handleEmployeeNameChange}
-                          loading={employeeNameLoading}
-                          value={formData.employeeId}
-                          selectOnBlur={false}
-                          noResultsMessage="No employees found."
-                          allowAdditions={false}
+              <Grid.Row>
+                <Grid.Column width={10}>
+                  <Form>
+                    <Form.Group widths="equal">
+                      <Form.Field required>
+                        <label>Start Date</label>
+                        <Input
+                          type="date"
+                          name="startDate"
+                          value={formData.startDate}
+                          onChange={(e, { name, value }) => {
+                            handleChange(e, { name, value });
+                            if (value) {
+                              setIsEndDateDisabled(false);
+                              setMinEndDate(value);
+                              setFormData(prev => ({
+                                ...prev,
+                                endDate: '', // Reset End Date when Start Date changes
+                              }));
+                            } else {
+                              setIsEndDateDisabled(true);
+                              setMinEndDate('');
+                            }
+                          }}
+                          min="2020-01-01"
+                          max="2030-12-31"
                         />
                       </Form.Field>
-
-                      {/* Employee ID Dropdown */}
+                      <Form.Field required>
+                        <label>End Date</label>
+                        <Input
+                          type="date"
+                          name="endDate"
+                          value={formData.endDate}
+                          onChange={handleChange}
+                          min={minEndDate}
+                          disabled={isEndDateDisabled}
+                          readOnly={false} // Users can select from calendar
+                        />
+                      </Form.Field>
+                    </Form.Group>
+ 
+                    <Form.Group widths="equal">
+                      <Form.Field required>
+                        <label>Project Name</label>
+                        <Dropdown
+                          placeholder="Select Project"
+                          fluid
+                          selection
+                          options={projects.map(project => ({
+                            key: project.ProjectID,
+                            text: project.ProjectName,
+                            value: project.ProjectID,
+                          }))}
+                          name="projectId"
+                          value={formData.projectId}
+                          onChange={handleChange}
+                          clearable={!clientProjectData}
+                          upward={true}
+                        />
+                      </Form.Field>
+                      <Form.Field required>
+                        <label>Client Name</label>
+                        <Dropdown
+                          placeholder="Select Client"
+                          fluid
+                          selection
+                          options={clients.map(client => ({
+                            key: client.ClientID,
+                            text: client.ClientName,
+                            value: client.ClientID,
+                          }))}
+                          name="clientId"
+                          value={formData.clientId}
+                          onChange={handleChange}
+                          clearable={!clientProjectData && !formData.projectId} // Allow clearing only if projectId is not set
+                          disabled={!!formData.projectId || !!clientProjectData} // Disable if projectId is set or clientProjectData is provided
+                          upward={true}
+                        />
+                      </Form.Field>
+                    </Form.Group>
+                    <Form.Group widths="equal">
+                      <Form.Field required>
+                        <label>Employee Name</label>
+                        {allocationData ? (
+                          <Input
+                            placeholder="Employee Name"
+                            name="employeeName"
+                            value={formData.employeeName}
+                            onChange={handleChange}
+                            readOnly
+                          />
+                        ) : (
+                          <Dropdown
+                            placeholder="Search Employee Name"
+                            fluid
+                            search
+                            selection
+                            options={employeeOptions}
+                            name="employeeName"
+                            value={formData.employeeId}
+                            onChange={handleEmployeeNameChange}
+                            onSearchChange={handleEmployeeNameSearchChange}
+                            loading={employeeNameLoading}
+                          />
+                        )}
+                      </Form.Field>
                       <Form.Field required>
                         <label>Employee ID</label>
-                        <Dropdown
-                          placeholder="Select Employee ID"
-                          fluid
-                          search
-                          selection
-                          options={employeeOptions.map(option => ({
-                            key: option.value,
-                            text: option.value,
-                            value: option.value,
-                            name: option.name,
-                          }))}
-                          onSearchChange={handleEmployeeIdSearchChange}
-                          onChange={handleEmployeeIdChange}
-                          loading={employeeIdLoading}
+                        <Input
+                          placeholder="Employee ID"
+                          name="employeeId"
                           value={formData.employeeId}
-                          selectOnBlur={false}
-                          noResultsMessage="No employees found."
-                          allowAdditions={false}
+                          onChange={handleChange}
+                          readOnly={!!allocationData}
                         />
                       </Form.Field>
-                  </Form.Group>
-                </Form>
-                {error && (
-                  <Message negative>
-                    <Message.Header>Error</Message.Header>
-                    <p>{error}</p>
-                  </Message>
-                )}
-              </Grid.Column>
-              <Grid.Column width={6}>
-                <Segment>
-                  <Header as='h4' dividing>
-                    Allocation %
-                  </Header>
-                  <div style={{ width: 150, height: 150, margin: '0 auto' }}>
-                  <CircularProgressbar 
-                    value={totalAllocation} 
-                    text={`${totalAllocation}%`} 
-                    styles={buildStyles({
-                      textSize: '16px',
-                      pathColor: '#3b82f6',
-                      textColor: '#333',
-                      trailColor: '#e2e8f0',
-                    })}
-                  />
-                  </div>
-                </Segment>
-              </Grid.Column>
-            </Grid.Row>
-            <Grid.Row>
-              <Grid.Column width={16}>
-              <Form>
-                <Form.Group widths="equal">
-                <Form.Field required>
-                    <label>Time Sheet Approver</label>
-                    <Dropdown
-                      placeholder="Select Approver"
-                      fluid
-                      selection
-                      options={getTimeSheetApproverOptions()}
-                      name="timeSheetApprover"
-                      value={formData.timeSheetApprover}
-                      onChange={handleChange}
-                      clearable
-                      upward={true}
-                    />
-                  </Form.Field>
-                  <Form.Field required>
-                    <label>Allocation %</label>
-                    <Dropdown
-                      placeholder="Select Allocation %"
-                      fluid
-                      selection
-                      options={AllocationPercentOptions.filter(option => 
-                        parseInt(option.value, 10) <= (remainingAllocation + currentAllocation)
-                      )}
-                      name="allocationPercent"
-                      value={formData.allocationPercent}
-                      onChange={handleChange}
-                      upward={true}
-                      clearable
-                    />
-                    <div style={{ marginTop: '5px', color: 'gray', fontSize: '12px' }}>
-                      Remaining Allocation: {remainingAllocation + currentAllocation}%
+                    </Form.Group>
+                  </Form>
+                  {error && (
+                    <Message negative>
+                      <Message.Header>Error</Message.Header>
+                      <p>{error}</p>
+                    </Message>
+                  )}
+                </Grid.Column>
+                <Grid.Column width={6}>
+                  <Segment>
+                    <Header as='h4' dividing>
+                      Allocation %
+                    </Header>
+                    <div style={{ width: 150, height: 150, margin: '0 auto' }}>
+                      <CircularProgressbar
+                        value={totalAllocation}
+                        text={`${totalAllocation}%`}
+                        styles={buildStyles({
+                          textSize: '16px',
+                          pathColor: '#3b82f6',
+                          textColor: '#333',
+                          trailColor: '#e2e8f0',
+                        })}
+                      />
                     </div>
-                  </Form.Field>
-                  <Form.Field required>
-                    <label>Status</label>
-                    <Dropdown
-                      placeholder="Set Status"
-                      fluid
-                      selection
-                      options={[
-                        { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
-                        { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
-                        { key: 'allocated', text: 'Allocated', value: 'Allocated' },
-                        { key: 'closed', text: 'Closed', value: 'Closed' },
-                      ]}
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      clearable
-                      upward={true}
-                    />
-                  </Form.Field>
-                  
-                </Form.Group>
-                <Form.Group widths="equal">
-                  
-                  <Form.Field required>
-                      <label>Billing Type</label>
-                      <Dropdown
-                        placeholder="Select Billing Type"
-                        fluid
-                        selection
-                        options={[
-                          { key: 'tm', text: 'T&M', value: 'T&M' },
-                          { key: 'fix', text: 'Fix Price', value: 'Fix Price' },
-                        ]}
-                        name="billingType"
-                        value={formData.billingType}
-                        onChange={handleChange}
-                        upward={true}
-                        clearable
-                      />
-                    </Form.Field>
-
-                    <Form.Field required>
-                      <label>Billed?</label>
-                      <Dropdown
-                        placeholder="Select Billed Check"
-                        fluid
-                        selection
-                        options={[
-                          { key: 'yes', text: 'Yes', value: 'Yes' },
-                          { key: 'no', text: 'No', value: 'No' },
-                        ]}
-                        name="billedCheck"
-                        value={formData.billedCheck}
-                        onChange={handleChange}
-                        clearable
-                        upward={true}
-                      />
-                    </Form.Field>
-                    {/* Always show Billing Rate field */}
-                    <Form.Field required>
-                      <label>Billing Rate (USD)</label>
-                      <Input
-                        label={{ basic: true, content: '$' }}
-                        labelPosition="left"
-                        placeholder="Enter billing rate"
-                        name="billingRate"
-                        value={formData.billingRate}
-                        onChange={handleChange}
-                        type="number"
-                        min={0}
-                        max={999}
-                        step="0.01"
-                        iconPosition="left"
-                        disabled={formData.billedCheck === 'No'} // Disable if Billed? is No
-                        onKeyDown={(e) => {
-                          const currentLength = e.target.value.length;
-                          if (currentLength >= 10 && e.key !== 'Backspace' && e.key !== 'Delete') {
-                            e.preventDefault();
-                          }
-                        }}
-                      />
-                    </Form.Field>
-                </Form.Group>
-              </Form>
-              </Grid.Column>
-            </Grid.Row>
-          </Grid>
+                  </Segment>
+                </Grid.Column>
+              </Grid.Row>
+              <Grid.Row>
+                <Grid.Column width={16}>
+                  <Form>
+                    <Form.Group widths="equal">
+                      <Form.Field required>
+                        <label>Time Sheet Approver</label>
+                        <Dropdown
+                          placeholder="Select Approver"
+                          fluid
+                          selection
+                          options={getTimeSheetApproverOptions()}
+                          name="timeSheetApprover"
+                          value={formData.timeSheetApprover}
+                          onChange={handleChange}
+                          clearable
+                          upward={true}
+                        />
+                      </Form.Field>
+                      <Form.Field required>
+                        <label>Allocation %</label>
+                        <Dropdown
+                          placeholder="Select Allocation %"
+                          fluid
+                          selection
+                          options={AllocationPercentOptions.filter(option =>
+                            parseInt(option.value, 10) <= (remainingAllocation + currentAllocation)
+                          )}
+                          name="allocationPercent"
+                          value={formData.allocationPercent}
+                          onChange={handleChange}
+                          upward={true}
+                          clearable
+                        />
+                        <div style={{ marginTop: '5px', color: 'gray', fontSize: '12px' }}>
+                          Remaining Allocation: {remainingAllocation}%
+                        </div>
+                      </Form.Field>
+                      <Form.Field required>
+                        <label>Status</label>
+                        <Dropdown
+                          placeholder="Set Status"
+                          fluid
+                          selection
+                          options={[
+                            { key: 'client-unallocated', text: 'Client Unallocated', value: 'Client Unallocated' },
+                            { key: 'project-unallocated', text: 'Project Unallocated', value: 'Project Unallocated' },
+                            { key: 'allocated', text: 'Allocated', value: 'Allocated' },
+                            { key: 'closed', text: 'Closed', value: 'Closed' },
+                          ]}
+                          name="status"
+                          value={formData.status}
+                          onChange={handleChange}
+                          clearable
+                          upward={true}
+                        />
+                      </Form.Field>
+ 
+                    </Form.Group>
+                    <Form.Group widths="equal">
+ 
+                      <Form.Field required>
+                        <label>Billing Type</label>
+                        <Dropdown
+                          placeholder="Select Billing Type"
+                          fluid
+                          selection
+                          options={[
+                            { key: 'tm', text: 'T&M', value: 'T&M' },
+                            { key: 'fix', text: 'Fix Price', value: 'Fix Price' },
+                          ]}
+                          name="billingType"
+                          value={formData.billingType}
+                          onChange={handleChange}
+                          upward={true}
+                          clearable
+                        />
+                      </Form.Field>
+ 
+                      <Form.Field required>
+                        <label>Billed?</label>
+                        <Dropdown
+                          placeholder="Select Billed Check"
+                          fluid
+                          selection
+                          options={[
+                            { key: 'yes', text: 'Yes', value: 'Yes' },
+                            { key: 'no', text: 'No', value: 'No' },
+                          ]}
+                          name="billedCheck"
+                          value={formData.billedCheck}
+                          onChange={handleChange}
+                          clearable
+                          upward={true}
+                        />
+                      </Form.Field>
+                      {/* Always show Billing Rate field */}
+                      <Form.Field required>
+                        <label>Billing Rate (USD)</label>
+                        <Input
+                          label={{ basic: true, content: '$' }}
+                          labelPosition="left"
+                          placeholder="Enter billing rate"
+                          name="billingRate"
+                          value={formData.billingRate}
+                          onChange={handleChange}
+                          type="number"
+                          min={0}
+                          max={999}
+                          step="0.01"
+                          iconPosition="left"
+                          disabled={formData.billedCheck === 'No'} // Disable if Billed? is No
+                          onKeyDown={(e) => {
+                            const currentLength = e.target.value.length;
+                            if (currentLength >= 10 && e.key !== 'Backspace' && e.key !== 'Delete') {
+                              e.preventDefault();
+                            }
+                          }}
+                        />
+                      </Form.Field>
+                    </Form.Group>
+                  </Form>
+                </Grid.Column>
+              </Grid.Row>
+            </Grid>
           </>
         )}
       </Modal.Content>
       <Modal.Actions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button 
-          color="blue" 
-          onClick={handleSubmit} 
+        <Button
+          color="blue"
+          onClick={handleSubmit}
           disabled={!isFormValid() || loading}
         >
           {allocationData ? 'Update' : 'Save'}
@@ -1044,7 +1060,7 @@ const handleBillingChange = (e, { value }) => {
     </Modal>
   );
 };
-
+ 
 // Define PropTypes for better type checking
 AllocationModalProjects.propTypes = {
   open: PropTypes.bool.isRequired,
@@ -1076,5 +1092,5 @@ AllocationModalProjects.propTypes = {
   }), // Allocation details or null
   userRole: PropTypes.string.isRequired,
 };
-
+ 
 export default AllocationModalProjects;

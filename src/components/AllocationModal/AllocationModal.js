@@ -267,11 +267,11 @@ const AllocationModal = ({
     const currentAllocationPercent = parseInt(formData.allocationPercent, 10) || 0;
 
     if (allocationData) {
-      // Editing existing allocation
-      newRemaining = fetchedRemainingAllocation + (originalAllocationPercent || 0) - currentAllocationPercent;
+        // Editing existing allocation, add back the original allocation percent
+        newRemaining = fetchedRemainingAllocation + (originalAllocationPercent || 0) - currentAllocationPercent;
     } else {
-      // Adding new allocation
-      newRemaining = fetchedRemainingAllocation - currentAllocationPercent;
+        // Adding a new allocation
+        newRemaining = fetchedRemainingAllocation - currentAllocationPercent;
     }
 
     setRemainingAllocation(newRemaining >= 0 ? newRemaining : 0);
@@ -809,7 +809,7 @@ const handleBillingChange = (e, { value }) => {
                       clearable
                     />
                     <div style={{ marginTop: '5px', color: 'gray', fontSize: '12px' }}>
-                      Remaining Allocation: {remainingAllocation + currentAllocation}%
+                      Remaining Allocation: {remainingAllocation}%
                     </div>
                   </Form.Field>
                   <Form.Field required>
