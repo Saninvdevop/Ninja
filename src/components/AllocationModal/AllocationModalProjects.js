@@ -1,5 +1,5 @@
 // src/components/AllocationModal/AllocationModalProjects.jsx
- 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Modal,
@@ -20,7 +20,7 @@ import { toast } from 'react-toastify';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import _ from 'lodash'; // Import lodash for debouncing
- 
+
 const AllocationModalProjects = ({
   open,
   onClose,
@@ -43,14 +43,15 @@ const AllocationModalProjects = ({
     billedCheck: '',
     billingRate: '',
     timeSheetApprover: '',
+    timeSheetApproverId: '',
     startDate: '',
     endDate: '',
   });
- 
+
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [employeeNameLoading, setEmployeeNameLoading] = useState(false);
   const [employeeIdLoading, setEmployeeIdLoading] = useState(false);
- 
+
   const [error, setError] = useState(null);
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -61,15 +62,15 @@ const AllocationModalProjects = ({
   const [originalAllocationPercent, setOriginalAllocationPercent] = useState(0);
   const [billingEnabled, setBillingEnabled] = useState('no');
   const [allocation, setAllocation] = useState(0); // For circular progress
- 
+
   // New States for Date Constraints
   const [isEndDateDisabled, setIsEndDateDisabled] = useState(true);
   const [minEndDate, setMinEndDate] = useState('');
- 
+
   const [totalAllocation, setTotalAllocation] = useState(0);
   const [remainingAllocation, setRemainingAllocation] = useState(100);
   const [currentAllocation, setCurrentAllocation] = useState(0);
- 
+
   useEffect(() => {
     const fetchEmployeesInitial = async () => {
       try {
@@ -88,36 +89,39 @@ const AllocationModalProjects = ({
       fetchEmployeesInitial();
     }
   }, [open]);
- 
+
   useEffect(() => {
-    if (formData.clientId) {
+    if (formData.clientId && !allocationData) { // Only set default approver if not editing
       const associatedProjects = projects.filter(
         project => project.ClientID === formData.clientId
       );
- 
+
       if (associatedProjects.length > 0) {
         const defaultApprover = associatedProjects[0].ProjectManager;
+        const defaultApproverID = associatedProjects[0].ProjectManagerID;
         setFormData(prev => ({
           ...prev,
+          timeSheetApproverId: defaultApproverID || '',
           timeSheetApprover: defaultApprover || '', // Set to ProjectManager or empty string if undefined
         }));
       } else {
         // If no projects are associated, clear the Time Sheet Approver
         setFormData(prev => ({
           ...prev,
+          timeSheetApproverId: '',
           timeSheetApprover: '',
         }));
       }
-    } else {
+    } else if (!formData.clientId) {
       // If no client is selected, clear the Time Sheet Approver
       setFormData(prev => ({
         ...prev,
         timeSheetApprover: '',
+        timeSheetApproverId: '',
       }));
     }
-  }, [formData.clientId, projects]);
- 
- 
+  }, [formData.clientId, projects, allocationData]);
+
   useEffect(() => {
     const fetchTotalAllocation = async () => {
       if (!formData.employeeId || !formData.startDate || !formData.endDate) return;
@@ -131,7 +135,7 @@ const AllocationModalProjects = ({
         const newTotalAllocation = 100 - response.data.remainingAllocation;
         setTotalAllocation(newTotalAllocation);
         setRemainingAllocation(response.data.remainingAllocation);
- 
+
         // If editing an existing allocation, set the current allocation
         if (allocationData) {
           const existingAllocation = allocationData.AllocationPercent || 0;
@@ -150,7 +154,7 @@ const AllocationModalProjects = ({
       fetchTotalAllocation();
     }
   }, [open, formData.employeeId, formData.startDate, formData.endDate, allocationData]);
- 
+
   // Fetch clients, projects, and timeSheetApprovers when the modal opens
   useEffect(() => {
     const fetchModalData = async () => {
@@ -169,17 +173,17 @@ const AllocationModalProjects = ({
         setLoading(false);
       }
     };
- 
+
     if (open) {
       fetchModalData();
     }
   }, [open]);
- 
+
   // Fetch remaining allocation when employeeData or allocationData changes
   useEffect(() => {
     const fetchRemainingAllocation = async () => {
       if (!formData.employeeId || !formData.startDate || !formData.endDate) return;
- 
+
       try {
         const response = await axios.get(`http://localhost:8080/employee-allocations/${formData.employeeId}`, {
           params: {
@@ -194,12 +198,12 @@ const AllocationModalProjects = ({
         setError('Failed to compute remaining allocation.');
       }
     };
- 
+
     if (open && formData.employeeId && formData.startDate && formData.endDate) {
       fetchRemainingAllocation();
     }
   }, [open, formData.employeeId, formData.startDate, formData.endDate]);
- 
+
   // Fetch Employee Details
   const fetchEmployeeDetails = async (employeeId) => {
     try {
@@ -217,7 +221,7 @@ const AllocationModalProjects = ({
       setError('Failed to fetch employee details.');
     }
   };
- 
+
   // Update formData when allocationData, employeeData, or clientProjectData changes
   useEffect(() => {
     if (allocationData) {
@@ -234,18 +238,19 @@ const AllocationModalProjects = ({
         billedCheck: allocationData.AllocationBilledCheck || '',
         billingRate: allocationData.AllocationBillingRate ? allocationData.AllocationBillingRate.toString() : '',
         timeSheetApprover: allocationData.AllocationTimeSheetApprover || '',
+        timeSheetApproverId: allocationData.AllocationTimeSheetApproverID || '',
         startDate: allocationData.AllocationStartDate ? allocationData.AllocationStartDate.substring(0, 10) : '',
         endDate: allocationData.AllocationEndDate ? allocationData.AllocationEndDate.substring(0, 10) : '',
       });
       setOriginalAllocationPercent(allocationData.AllocationPercent || 0);
       setAllocation(allocationData.AllocationPercent || 0);
- 
+
       // Enable End Date field if Start Date is present
       if (allocationData.AllocationStartDate) {
         setIsEndDateDisabled(false);
         setMinEndDate(allocationData.AllocationStartDate.substring(0, 10));
       }
- 
+
       // Fetch employee details if not provided in employeeData
       if (employeeData && allocationData.EmployeeID) {
         fetchEmployeeDetails(allocationData.EmployeeID);
@@ -272,11 +277,11 @@ const AllocationModalProjects = ({
       setIsEndDateDisabled(true);
       setMinEndDate('');
     }
- 
+
     // Reset error when allocationData changes
     setError(null);
   }, [allocationData, employeeData, clientProjectData]);
- 
+
   // Reset form when modal is closed
   useEffect(() => {
     if (!open) {
@@ -307,12 +312,12 @@ const AllocationModalProjects = ({
       setEmployeeOptions([]);
     }
   }, [open, employeeData, clientProjectData, allocationData]);
- 
+
   // Compute Remaining Allocation Dynamically
   useEffect(() => {
     let newRemaining = 0;
     const currentAllocationPercent = parseInt(formData.allocationPercent, 10) || 0;
- 
+
     if (allocationData) {
       // Editing existing allocation
       newRemaining = fetchedRemainingAllocation + (originalAllocationPercent || 0) - currentAllocationPercent;
@@ -320,22 +325,20 @@ const AllocationModalProjects = ({
       // Adding new allocation
       newRemaining = fetchedRemainingAllocation - currentAllocationPercent;
     }
- 
+
     setRemainingAllocation(newRemaining >= 0 ? newRemaining : 0);
   }, [fetchedRemainingAllocation, originalAllocationPercent, formData.allocationPercent, allocationData]);
- 
+
   // Helper function to check date overlap
   const isOverlapping = (newStart, newEnd, existingStart, existingEnd) => {
     const startA = new Date(newStart);
     const endA = newEnd ? new Date(newEnd) : new Date('9999-12-31');
     const startB = new Date(existingStart);
     const endB = existingEnd ? new Date(existingEnd) : new Date('9999-12-31');
- 
+
     return startA <= endB && startB <= endA;
   };
- 
- 
- 
+
   // Auto-populate Employee Name when Employee ID is entered and vice versa
   useEffect(() => {
     const fetchEmployeeDetails = async () => {
@@ -345,13 +348,13 @@ const AllocationModalProjects = ({
           response = await axios.get(`http://localhost:8080/employees/${formData.employeeId}`);
           setFormData(prev => ({
             ...prev,
-            employeeName: response.data.employeeName || '',
+            employeeName: response.data.EmployeeName || '',
           }));
         } else if (formData.employeeName && !formData.employeeId) {
           response = await axios.get(`http://localhost:8080/employees/search?query=${formData.employeeName}`);
           setFormData(prev => ({
             ...prev,
-            employeeId: response.data.employeeId || '',
+            employeeId: response.data.EmployeeID || '',
           }));
         }
       } catch (err) {
@@ -359,12 +362,12 @@ const AllocationModalProjects = ({
         setError('Invalid Employee ID or Name.');
       }
     };
- 
+
     if (formData.employeeId || formData.employeeName) {
       fetchEmployeeDetails();
     }
   }, [formData.employeeId, formData.employeeName]);
- 
+
   // Debounced function to fetch employees based on search query
   const fetchEmployees = useCallback(_.debounce(async (query, type) => {
     if (!query) {
@@ -373,7 +376,7 @@ const AllocationModalProjects = ({
       }
       return;
     }
- 
+
     try {
       const response = await axios.get('http://localhost:8080/employees/search', {
         params: { query }
@@ -400,19 +403,19 @@ const AllocationModalProjects = ({
       }
     }
   }, 500), []); // 500ms debounce
- 
+
   // Handle search change for Employee Name Dropdown
   const handleEmployeeNameSearchChange = (e, { searchQuery }) => {
     setEmployeeNameLoading(true);
     fetchEmployees(searchQuery, 'name');
   };
- 
+
   // Handle search change for Employee ID Dropdown
   const handleEmployeeIdSearchChange = (e, { searchQuery }) => {
     setEmployeeIdLoading(true);
     fetchEmployees(searchQuery, 'id');
   };
- 
+
   // Handle selection of Employee Name
   const handleEmployeeNameChange = (e, { value, options }) => {
     const selectedEmployee = options.find(option => option.value === value);
@@ -431,7 +434,7 @@ const AllocationModalProjects = ({
     }
     setError(null);
   };
- 
+
   // Handle selection of Employee ID
   const handleEmployeeIdChange = (e, { value, options }) => {
     const selectedEmployee = options.find(option => option.value === value);
@@ -450,20 +453,19 @@ const AllocationModalProjects = ({
     }
     setError(null);
   };
- 
- 
+
   // Handle form field changes
   const handleChange = (e, { name, value }) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
- 
+
     if (name === 'allocationPercent') {
       const newAllocationPercent = parseInt(value, 10) || 0;
       setCurrentAllocation(newAllocationPercent);
     }
- 
+
     // If allocationPercentDropdown changes, update allocationPercent as well
     if (name === 'allocationPercentDropdown') {
       setFormData((prev) => ({
@@ -472,37 +474,60 @@ const AllocationModalProjects = ({
       }));
       setAllocation(parseInt(value, 10) || 0);
     }
- 
+
     if (name === 'billedCheck') {
       handleBillingChange(e, { value });
     }
- 
-    // If project is changed, update the Time Sheet Approver and Client ID
-    if (name === 'projectId') {
+
+    // Handle Time Sheet Approver selection
+    if (name === 'timeSheetApprover') {
+      // The value is the EmployeeID
+      // Find the approver name based on EmployeeID
+      const approver = getTimeSheetApproverOptions().find(option => option.value === value);
+
+      if (approver) {
+        setFormData(prev => ({
+          ...prev,
+          timeSheetApproverId: value,
+          timeSheetApprover: approver.text,
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          timeSheetApproverId: '',
+          timeSheetApprover: '',
+        }));
+      }
+    } else if (name === 'projectId') {
       const selectedProject = projects.find(project => project.ProjectID === value);
       if (selectedProject) {
-        // Set Time Sheet Approver based on Project Manager
-        if (selectedProject.ProjectManager) {
-          setFormData((prev) => ({
+        // Set Time Sheet Approver based on Project Manager only if not editing
+        if (!allocationData && selectedProject.ProjectManagerID && selectedProject.ProjectManager) {
+          setFormData(prev => ({
             ...prev,
+            timeSheetApproverId: selectedProject.ProjectManagerID,
             timeSheetApprover: selectedProject.ProjectManager,
           }));
         }
- 
+
         // Set Client ID automatically based on selected Project
-        setFormData((prev) => ({
+        setFormData(prev => ({
           ...prev,
+          projectId: value,
           clientId: selectedProject.ClientID,
         }));
- 
-        // Disable Client Name dropdown when Project is selected
-        setIsEndDateDisabled(prev => prev);
       } else {
         // If no project is selected, allow manual selection of Client
-        setIsEndDateDisabled(true);
+        setFormData(prev => ({
+          ...prev,
+          projectId: '',
+          clientId: '',
+          timeSheetApproverId: '',
+          timeSheetApprover: '',
+        }));
       }
     }
- 
+
     // Dynamically update status based on allocation percentage and selected fields
     if (name === 'allocationPercent') {
       const allocationValue = parseInt(value, 10);
@@ -524,11 +549,11 @@ const AllocationModalProjects = ({
         setFormData((prev) => ({ ...prev, status: '' }));
       }
     }
- 
+
     // Reset error when user modifies any field
     setError(null);
   };
- 
+
   // Validate form fields
   const isFormValid = () => {
     const {
@@ -540,10 +565,11 @@ const AllocationModalProjects = ({
       billedCheck, // Although we're removing billed check logic, keeping it for form validation if necessary
       billingRate,
       timeSheetApprover,
+      timeSheetApproverId,
       startDate,
       endDate,
     } = formData;
- 
+
     if (
       (!clientProjectData && (!clientId || !projectId)) || // If not prefilled, client and project are required
       !status ||
@@ -552,12 +578,13 @@ const AllocationModalProjects = ({
       !billedCheck || // Keeping billedCheck as required since it's still part of the form
       !billingRate || // Billing Rate is always required now
       !timeSheetApprover ||
+      !timeSheetApproverId ||
       !startDate ||
       !endDate // Ensure endDate is always required
     ) {
       return false;
     }
- 
+
     // Check if start date is before 2020
     const start = new Date(startDate);
     const minStartDate = new Date('2020-01-01');
@@ -565,16 +592,16 @@ const AllocationModalProjects = ({
       setError('Start Date cannot be before January 1, 2020.');
       return false;
     }
- 
+
     // Additional validation for AllocationEndDate
     if (endDate && startDate && new Date(endDate) < new Date(startDate)) {
       setError('End Date cannot be before Start Date.');
       return false;
     }
- 
+
     return true;
   };
- 
+
   // Handle form submission
   const handleSubmit = async () => {
     // Basic validation
@@ -588,30 +615,29 @@ const AllocationModalProjects = ({
       setError('Employee Name and Employee ID are required.');
       return;
     }
- 
+
     // Validate Billing Rate only if Billed? is Yes
     if (formData.billedCheck === 'Yes' && (!formData.billingRate || isNaN(formData.billingRate) || formData.billingRate <= 0)) {
       setError('Billing rate must be a positive number when billed.');
       return;
     }
- 
- 
+
     try {
       // Check for overlapping allocations
       const overlapResponse = await axios.get(`http://localhost:8080/employee-details/${formData.employeeId}/allocations`);
       const allocationsList = overlapResponse.data.allocations;
- 
+
       const hasOverlap = allocationsList.some(alloc => {
         // If editing, exclude the current allocation
         if (allocationData && alloc.AllocationID === allocationData.AllocationID) {
           return false;
         }
- 
+
         // Check if the project is the same
         if (alloc.ProjectID !== formData.projectId) {
           return false;
         }
- 
+
         // Check for date overlap
         return isOverlapping(
           formData.startDate,
@@ -620,12 +646,12 @@ const AllocationModalProjects = ({
           alloc.AllocationEndDate
         );
       });
- 
+
       if (hasOverlap) {
         setError('Allocation overlaps with an existing allocation for the same project.');
         return;
       }
- 
+
       // Check total allocation does not exceed 100%
       if (allocationData) {
         // If editing, subtract the current allocation percent from total allocation
@@ -637,7 +663,7 @@ const AllocationModalProjects = ({
         });
         const totalAllocation = 100 - totalAllocationResponse.data.remainingAllocation;
         const adjustedTotal = totalAllocation - originalAllocationPercent + parseInt(formData.allocationPercent, 10);
- 
+
         if (adjustedTotal > 100) {
           setError('Total allocation percentage cannot exceed 100%.');
           return;
@@ -651,13 +677,13 @@ const AllocationModalProjects = ({
           }
         });
         const totalAllocation = 100 - totalAllocationResponse.data.remainingAllocation;
- 
+
         if (totalAllocation + parseInt(formData.allocationPercent, 10) > 100) {
           setError('Total allocation percentage cannot exceed 100%.');
           return;
         }
       }
- 
+
       // Prepare the payload
       const payload = {
         EmployeeID: formData.employeeId,
@@ -668,13 +694,14 @@ const AllocationModalProjects = ({
         AllocationPercent: parseInt(formData.allocationPercent, 10),
         AllocationStartDate: formData.startDate,
         AllocationEndDate: formData.endDate || null,
-        AllocationTimeSheetApprover: formData.timeSheetApprover,
+        AllocationTimeSheetApproverID: formData.timeSheetApproverId, // Include Approver ID
+        AllocationTimeSheetApprover: formData.timeSheetApprover, 
         AllocationBillingType: formData.billingType,
         AllocationBilledCheck: formData.billedCheck,
         AllocationBillingRate: formData.billedCheck === 'Yes' ? parseFloat(formData.billingRate) : 0.00, // Ensure it's 0.00 if No
         ModifiedBy: 'Admin',
       };
- 
+
       if (allocationData && allocationData.AllocationID) {
         // Editing existing allocation
         await axios.put(`http://localhost:8080/allocations/${allocationData.AllocationID}`, payload);
@@ -684,7 +711,7 @@ const AllocationModalProjects = ({
         await axios.post('http://localhost:8080/api/allocate', payload);
         toast.success('Allocation added successfully!');
       }
- 
+
       onSave(); // Refresh allocations in parent component
       onClose(); // Close the modal
     } catch (err) {
@@ -692,13 +719,13 @@ const AllocationModalProjects = ({
       setError(err.response?.data?.message || 'Failed to add/update allocation.');
     }
   };
- 
+
   // Helper function to generate project options based on selected client
   const getFilteredProjectOptions = () => {
     if (formData.clientId === '') {
       return [];
     }
- 
+
     return projects
       .filter(project => project.ClientID === formData.clientId)
       .map(project => ({
@@ -707,7 +734,7 @@ const AllocationModalProjects = ({
         value: project.ProjectID,
       }));
   };
- 
+
   const AllocationPercentOptions = [
     { key: 0, text: '0%', value: '0' },
     { key: 25, text: '25%', value: '25' },
@@ -715,37 +742,34 @@ const AllocationModalProjects = ({
     { key: 75, text: '75%', value: '75' },
     { key: 100, text: '100%', value: '100' },
   ];
+
   // Helper function to get Time Sheet Approver options
   const getTimeSheetApproverOptions = () => {
-    const staticOptions = [
-      { key: 'shishir', text: 'Shishir', value: 'Shishir' },
-      { key: 'rajendra', text: 'Rajendra', value: 'Rajendra' },
-      { key: 'kiran', text: 'Kiran', value: 'Kiran' },
-    ];
- 
     // Include Project Manager as an option
-    const projectManager = projects.find(project => project.ProjectID === formData.projectId)?.ProjectManager;
-    const dynamicOptions = projectManager
-      ? [{ key: `pm-${projectManager}`, text: projectManager, value: projectManager }]
+    const selectedProject = projects.find(project => project.ProjectID === formData.projectId);
+    const projectManager = selectedProject?.ProjectManager;
+    const projectManagerID = selectedProject?.ProjectManagerID;
+  
+    const dynamicOptions = (projectManager && projectManagerID)
+      ? [{ key: projectManagerID, text: projectManager, value: projectManagerID }]
       : [];
- 
-    // Combine static and dynamic options, ensuring uniqueness
+  
+    // Combine backend-provided timeSheetApprovers and project manager
     const combinedOptions = [
-      ...staticOptions,
       ...timeSheetApprovers.map(approver => ({
-        key: approver,
-        text: approver,
-        value: approver,
+        key: approver.EmployeeID,
+        text: approver.Name,
+        value: approver.EmployeeID,
       })),
       ...dynamicOptions,
     ];
- 
-    // Remove duplicates
+  
+    // Remove duplicates based on EmployeeID
     const uniqueOptions = Array.from(new Map(combinedOptions.map(item => [item.key, item])).values());
- 
+  
     return uniqueOptions;
   };
- 
+
   // Handle Billing Radio Change
   const handleBillingChange = (e, { value }) => {
     setFormData((prev) => ({
@@ -754,9 +778,7 @@ const AllocationModalProjects = ({
       billingRate: value === 'Yes' ? prev.billingRate || '0.00' : '0.00', // Default to 0.00 if No is selected
     }));
   };
- 
- 
- 
+
   return (
     <Modal open={open} onClose={onClose} size="large" closeIcon>
       <Modal.Header>
@@ -770,7 +792,7 @@ const AllocationModalProjects = ({
             <Message.Header>Error</Message.Header>
             <p>{fetchError}</p>
           </Message>
- 
+
         ) : (
           <>
             <Grid stackable divided>
@@ -815,7 +837,7 @@ const AllocationModalProjects = ({
                         />
                       </Form.Field>
                     </Form.Group>
- 
+
                     <Form.Group widths="equal">
                       <Form.Field required>
                         <label>Project Name</label>
@@ -887,7 +909,7 @@ const AllocationModalProjects = ({
                           placeholder="Employee ID"
                           name="employeeId"
                           value={formData.employeeId}
-                          onChange={handleChange}
+                          onChange={handleEmployeeIdChange}
                           readOnly={!!allocationData}
                         />
                       </Form.Field>
@@ -932,7 +954,7 @@ const AllocationModalProjects = ({
                           selection
                           options={getTimeSheetApproverOptions()}
                           name="timeSheetApprover"
-                          value={formData.timeSheetApprover}
+                          value={formData.timeSheetApproverId}
                           onChange={handleChange}
                           clearable
                           upward={true}
@@ -976,10 +998,10 @@ const AllocationModalProjects = ({
                           upward={true}
                         />
                       </Form.Field>
- 
+
                     </Form.Group>
                     <Form.Group widths="equal">
- 
+
                       <Form.Field required>
                         <label>Billing Type</label>
                         <Dropdown
@@ -997,7 +1019,7 @@ const AllocationModalProjects = ({
                           clearable
                         />
                       </Form.Field>
- 
+
                       <Form.Field required>
                         <label>Billed?</label>
                         <Dropdown
@@ -1060,7 +1082,7 @@ const AllocationModalProjects = ({
     </Modal>
   );
 };
- 
+
 // Define PropTypes for better type checking
 AllocationModalProjects.propTypes = {
   open: PropTypes.bool.isRequired,
@@ -1085,6 +1107,7 @@ AllocationModalProjects.propTypes = {
     AllocationEndDate: PropTypes.string,
     AllocationBillingRate: PropTypes.number,
     AllocationTimeSheetApprover: PropTypes.string,
+    AllocationTimeSheetApproverID: PropTypes.string, // Ensure this is included
     AllocationBillingType: PropTypes.string,
     AllocationBilledCheck: PropTypes.string,
     ModifiedBy: PropTypes.string,
@@ -1092,5 +1115,5 @@ AllocationModalProjects.propTypes = {
   }), // Allocation details or null
   userRole: PropTypes.string.isRequired,
 };
- 
+
 export default AllocationModalProjects;
