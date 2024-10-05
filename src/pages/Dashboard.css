@@ -1,260 +1,191 @@
-/* src/pages/Dashboard.css */
+/* Dashboard.css */
 
-body {
-    font-family: 'Inter', sans-serif; /* Clean and modern font */
-    background-color: #f5f8fa; /* Soft background */
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    color: #333; /* Dark grey text for readability */
-  }
-  
-  .dashboard-container {
-    padding: 90px;
-    background-color: #f0f5f9;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  h2 {
-    color: #333;
-    font-size: 2rem;
-    margin-bottom: 30px;
-    text-align: center;
-    font-weight: 600;
-  }
-  
-  .card-group {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Adjusted width for wider cards */
-    gap: 20px;
-    width: 100%;
-    max-width: 1200px;
-    margin-top: 60px;
-
-  }
-  
-  .card {
-    border-radius: 16px; /* More rounded corners */
-    background: #ffffff;
-    color: #333;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Soft shadow */
-    border: 1px solid #e5e9f2; /* Subtle border */
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    cursor: pointer;
-    position: relative; /* Relative positioning for icons */
-    padding: 30px !important;
-    margin-bottom: 20px !important;
-    margin-left: 30px !important;
-    
-  }
-  
-  .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  }
-  
-  .card-header {
-    font-size: 1.3rem;
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: #666;
-    display: flex;
-    align-items: center;
-  }
-  
-  .card-description {
-    font-size: 2.5rem; /* Larger text for emphasis */
-    font-weight: bold;
-    margin-top: 50px;
-    color: #4a90e2; /* Accent color */
-  }
-  
-  .card-icon {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    font-size: 1.5rem;
-    color: #4a90e2; /* Match icon color with accent */
-  }
-  
-  .chart-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 250px;
-  }
-  
-  .pie-chart,
-  .bar-chart {
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 16px; /* Rounded corners to match cards */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e5e9f2;
-    width: 100%;
-    max-width: 600px; /* Increased width for larger charts */
-    margin: 0 auto;
-  }
-  
-  .pie-chart:hover,
-  .bar-chart:hover {
-    background: #f0f0f5;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  }
-  
-  .button-add {
-    background-color: #4a90e2;
-    color: #ffffff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    margin: 20px 0;
-    font-size: 1rem;
-    font-weight: 500;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .button-add:hover {
-    background-color: #357ab7;
-  }
-
-
-  /* src/pages/Dashboard.css */
-
-body {
-  font-family: 'Inter', sans-serif; /* Clean and modern font */
-  background-color: #f5f8fa; /* Soft background */
-  margin: 0;
-  padding: 0;
+/* Main container styles */
+.dashboard-container {
+  padding-left: 18%; /* Matches the width of the sidebar */
+  width: 100%;
   box-sizing: border-box;
-  color: #333; /* Dark grey text for readability */
-}
-
-.dashboard-page-container {
-  padding: 90px;
-  background-color: #f0f5f9;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-left: -300px !important;
-}
-
-h2 {
+  font-family: 'Inter', sans-serif;
+  background-color: #f5f8fa;
   color: #333;
+}
+
+.dashboard-content {
+  padding: 2rem;
+}
+
+/* Greeting section styles */
+.greeting {
+  margin-bottom: 2rem;
+}
+
+.greeting h1 {
   font-size: 2rem;
-  margin-bottom: 30px;
-  text-align: center;
   font-weight: 600;
-}
-
-.dashboard-card-group {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Adjusted width for wider cards */
-  gap: 20px;
-  width: 100%;
-  max-width: 1200px;
-  margin-top: 60px;
-}
-
-.dashboard-card {
-  border-radius: 16px; /* More rounded corners */
-  background: #ffffff;
   color: #333;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Soft shadow */
-  border: 1px solid #e5e9f2; /* Subtle border */
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  padding: 30px; /* Updated padding */
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  cursor: pointer;
-  position: relative; /* Relative positioning for icons */
-  margin-bottom: 20px !important;
-  margin-left: 30px !important;
+  margin-bottom: 0.5rem;
 }
 
-.dashboard-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.dashboard-card-header {
-  font-size: 1.3rem;
-  margin-bottom: 5px;
-  font-weight: 600;
+.greeting h2.date {
+  font-size: 1.2rem;
   color: #666;
-  display: flex;
-  align-items: center;
+  margin-top: 0;
 }
 
-.dashboard-card-description {
-  font-size: 2.5rem; /* Larger text for emphasis */
-  font-weight: bold;
-  margin-top: 50px;
-  color: #4a90e2; /* Accent color */
+/* Chart section styles */
+.dashboard-chart {
+  margin-bottom: 2rem;
 }
 
-.dashboard-card-icon {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  font-size: 1.5rem;
-  color: #4a90e2; /* Match icon color with accent */
+/* Client and Project container styles */
+.client-project-container {
+  margin-bottom: 2rem;
 }
 
-.dashboard-chart-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 250px;
+/* Table styles for both client and project details */
+.client-details-table,
+.project-details-table {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.dashboard-pie-chart,
-.dashboard-bar-chart {
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 16px; /* Rounded corners to match cards */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e9f2;
-  width: 100%;
-  max-width: 600px; /* Increased width for larger charts */
-  margin: 0 auto;
-}
-
-.dashboard-pie-chart:hover,
-.dashboard-bar-chart:hover {
-  background: #f0f0f5;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.dashboard-button-add {
-  background-color: #4a90e2;
-  color: #ffffff;
+.client-details-table .ui.table,
+.project-details-table .ui.table {
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+}
+
+.client-details-table .ui.table th,
+.project-details-table .ui.table th {
+  background-color: #f0f5f9;
+  font-weight: 600;
+  color: #333;
+}
+
+.client-details-table .ui.table td:hover,
+.project-details-table .ui.table td:hover {
+  background-color: #e0f7fa;
   cursor: pointer;
-  margin: 20px 0;
-  font-size: 1rem;
-  font-weight: 500;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.dashboard-button-add:hover {
-  background-color: #357ab7;
+.client-details-table::-webkit-scrollbar {
+  width: 8px;
 }
 
-.ui.message {
-  margin-top: 20px;
+.client-details-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
 }
 
+.client-details-table::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.client-details-table::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Project section container styles */
+.project-section-container {
+  margin-top: 2rem;
+}
+
+/* Project statistics styles */
+.project-statistics .stat-item,
+.project-status {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 1rem;
+}
+
+.project-statistics .stat-item:hover {
+  background-color: #f1f1f1;
+  cursor: pointer;
+}
+
+.project-statistics .ui.progress {
+  margin-bottom: 0;
+}
+
+/* Progress bar colors for different project statuses */
+.project-statistics .ui.progress.completed .bar {
+  background-color: #4caf50;
+}
+
+.project-statistics .ui.progress.on-hold .bar {
+  background-color: #9b59b6;
+}
+
+.project-statistics .ui.progress.in-progress .bar {
+  background-color: #f1c40f;
+}
+
+/* Project status list styles */
+.project-status .ui.list .item {
+  padding: 0.5rem 0;
+}
+
+.project-status .ui.list .item:hover {
+  background-color: #f8fafc;
+  cursor: pointer;
+}
+
+/* Responsive styles */
+@media only screen and (max-width: 768px) {
+  .dashboard-container {
+    padding-left: 30%; /* Adjusted for tablet view */
+  }
   
+  .dashboard-content {
+    padding: 1.5rem;
+  }
+  
+  .greeting h1 {
+    font-size: 1.8rem;
+  }
+  
+  .greeting h2.date {
+    font-size: 1rem;
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  .dashboard-container {
+    padding-left: 40%; /* Adjusted for mobile view */
+  }
+  
+  .dashboard-content {
+    padding: 1rem;
+  }
+  
+  .greeting h1 {
+    font-size: 1.5rem;
+  }
+  
+  .greeting h2.date {
+    font-size: 0.9rem;
+  }
+  
+  .client-project-container .ui.grid {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+@media only screen and (max-width: 320px) {
+  .dashboard-container {
+    padding-left: 50%; /* Adjusted for very small devices */
+  }
+  
+  .dashboard-content {
+    padding: 0.8rem;
+  }
+  
+  .greeting h1 {
+    font-size: 1.3rem;
+  }
+  
+  .greeting h2.date {
+    font-size: 0.8rem;
+  }
+}
