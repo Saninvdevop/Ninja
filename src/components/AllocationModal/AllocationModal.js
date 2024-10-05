@@ -42,6 +42,7 @@ const AllocationModal = ({
     billedCheck: '',
     billingRate: '',
     timeSheetApprover: '',
+    timeSheetApproverId: '',
     startDate: '',
     endDate: '',
   });
@@ -193,6 +194,7 @@ const AllocationModal = ({
         billedCheck: allocationData.AllocationBilledCheck || '',
         billingRate: allocationData.AllocationBillingRate ? allocationData.AllocationBillingRate.toString() : '',
         timeSheetApprover: allocationData.AllocationTimeSheetApprover || '',
+        timeSheetApproverId: allocationData.AllocationTimeSheetApproverID || '',
         startDate: allocationData.AllocationStartDate ? allocationData.AllocationStartDate.substring(0, 10) : '',
         endDate: allocationData.AllocationEndDate ? allocationData.AllocationEndDate.substring(0, 10) : '',
       });
@@ -218,6 +220,7 @@ const AllocationModal = ({
         billedCheck: '',
         billingRate: '',
         timeSheetApprover: '',
+        timeSheetApproverId: '',
         startDate: '',
         endDate: '',
       });
@@ -246,6 +249,7 @@ const AllocationModal = ({
         billedCheck: '',
         billingRate: '',
         timeSheetApprover: '',
+        timeSheetApproverId: allocationData ? allocationData.AllocationTimeSheetApproverID || '' : '',
         startDate: '',
         endDate: '',
       });
@@ -358,31 +362,50 @@ const AllocationModal = ({
       handleBillingChange(e, { value });
     }
 
-    // If project is changed, update the Time Sheet Approver and Client ID
-    if (name === 'projectId') {
+    if (name === 'timeSheetApprover') {
+      // The value is the EmployeeID
+      // Find the approver name based on EmployeeID
+      const approver = getTimeSheetApproverOptions().find(option => option.value === value);
+  
+      if (approver) {
+        setFormData(prev => ({
+          ...prev,
+          timeSheetApproverId: value,
+          timeSheetApprover: approver.text,
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          timeSheetApproverId: '',
+          timeSheetApprover: '',
+        }));
+      }
+    } else if (name === 'projectId') {
       const selectedProject = projects.find(project => project.ProjectID === value);
       if (selectedProject) {
         // Set Time Sheet Approver based on Project Manager
-        if (selectedProject.ProjectManager) {
+        if (selectedProject.ProjectManagerID && selectedProject.ProjectManager) {
           setFormData((prev) => ({
             ...prev,
+            timeSheetApproverId: selectedProject.ProjectManagerID,
             timeSheetApprover: selectedProject.ProjectManager,
           }));
-        }
-
+        } 
+  
         // Set Client ID automatically based on selected Project
         setFormData((prev) => ({
           ...prev,
+          projectId: value,
           clientId: selectedProject.ClientID,
         }));
-
-        // Disable Client Name dropdown when Project is selected
-        setIsEndDateDisabled(prev => prev);
-      } else {
-        // If no project is selected, allow manual selection of Client
-        setIsEndDateDisabled(true);
+      }else {
+          setFormData((prev) => ({
+            ...prev,
+            timeSheetApproverId: '',
+            timeSheetApprover: '',
+          }));
+        }
       }
-    }
 
     // Dynamically update status based on allocation percentage and selected fields
     if (name === 'allocationPercent') {
@@ -421,6 +444,7 @@ const AllocationModal = ({
       billedCheck, // Although we're removing billed check logic, keeping it for form validation if necessary
       billingRate,
       timeSheetApprover,
+      timeSheetApproverId,
       startDate,
       endDate,
     } = formData;
@@ -433,6 +457,7 @@ const AllocationModal = ({
       !billedCheck || // Keeping billedCheck as required since it's still part of the form
       !billingRate || // Billing Rate is always required now
       !timeSheetApprover ||
+      !timeSheetApproverId ||
       !startDate ||
       !endDate // Ensure endDate is always required
     ) {
@@ -545,6 +570,7 @@ const AllocationModal = ({
         AllocationPercent: parseInt(formData.allocationPercent, 10),
         AllocationStartDate: formData.startDate,
         AllocationEndDate: formData.endDate || null,
+        AllocationTimeSheetApproverID: formData.timeSheetApproverId,
         AllocationTimeSheetApprover: formData.timeSheetApprover,
         AllocationBillingType: formData.billingType,
         AllocationBilledCheck: formData.billedCheck,
@@ -592,45 +618,50 @@ const AllocationModal = ({
     { key: 75, text: '75%', value: '75' },
     { key: 100, text: '100%', value: '100' },
   ];
+  
   // Helper function to get Time Sheet Approver options
   const getTimeSheetApproverOptions = () => {
-    const staticOptions = [
-      { key: 'shishir', text: 'Shishir', value: 'Shishir' },
-      { key: 'rajendra', text: 'Rajendra', value: 'Rajendra' },
-      { key: 'kiran', text: 'Kiran', value: 'Kiran' },
-    ];
-
     // Include Project Manager as an option
-    const projectManager = projects.find(project => project.ProjectID === formData.projectId)?.ProjectManager;
+    const selectedProject = projects.find(project => project.ProjectID === formData.projectId);
+    const projectManager = selectedProject?.ProjectManager;
+    const projectManagerID = selectedProject?.ProjectManagerID;
+
     const dynamicOptions = projectManager
-      ? [{ key: `pm-${projectManager}`, text: projectManager, value: projectManager }]
+      ? [{ key: projectManagerID, text: projectManager, value: projectManagerID }]
       : [];
 
-    // Combine static and dynamic options, ensuring uniqueness
+    // Combine timeSheetApprovers and project manager
     const combinedOptions = [
-      ...staticOptions,
       ...timeSheetApprovers.map(approver => ({
-        key: approver,
-        text: approver,
-        value: approver,
+        key: approver.EmployeeID,
+        text: approver.Name,
+        value: approver.EmployeeID,
       })),
       ...dynamicOptions,
     ];
+    if (allocationData && allocationData.AllocationTimeSheetApproverID && 
+      !combinedOptions.find(option => option.value === allocationData.AllocationTimeSheetApproverID)) {
+    combinedOptions.push({
+      key: allocationData.AllocationTimeSheetApproverID,
+      text: allocationData.AllocationTimeSheetApprover,
+      value: allocationData.AllocationTimeSheetApproverID,
+    });
+  }
 
-    // Remove duplicates
+    // Remove duplicates based on EmployeeID
     const uniqueOptions = Array.from(new Map(combinedOptions.map(item => [item.key, item])).values());
 
     return uniqueOptions;
   };
 
-  // Handle Billing Radio Change
-const handleBillingChange = (e, { value }) => {
-  setFormData((prev) => ({
-    ...prev,
-    billedCheck: value,
-    billingRate: value === 'Yes' ? prev.billingRate || '0.00' : '0.00', // Default to 0.00 if No is selected
-  }));
-};
+    // Handle Billing Radio Change
+  const handleBillingChange = (e, { value }) => {
+    setFormData((prev) => ({
+      ...prev,
+      billedCheck: value,
+      billingRate: value === 'Yes' ? prev.billingRate || '0.00' : '0.00', // Default to 0.00 if No is selected
+    }));
+  };
 
 
 
@@ -787,7 +818,7 @@ const handleBillingChange = (e, { value }) => {
                       selection
                       options={getTimeSheetApproverOptions()}
                       name="timeSheetApprover"
-                      value={formData.timeSheetApprover}
+                      value={formData.timeSheetApproverId}
                       onChange={handleChange}
                       clearable
                       upward={true}
@@ -947,5 +978,6 @@ AllocationModal.propTypes = {
   }), // Allocation details or null
   userRole: PropTypes.string.isRequired,
 };
+
 
 export default AllocationModal;
