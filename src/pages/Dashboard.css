@@ -60,6 +60,11 @@
   color: #333;
 }
 
+.project-details-table {
+  max-height: 400px; /* Set the maximum height */
+  overflow-y: auto;  /* Allow vertical scrolling */
+}
+
 .client-details-table .ui.table td:hover,
 .project-details-table .ui.table td:hover {
   background-color: #e0f7fa;
