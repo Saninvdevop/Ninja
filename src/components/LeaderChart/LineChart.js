@@ -20,14 +20,15 @@ const LineChart = () => {
     unallocated: 0,
     draft: 0,
     bench: 0,
-    startDate: '',
-    endDate: ''
   });
 
   // Function to fetch data from the API
   const fetchData = async (url) => {
     try {
       const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       return data;
     } catch (error) {
@@ -36,85 +37,62 @@ const LineChart = () => {
     }
   };
 
-  // Function to fetch chart data and dynamically set dates
-  const fetchChartData = async (startDate, endDate) => {
-    const [allocated, unallocated, draft, bench] = await Promise.all([
-      fetchData('http://localhost:8080/employees/allocatedLeader'),
-      fetchData('http://localhost:8080/employees/unallocatedLeader'),
-      fetchData('http://localhost:8080/employees/draftLeader'),
-      fetchData('http://localhost:8080/employees/benchLeader'),
-    ]);
+  // Function to fetch allocation snapshot for a specific date
+  const fetchAllocationSnapshot = async (date) => {
+    const url = `http://localhost:8080/api/allocation-snapshot?date=${date}`;
+    const result = await fetchData(url);
 
-    // Prepare the labels (X-axis: Dates) and datasets (Y-axis: Number of people)
-    const labels = [
-      new Date(allocated.StartDate).toLocaleDateString(), 
-      new Date(unallocated.StartDate).toLocaleDateString(), 
-      new Date(draft.StartDate).toLocaleDateString(), 
-      new Date(bench.StartDate).toLocaleDateString()
-    ]; // Format the dates
+    if (result) {
+      setChartData({
+        labels: [date], // X-axis: Single date for the snapshot
+        datasets: [
+          {
+            label: 'Allocated',
+            data: [result.allocated], // Y-axis: Number of allocated people
+            borderColor: 'rgba(75,192,192,1)',
+            backgroundColor: 'rgba(75,192,192,0.2)',
+            fill: true,
+          },
+          {
+            label: 'Unallocated',
+            data: [result.unallocated], // Y-axis: Number of unallocated people
+            borderColor: 'rgba(255,99,132,1)',
+            backgroundColor: 'rgba(255,99,132,0.2)',
+            fill: true,
+          },
+          {
+            label: 'Draft',
+            data: [result.draft], // Y-axis: Number of draft people
+            borderColor: 'rgba(54,162,235,1)',
+            backgroundColor: 'rgba(54,162,235,0.2)',
+            fill: true,
+          },
+          {
+            label: 'Bench',
+            data: [result.bench], // Y-axis: Number of bench people
+            borderColor: 'rgba(153,102,255,1)',
+            backgroundColor: 'rgba(153,102,255,0.2)',
+            fill: true,
+          },
+        ],
+      });
 
-    setChartData({
-      labels, // X-axis: Dates
-      datasets: [
-        {
-          label: 'Allocated',
-          data: [allocated.AllocatedCount], // Y-axis: Number of allocated people
-          borderColor: 'rgba(75,192,192,1)',
-          backgroundColor: 'rgba(75,192,192,0.2)',
-          fill: true,
-        },
-        {
-          label: 'Unallocated',
-          data: [unallocated.UnallocatedCount], // Y-axis: Number of unallocated people
-          borderColor: 'rgba(255,99,132,1)',
-          backgroundColor: 'rgba(255,99,132,0.2)',
-          fill: true,
-        },
-        {
-          label: 'Draft',
-          data: [draft.DraftCount], // Y-axis: Number of draft people
-          borderColor: 'rgba(54,162,235,1)',
-          backgroundColor: 'rgba(54,162,235,0.2)',
-          fill: true,
-        },
-        {
-          label: 'Bench',
-          data: [bench.BenchCount], // Y-axis: Number of bench people
-          borderColor: 'rgba(153,102,255,1)',
-          backgroundColor: 'rgba(153,102,255,0.2)',
-          fill: true,
-        },
-      ],
-    });
-
-    // Combine allocation details for overall details
-    const earliestStartDate = Math.min(
-      new Date(allocated.StartDate),
-      new Date(unallocated.StartDate),
-      new Date(draft.StartDate),
-      new Date(bench.StartDate)
-    );
-    const latestEndDate = Math.max(
-      new Date(allocated.EndDate),
-      new Date(unallocated.EndDate),
-      new Date(draft.EndDate),
-      new Date(bench.EndDate)
-    );
-
-    setAllocationDetails({
-      allocated: allocated.AllocatedCount,
-      unallocated: unallocated.UnallocatedCount,
-      draft: draft.DraftCount,
-      bench: bench.BenchCount,
-      startDate: new Date(earliestStartDate).toLocaleDateString(),
-      endDate: new Date(latestEndDate).toLocaleDateString(),
-    });
+      // Set allocation details
+      setAllocationDetails({
+        allocated: result.allocated,
+        unallocated: result.unallocated,
+        draft: result.draft,
+        bench: result.bench,
+      });
+    }
   };
 
   useEffect(() => {
-    // Fetch entire chart data by default (for all available data)
-    fetchChartData();
-  }, []);
+    // Fetch data for the selected date when component mounts or date changes
+    if (formData.startDate) {
+      fetchAllocationSnapshot(formData.startDate);
+    }
+  }, [formData.startDate]);
 
   const handleChange = (e, { name, value }) => {
     setFormData(prev => ({
@@ -129,20 +107,24 @@ const LineChart = () => {
         endDate: '',
       }));
     }
-
-    if (name === 'endDate' && value) {
-      fetchChartData(formData.startDate, value);
-    }
   };
 
   const handleClear = () => {
-    // Reset form data to empty strings and fetch overall data
+    // Reset form data to empty strings
     setFormData({
       startDate: '',
       endDate: ''
     });
-
-    fetchChartData();
+    setChartData({
+      labels: [],
+      datasets: [],
+    });
+    setAllocationDetails({
+      allocated: 0,
+      unallocated: 0,
+      draft: 0,
+      bench: 0,
+    });
   };
 
   return (
@@ -160,17 +142,6 @@ const LineChart = () => {
           style={{ marginRight: '10px' }}
           aria-label="Start Date"
         />
-        -
-        <Input
-          type="date"
-          name="endDate"
-          value={formData.endDate}
-          onChange={handleChange}
-          min={minEndDate}
-          placeholder="End Date"
-          style={{ marginLeft: '10px', marginRight: '10px' }}
-          aria-label="End Date"
-        />
         <Button onClick={handleClear} primary>Clear</Button>
       </div>
       <div className="chart-container">
@@ -179,15 +150,10 @@ const LineChart = () => {
           options={{
             scales: {
               x: {
-                type: 'time', // X-axis represents dates
-                time: {
-                  unit: 'month', // Display by month
-                  min: '2018-01-01', // Start date for X-axis
-                  max: new Date().toISOString().split('T')[0], // Current date for X-axis
-                },
+                type: 'category', // X-axis is category since we are displaying a single date
                 title: {
                   display: true,
-                  text: 'Dates',
+                  text: 'Date',
                 },
               },
               y: {
