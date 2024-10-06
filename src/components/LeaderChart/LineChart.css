@@ -66,24 +66,25 @@ h2 {
 .allocation-details {
   margin-left: 10px;
   padding: 5px;
-  background-color: #f9f9f9;
-  border: 1px solid #050000;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  font-size: 1rem;
-  max-height: 130px;
-  overflow-y: auto;
+  background-color: #f9f9f9; /* Light gray background */
+  border: 1px solid #050000; /* Dark border */
+  border-radius: 5px; /* Rounded corners */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  font-size: 1rem; /* Base font size */
+  max-height: 130px; /* Limit height */
+  overflow-y: auto; /* Enable scrolling for overflow */
 }
 
 .allocation-details h3 {
-  margin: 0 0 5px 0;
-  font-size: 1rem;
+  margin: 0 0 5px 0; /* No margin top/bottom for h3, space below */
+  font-size: 1rem; /* Font size for the title */
 }
 
 .allocation-details p {
-  margin: 2px 0;
-  line-height: 1.2;
+  margin: 2px 0; /* Small margin for paragraphs */
+  line-height: 1.2; /* Line height for better readability */
 }
+
 
 /* Custom styles for the project status */
 .label.green {
