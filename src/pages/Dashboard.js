@@ -33,7 +33,7 @@ const Dashboard = () => {
     const fetchProjects = async () => {
       if (selectedClientId) {
         try {
-          const response = await fetch(`http://localhost:8080/api/client/${selectedClientId}/projects`);
+          const response = await fetch(`http://localhost:8080/client/${selectedClientId}/projects`);
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
@@ -72,6 +72,9 @@ const Dashboard = () => {
   const inProgressProjects = projectData.filter(project => project.ProjectStatus === 'In Progress').length;
   const totalProjects = projectData.length;
 
+  // Find the selected client name for display
+  const selectedClient = clientData.find(client => client.ClientID === selectedClientId);
+
   return (
     <Container fluid className="dashboard-container">
       <div className="dashboard-content">
@@ -92,12 +95,17 @@ const Dashboard = () => {
                 <Table selectable>
                   <Table.Header>
                     <Table.Row>
-                      <Table.HeaderCell>Client Name</Table.HeaderCell>
+                      <Table.HeaderCell style={{ width: '30%' }}>Client ID</Table.HeaderCell>
+                      <Table.HeaderCell style={{ width: '70%' }}>Client Name</Table.HeaderCell>
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>
                     {clientData.map((client) => (
-                      <Table.Row key={client.ClientID} onClick={() => setSelectedClientId(client.ClientID)}>
+                      <Table.Row key={client.ClientID} onClick={() => {
+                        setSelectedClientId(client.ClientID);
+                        setProjectData([]); // Reset project data when a new client is selected
+                      }}>
+                        <Table.Cell>{client.ClientID}</Table.Cell>
                         <Table.Cell>{client.ClientName}</Table.Cell>
                       </Table.Row>
                     ))}
@@ -107,8 +115,8 @@ const Dashboard = () => {
             </Grid.Column>
             <Grid.Column width={11}>
               <Segment className="project-details-table">
-                <Header as='h3'>Project Details</Header>
-                {projectData.length > 0 ? (
+                <Header as='h3'>Project Details for {selectedClient ? selectedClient.ClientName : 'Select a Client'}</Header>
+                {Array.isArray(projectData) && projectData.length > 0 ? (
                   <Table>
                     <Table.Header>
                       <Table.Row>
@@ -131,11 +139,15 @@ const Dashboard = () => {
                             </Label>
                           </Table.Cell>
                           <Table.Cell>{project.ProjectManager}</Table.Cell>
-                          <Table.Cell>{new Date(project.ProjectStartDate).toLocaleDateString()}</Table.Cell>
-                          <Table.Cell>{new Date(project.ProjectEndDate).toLocaleDateString()}</Table.Cell>
+                          <Table.Cell>
+                            {project.ProjectStartDate ? new Date(project.ProjectStartDate).toLocaleDateString() : '-'}
+                          </Table.Cell>
+                          <Table.Cell>
+                            {project.ProjectEndDate ? new Date(project.ProjectEndDate).toLocaleDateString() : '-'}
+                          </Table.Cell>
                           <Table.Cell>{project.Headcount}</Table.Cell>
                         </Table.Row>
-                      ))}
+                      ))}  
                     </Table.Body>
                   </Table>
                 ) : (
@@ -186,9 +198,8 @@ const Dashboard = () => {
             </Grid.Column>
           </Grid.Row>
         </Grid>
-
-      </div> 
-    </Container> 
+      </div>
+    </Container>
   );
 };
 
