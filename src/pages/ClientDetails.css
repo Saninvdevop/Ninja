@@ -1,49 +1,135 @@
-/* src/pages/ClientDetails.css */
-
- /* Scrollable table container */
- .table-container {
-  overflow-x: auto;
+/* General Styles */
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background-color: #f9f9f9;
+  height: 100vh;
+  overflow-y: auto;
 }
-
-.table-container .ui.table {
-  min-width: 1800px; /* Adjust based on the number of columns */
+ 
+.right-content {
+  flex-grow: 1;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
-/* Style the table headers to indicate they are sortable */
-.ui.table th {
+ 
+/* Breadcrumb Styles */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+ 
+.breadcrumb-text {
+  font-size: 1.2rem;
+  color: #333;
+}
+ 
+.breadcrumb-divider {
+  margin: 0 5px;
+}
+ 
+/* Control Styles */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+ 
+.filter-tabs {
+  display: flex;
+  gap: 10px;
+}
+ 
+.tab {
+  padding: 10px 15px;
+  background-color: #e0e0e0;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
-  .table {
-    width: 100%; /* Take full width */
-    table-layout: fixed; /* Fixed layout for better control */
-    border-collapse: collapse; /* Collapse borders for a cleaner look */
+ 
+.tab.active {
+  background-color: #007bff;
+  color: white;
+}
+ 
+.search-bar {
+  width: 300px;
+}
+ 
+.download-button {
+  display: flex;
+  align-items: center;
+}
+ 
+/* Table Styles */
+.table {
+  margin-top: 20px;
+}
+ 
+.table .ui.table {
+  margin: 0;
+}
+ 
+/* Pagination Styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+ 
+.pagination button {
+  background-color: #f5f5f5;
+  border: none;
+  padding: 10px 20px;
+  margin: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+ 
+.pagination button:hover {
+  background-color: #e5e5e5;
+}
+ 
+.pagination button.active {
+  background-color: #4a90e2;
+  color: white;
+}
+ 
+.pagination button:disabled {
+  background-color: #d3d3d3;
+  cursor: not-allowed;
+}
+ 
+/* New Style for Current Page Display */
+.current-page {
+  background-color: #4a90e2; /* Blue background */
+  color: white; /* White text */
+  padding: 10px 15px; /* Padding for better appearance */
+  border-radius: 4px; /* Rounded corners */
+  margin: 0 10px; /* Margin to space out from buttons */
+  font-size: 1rem; /* Match font size */
+}
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: flex-start;
   }
-  
-  .table th, .table td {
-    padding: 8px 10px; /* Reduced padding */
-    text-align: left; /* Left-align text */
-    white-space: normal; /* Allow text to wrap */
-    overflow: hidden; /* Hide overflow */
-    text-overflow: ellipsis; /* Add ellipsis if the content overflows */
-    font-size: 0.9em; /* Slightly smaller font size */
+ 
+  .search-bar {
+    width: 100%;
   }
-  
-  .table th {
-    background-color: #f5f8fa; /* Light background for the header */
-    font-weight: bold;
+ 
+  .filter-tabs {
+    flex-wrap: wrap;
   }
-  
-  .table td {
-    background-color: #fff; /* White background for table rows */
-    color: #333; /* Darker text color for contrast */
-  }
-  
-  .table tr:nth-child(even) {
-    background-color: #f9f9f9; /* Light grey background for alternating rows */
-  }
-  
-  .table tr:hover {
-    background-color: #e9ecef; /* Highlight row on hover */
-  }
-  
-  
+}

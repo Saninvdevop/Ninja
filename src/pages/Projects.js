@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import './Projects.css';
-
+ 
 const Projects = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
@@ -13,15 +13,20 @@ const Projects = ({ userRole }) => {
   const [loading, setLoading] = useState(true);
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState(null);
-
+ 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const clientsPerPage = 20; // Number of clients per page
+ 
   const handleRowClick = (clientId) => {
     navigate(`/client/${clientId}/projects`);
   };
-
+ 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to the first page on search
   };
-
+ 
   const downloadExcel = () => {
     const dataToExport = filteredAndSortedData.map(client => ({
       'Client ID': client.ClientID,
@@ -31,25 +36,25 @@ const Projects = ({ userRole }) => {
       "Client Partner": client.ClientPartner,
       Headcount: client.Headcount // Add Headcount to Excel
     }));
-
+ 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Clients');
-
+ 
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
     saveAs(data, 'clients.xlsx');
   };
-
+ 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch('http://localhost:8080/clients');
-        
+       
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-
+ 
         const data = await response.json();
         setClientData(data);
       } catch (error) {
@@ -58,10 +63,10 @@ const Projects = ({ userRole }) => {
         setLoading(false);
       }
     };
-
+ 
     fetchData();
   }, []);
-
+ 
   const filteredData = clientData.filter(client => {
     const term = searchTerm.toLowerCase();
     return (
@@ -71,39 +76,55 @@ const Projects = ({ userRole }) => {
       String(client.ClientID).includes(term)
     );
   });
-
+ 
   const sortedData = React.useMemo(() => {
     if (!sortColumn) return filteredData;
-
+ 
     return [...filteredData].sort((a, b) => {
       let aVal = a[sortColumn];
       let bVal = b[sortColumn];
-
+ 
       if (typeof aVal === 'string') {
         aVal = aVal.toLowerCase();
         bVal = bVal.toLowerCase();
       }
-
+ 
       if (aVal > bVal) return sortDirection === 'ascending' ? 1 : -1;
       if (aVal < bVal) return sortDirection === 'ascending' ? -1 : 1;
       return 0;
     });
   }, [filteredData, sortColumn, sortDirection]);
-
+ 
   const filteredAndSortedData = sortedData;
-
+ 
   const handleSort = (clickedColumn) => {
     if (sortColumn !== clickedColumn) {
       setSortColumn(clickedColumn);
       setSortDirection('ascending');
       return;
     }
-
+ 
     setSortDirection(sortDirection === 'ascending' ? 'descending' : 'ascending');
   };
-
-  
-
+ 
+  // Pagination logic
+  const indexOfLastClient = currentPage * clientsPerPage;
+  const indexOfFirstClient = indexOfLastClient - clientsPerPage;
+  const currentClients = filteredAndSortedData.slice(indexOfFirstClient, indexOfLastClient);
+  const totalPages = Math.ceil(filteredAndSortedData.length / clientsPerPage);
+ 
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+ 
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+ 
   return (
     <div className='main-layout'>
       <div className='right-content'>
@@ -111,28 +132,26 @@ const Projects = ({ userRole }) => {
           <h2 className="breadcrumb-text">Clients</h2>
         </div>
         <div className="controls">
-            
-           <Input
-              icon="search"
-              placeholder="Search Client"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="search-bar"
-              style={{ marginRight: '10px', width: '300px' }}
-           />
-  
-           <Button
-             icon
-             labelPosition="left"
-             color="blue"
-             onClick={downloadExcel}
-             className="download-button"
-           >
-             <Icon name="download" />
-             Download
-           </Button>
+          <Input
+            icon="search"
+            placeholder="Search Client"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="search-bar"
+            style={{ marginRight: '10px', width: '300px' }}
+          />
+          <Button
+            icon
+            labelPosition="left"
+            color="blue"
+            onClick={downloadExcel}
+            className="download-button"
+          >
+            <Icon name="download" />
+            Download
+          </Button>
         </div>
-      
+     
         <div className='table'>
           {loading ? (
             <div>Loading...</div>
@@ -179,8 +198,8 @@ const Projects = ({ userRole }) => {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {filteredAndSortedData.length > 0 ? (
-                  filteredAndSortedData.map((client) => (
+                {currentClients.length > 0 ? (
+                  currentClients.map((client) => (
                     <Table.Row
                       key={client.ClientID}
                       onClick={() => handleRowClick(client.ClientID)}
@@ -198,7 +217,7 @@ const Projects = ({ userRole }) => {
                   ))
                 ) : (
                   <Table.Row>
-                    <Table.Cell colSpan="5" textAlign="center">
+                    <Table.Cell colSpan="6" textAlign="center">
                       No matching clients found.
                     </Table.Cell>
                   </Table.Row>
@@ -207,9 +226,29 @@ const Projects = ({ userRole }) => {
             </Table>
           )}
         </div>
+ 
+        {/* Pagination Controls */}
+        <div className="pagination">
+          <button onClick={handlePrevPage} disabled={currentPage === 1}>
+            Previous
+          </button>
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index + 1}
+              onClick={() => setCurrentPage(index + 1)}
+              className={currentPage === index + 1 ? 'active' : ''}
+            >
+              {index + 1}
+            </button>
+          ))}
+          <button onClick={handleNextPage} disabled={currentPage === totalPages}>
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
 };
-
+ 
 export default Projects;
+ 
